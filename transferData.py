@@ -5,14 +5,20 @@ import argparse
 import logging 
 from classes.dbConnection import dbConnection
 from classes.helperFunctions import helperFunctions
+#import external.timestamp_pb2
+#from external.timestamp_pb2 import Timestamp
+from structure.Structure_pb2 import Origin, CompositeKey, Country
+from structure.external.timestamp_pb2 import Timestamp
 import io
 import sys
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 from classes.fieldMapping import lbsnPost,lbsnPlace,lbsnUser,lbsnPostReaction  
 import pandas as pd
+#import protobuf
 
 def main():
+
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger(__name__)
     #Set Output to Replace in case of encoding issues (console/windows)
