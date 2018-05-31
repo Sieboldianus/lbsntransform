@@ -6,18 +6,23 @@ import emoji
 import numpy as np
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
+import datetime
 
 class helperFunctions():  
+    
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
+    
     def cleanhtml(raw_html):
         cleanr = re.compile('<.*?>')
         cleantext = re.sub(cleanr, '', raw_html)
         return cleantext
+    
     def extract_emojis(str):
         #str = str.decode('utf-32').encode('utf-32', 'surrogatepass')
         #return list(c for c in str if c in emoji.UNICODE_EMOJI)
         return list(c for c in str if c in emoji.UNICODE_EMOJI)
+    
     def getRectangleBounds(points):
         lats = []
         lngs = []
@@ -29,6 +34,7 @@ class helperFunctions():
         limXMin = np.min(lngs)       
         limXMax = np.max(lngs)
         return limYMin,limYMax,limXMin,limXMax
+    
     def createNewLBSNRecord_with_id(record,id,origin):
             # initializes new record with composite ID
             c_Key = CompositeKey()
@@ -47,24 +53,51 @@ class helperFunctions():
             elif isinstance(record,lbsnUser):
                 record.user_pkey.CopyFrom(c_Key)                         
             return record
+        
     def isPostReaction_Type(jsonString,return_type = False):
         reaction = lbsnPostReaction()
         if jsonString.get('in_reply_to_status_id_str'):
             if return_type:
-                reaction.post_type = lbsnPostReaction.REPLY
+                reaction.reaction_type = lbsnPostReaction.REPLY
                 return reaction
             else:
                 return True
         elif jsonString.get('quoted_status_id_str'):
             if return_type:
-                reaction.post_type = lbsnPostReaction.QUOTE
+                reaction.reaction_type = lbsnPostReaction.QUOTE
                 return reaction
             else:
                 return True            
         elif jsonString.get('retweeted_status'):
             if return_type:
-                reaction.post_type = lbsnPostReaction.SHARE
+                reaction.reaction_type = lbsnPostReaction.SHARE
                 return reaction
             else:
-                return True
+                return True         
         return False
+    
+    def isPost_Type(jsonString):
+        # if post, get type of first entity
+        if 'media' in jsonString:
+            typeString = jsonString.get('entities').get('media')[0].get('type')
+            # type is either photo, video, or animated_gif
+            # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
+            if typeString:
+                post = lbsnPost()
+                if typeString == "photo":
+                    post.post_type = lbsnPost.IMAGE
+                elif typeString == "video" or typeString == "animated_gif":
+                    post.post_type = lbsnPost.VIDEO
+                else:
+                    post.post_type = lbsnPost.TEXT
+                return post
+        else: 
+            return False
+      
+    def parseJSONDateStringToProtoBuf(jsonDateString):
+        # Parse String -Timestamp Format found in Twitter json
+        dateTimeRecord = datetime.datetime.strptime(jsonDateString,'%a %b %d %H:%M:%S +0000 %Y') 
+        protobufTimestampRecord = Timestamp()
+        # Convert to ProtoBuf Timestamp Recommendation
+        protobufTimestampRecord.FromDatetime(dateTimeRecord)
+        return protobufTimestampRecord
