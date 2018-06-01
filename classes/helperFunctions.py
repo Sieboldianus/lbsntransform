@@ -7,6 +7,7 @@ import numpy as np
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import datetime
+import logging 
 
 class helperFunctions():  
     
@@ -134,25 +135,35 @@ class lbsnRecordDicts():
         self.lbsnPostDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnPostDict}  
         self.lbsnPostReactionDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnPostReactionDict}
         
-    def Count(self):
-        x = 0
-        items = self.__dict__.items()
-        for k,v in items:
-            x += len(v) # count number of entries in specific dict (lbsnCountry, lbsnPost etc.)
-        return x
-
+    def Count(self, TypeCount = False):
+        if not TypeCount:
+            x = 0
+            items = self.__dict__.items()
+            for k,v in items:
+                x += len(v) # count number of entries in specific dict (lbsnCountry, lbsnPost etc.)
+            return x
+        else:
+            countDictForType = {}
+            items = self.__dict__.items()
+            for k,v in items:
+                countDictForType[k] = len(v)        
+            return countDictForType
+    
     def MergeExistingRecords(self, newrecord,pkeyID,dict):
-        # Compare Vaues, keep longer ones
+        # Basic Compare function for GUIDS
+        # Compare Length of ProtoBuf Messages, keep longer ones
+        # This should be updated to compare the complete structure, including taking into account the timestamp of data, if two values exist
         if pkeyID in dict:
             oldRecordString = dict[pkeyID].SerializeToString()
             newRecordString = newrecord.SerializeToString()
-            if len(oldRecordString) <= len(newRecordString):
-                dict[pkeyID] = newrecord
-                print("overwritten")
-            else:
-                print("kept")
-        else:
-            dict[pkeyID] = newrecord
+            if len(oldRecordString) >= len(newRecordString):
+                return
+            #log = logging.getLogger(__name__)
+            #log.warning(f'Message Overwritten! \n Old {type(dict[pkeyID])}: {oldRecordString} \n New {type(newrecord)}: {newRecordString}')
+            #log.warning(f'OLD: {dict[pkeyID]}\n')
+            #log.warning(f'NEW: {newrecord}\n' )
+            #input("Press Enter to continue...")                                                                                              
+        dict[pkeyID] = newrecord
             
     def AddRecordsToDict(self,records):
         if isinstance(records,(list,)):
@@ -163,7 +174,7 @@ class lbsnRecordDicts():
             self.AddRecordToDict(record)
             
     def AddRecordToDict(self,record):
-        print(type(record))
+        #print(type(record))
         if isinstance(record,lbsnPost):
             pkeyID = record.post_pkey.id
             dict = self.lbsnPostDict

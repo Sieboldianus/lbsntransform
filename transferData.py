@@ -76,31 +76,36 @@ def main():
                                    True # ReadOnly Mode
                                    )
     processedRecords = 0
+    lastDBRowNumber = 0 # Start Value, Modify to continue from last processing
     conn_input, cursor_input = inputConnection.connect()
     finished = False
     while not finished:
-        records,returnedRecord_count = fetchJsonData_from_LBSN(cursor_input)
+        records,returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, lastDBRowNumber)
         if returnedRecord_count == 0:
             finished = True
-            log.info(f'Processed all available {processedRecords} records. Done.')
+            break
         else:
-            lbsnRecords, processedRecords = loopInputRecords(records,origin, processedRecords, transferlimit)
-            log.info(f'Processed {lbsnRecords.Count()} records. \n')
+            lbsnRecords, processedRecords, lastDBRowNumber, finished = loopInputRecords(records,origin, processedRecords, transferlimit, finished)
+            log.info(f'{processedRecords} Processed {lbsnRecords.Count(True)} records. \n')
             # print(records[0])
     cursor_input.close()
+    log.info(f'Processed {processedRecords} records. Done.')
     
-def loopInputRecords(records,origin, processedRecords, transferlimit):
+def loopInputRecords(records, origin, processedRecords, transferlimit, finished):
     lbsnRecords = lbsnRecordDicts()
     for record in records:
-        dbRowNumber = record[0]
+        processedRecords += 1
+        lastDBRowNumber = record[0]
         #singleUJSONRecord = ujson.loads(record[2])
         singleJSONRecordDict = record[2]
+        if singleJSONRecordDict.get('limit'):
+            # Skip Rate Limiting Notice
+            continue
         lbsnRecords.updateRecordDicts(parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords))
         if processedRecords >= transferlimit:
             finished = True
-            log.info(f'Processed {processedRecords} records. Done.')
             break
-    return lbsnRecords, processedRecords
+    return lbsnRecords, processedRecords, lastDBRowNumber, finished
    
 def fetchJsonData_from_LBSN(cursor, startID = 0):
     query_sql = '''
@@ -118,12 +123,39 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
     # Define Sets that will hold unique values of each lbsn type
     
     post_guid = jsonStringDict.get('id_str')
-    log.debug(f'\n\n##################### {post_guid} #####################')
+    #log.debug(f'\n\n##################### {post_guid} #####################')
     postGeoaccuracy = None
     
     if not post_guid:
-        sys.exit("No PostGuid")
-        
+        log.warning(f'No PostGuid\n\n{jsonStringDict}')
+        input("Press Enter to continue...")
+
+    # Get Post/Reaction Details of User
+    userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('user').get('id_str'),origin)
+    # get additional information about the user, if available
+    userRecord.user_fullname = jsonStringDict.get('user').get('name')
+    userRecord.follows = jsonStringDict.get('user').get('friends_count')
+    userRecord.is_private = jsonStringDict.get('user').get('protected')
+    userRecord.followed = jsonStringDict.get('user').get('followers_count')
+    userBio = jsonStringDict.get('user').get('description')
+    if userBio:
+        userRecord.biography = userBio
+    userRecord.user_name = jsonStringDict.get('user').get('screen_name')
+    userRecord.group_count = jsonStringDict.get('user').get('listed_count')
+    userRecord.post_count = jsonStringDict.get('user').get('statuses_count')
+    userRecord.url = f'https://twitter.com/intent/user?user_id={userRecord.user_pkey.id}'
+    refUserLanguage = Language()
+    refUserLanguage.language_short = jsonStringDict.get('user').get('lang')
+    userRecord.user_language.CopyFrom(refUserLanguage)    
+    userLocation = jsonStringDict.get('user').get('location')
+    if userLocation:
+        userRecord.user_location = userLocation
+    userRecord.liked_count = jsonStringDict.get('user').get('favourites_count')
+    userRecord.active_since.CopyFrom(helperFunctions.parseJSONDateStringToProtoBuf(jsonStringDict.get('user').get('created_at'))) 
+    userProfileImageURL = jsonStringDict.get('user').get('profile_image_url')
+    if not userProfileImageURL == "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png":
+        userRecord.profile_image_url = userProfileImageURL
+                
     #Some preprocessing for all types:
     post_coordinates = jsonStringDict.get('coordinates') 
     if not post_coordinates:
@@ -150,7 +182,7 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),placeID,origin)
             if not postGeoaccuracy:
                 postGeoaccuracy = lbsnPost.COUNTRY      
-            log.debug(f'Placetype detected: country/')
+            #log.debug(f'Placetype detected: country/')
             #sys.exit("COUNTRY DETECTED - should not exist")   #debug  
         if place_type == "city" or place_type == "neighborhood" or place_type  == "admin":
             #city_guid
@@ -159,7 +191,7 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
                 postGeoaccuracy = lbsnPost.CITY  
                 l_lng = lon_center
                 l_lat = lat_center
-            log.debug(f'Placetype detected: city/neighborhood/admin')
+            #log.debug(f'Placetype detected: city/neighborhood/admin')
         if place_type == "poi":
             #place_guid
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPlace(),place.get('id'),origin)
@@ -167,44 +199,24 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
                 postGeoaccuracy = lbsnPost.PLACE  
                 l_lng = lon_center
                 l_lat = lat_center                       
-            log.debug(f'Placetype detected: place/poi')
-            
-        placeRecord.name = place.get('name')
-        placeRecord.url = place.get('url')   
+            #log.debug(f'Placetype detected: place/poi')
+        # At the moment, only English name references are processed
+        if userRecord.user_language.language_short == 'en':
+            placeRecord.name = place.get('name')
+            placeRecord.name_language.CopyFrom(userRecord.user_language)
+        placeRecord.url = place.get('url')
         placeRecord.geom_center = "POINT(%s %s)" % (lon_center,lat_center)
         placeRecord.geom_area = Polygon(bounding_box_points).wkt # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
-        if not place_type == "country":
+        if isinstance(placeRecord,lbsnCity):
             refCountryRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),origin)
-            refCountryRecord.name = place.get('country') # Needs to be saved 
+            # At the moment, only English name references are processed
+            if userRecord.user_language.language_short == 'en':
+                refCountryRecord.name = place.get('country') # Needs to be saved 
+                refCountryRecord.name_language.CopyFrom(userRecord.user_language)
             lbsnRecords.AddRecordsToDict(refCountryRecord)       
             placeRecord.country_pkey.CopyFrom(refCountryRecord) ##Assignment Error!
-        log.debug(f'Final Place Record: {placeRecord}')
+        #log.debug(f'Final Place Record: {placeRecord}')
         lbsnRecords.AddRecordsToDict(placeRecord)
-    # Get Post/Reaction Details of user
-    userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('user').get('id_str'),origin)
-    # get additional information about the user, if available
-    userRecord.user_fullname = jsonStringDict.get('user').get('name')
-    userRecord.follows = jsonStringDict.get('user').get('friends_count')
-    userRecord.is_private = jsonStringDict.get('user').get('protected')
-    userRecord.followed = jsonStringDict.get('user').get('followers_count')
-    userBio = jsonStringDict.get('user').get('description')
-    if userBio:
-        userRecord.biography = userBio
-    userRecord.user_name = jsonStringDict.get('user').get('screen_name')
-    userRecord.group_count = jsonStringDict.get('user').get('listed_count')
-    userRecord.post_count = jsonStringDict.get('user').get('statuses_count')
-    userRecord.url = f'https://twitter.com/intent/user?user_id={userRecord.user_pkey.id}'
-    refUserLanguage = Language()
-    refUserLanguage.language_short = jsonStringDict.get('user').get('lang')
-    userRecord.user_language.CopyFrom(refUserLanguage)    
-    userLocation = jsonStringDict.get('user').get('location')
-    if userLocation:
-        userRecord.user_location = userLocation
-    userRecord.liked_count = jsonStringDict.get('user').get('favourites_count')
-    userRecord.active_since.CopyFrom(helperFunctions.parseJSONDateStringToProtoBuf(jsonStringDict.get('user').get('created_at'))) 
-    userProfileImageURL = jsonStringDict.get('user').get('profile_image_url')
-    if not userProfileImageURL == "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png":
-        userRecord.profile_image_url = userProfileImageURL
     
     # First process attributes that are similar for posts and reactions
     # Get User Mentions
@@ -215,7 +227,7 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
     else:
         userMentionsJson = jsonStringDict.get('entities').get('user_mentions')
     refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,origin)
-    log.debug(f'User mentions: {refUserRecords}')
+    #log.debug(f'User mentions: {refUserRecords}')
     lbsnRecords.AddRecordsToDict(refUserRecords)  
     # Assignment Step
     # check first if post is reaction to other post
@@ -245,7 +257,7 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
         # This information is currently not [available from Twitter](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object):
         # "Note that retweets of retweets do not show representations of the intermediary retweet [...]"
         # postReactionRecord.referencedPostreaction_pkey.CopyFrom(refPostReactionRecord)    
-        log.debug(f'Reaction record: {postReactionRecord}')
+        #log.debug(f'Reaction record: {postReactionRecord}')
         lbsnRecords.AddRecordsToDict(postReactionRecord)  
     else:
         # if record is a post   
@@ -275,7 +287,7 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
             postRecord.post_type = postType.post_type
         else:
             postRecord.post_type = lbsnPost.OTHER
-            log.debug(f'Other Post type detected: {jsonStringDict.get("entities").get("media")}')
+            #log.debug(f'Other Post type detected: {jsonStringDict.get("entities").get("media")}')
         refPostLanguage = Language()
         refPostLanguage.language_short = jsonStringDict.get('lang')
         postRecord.post_language.CopyFrom(refPostLanguage)
@@ -284,9 +296,9 @@ def parseJsonRecord(jsonStringDict,origin,lbsnRecords):
         postRecord.user_mentions_pkey.extend([userRef.user_pkey for userRef in refUserRecords])  
         # because standard print statement will produce escaped text, we can use protobuf text_format to give us a human friendly version of the text
         # log.debug(f'Post record: {text_format.MessageToString(postRecord,as_utf8=True)}')
-        log.debug(f'Post record: {postRecord}')
+        #log.debug(f'Post record: {postRecord}')
         lbsnRecords.AddRecordsToDict(postRecord) 
-    log.debug(f'The user who posted/reacted: {userRecord}')
+    #log.debug(f'The user who posted/reacted: {userRecord}')
     lbsnRecords.AddRecordsToDict(userRecord)
     
     return lbsnRecords
