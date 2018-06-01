@@ -101,3 +101,12 @@ class helperFunctions():
         # Convert to ProtoBuf Timestamp Recommendation
         protobufTimestampRecord.FromDatetime(dateTimeRecord)
         return protobufTimestampRecord
+    
+    def getMentionedUsers(userMentions_jsonString,origin):
+        mentionedUsersList = []
+        for userMention in userMentions_jsonString:    #iterate over the list
+            refUserRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userMention.get('id_str'),origin)
+            refUserRecord.user_fullname = userMention.get('name') # Needs to be saved
+            refUserRecord.user_name = userMention.get('screen_name')
+            mentionedUsersList.append(refUserRecord)
+        return mentionedUsersList
