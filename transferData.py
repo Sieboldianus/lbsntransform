@@ -99,7 +99,7 @@ def parseJsonRecord(JsonRecord,origin):
     postGeoaccuracy = None
     
     if not post_guid:
-        print("No PostGuid")
+        sys.exit("No PostGuid")
         
     #Some preprocessing for all types:
     post_coordinates = jsonString.get('coordinates') 
