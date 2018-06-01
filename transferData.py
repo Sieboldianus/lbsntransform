@@ -5,6 +5,7 @@ import argparse
 import logging 
 from classes.dbConnection import dbConnection
 from classes.helperFunctions import helperFunctions
+from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 #LBSN Structure Import from ProtoBuf
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
@@ -83,19 +84,24 @@ def main():
             finished = True
             log.info(f'Processed all available {processedRecords} records. Done.')
         else:
-            for record in records:
-                dbRowNumber = record[0]
-                #singleUJSONRecord = ujson.loads(record[2])
-                singleJSONRecordDict = record[2]
-                parseJsonRecord(singleJSONRecordDict, origin)
-                processedRecords += 1
-                if processedRecords >= transferlimit:
-                    finished = True
-                    log.info(f'Processed {processedRecords} records. Done.')
-                    break
+            lbsnRecords, processedRecords = loopInputRecords(records,origin, processedRecords, transferlimit)
+            log.info(f'Processed {lbsnRecords.Count()} records. \n')
             # print(records[0])
-    cursor_input.close()    
-
+    cursor_input.close()
+    
+def loopInputRecords(records,origin, processedRecords, transferlimit):
+    lbsnRecords = lbsnRecordDicts()
+    for record in records:
+        dbRowNumber = record[0]
+        #singleUJSONRecord = ujson.loads(record[2])
+        singleJSONRecordDict = record[2]
+        lbsnRecords.updateRecordDicts(parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords))
+        if processedRecords >= transferlimit:
+            finished = True
+            log.info(f'Processed {processedRecords} records. Done.')
+            break
+    return lbsnRecords, processedRecords
+   
 def fetchJsonData_from_LBSN(cursor, startID = 0):
     query_sql = '''
             SELECT in_id,insert_time,data::json FROM public."input"
@@ -106,9 +112,10 @@ def fetchJsonData_from_LBSN(cursor, startID = 0):
     records = cursor.fetchall()
     return records, cursor.rowcount
 
-def parseJsonRecord(jsonStringDict,origin):    
+def parseJsonRecord(jsonStringDict,origin,lbsnRecords):    
     log = logging.getLogger()
-    #log.debug(jsonStringDict)
+    # log.debug(jsonStringDict)
+    # Define Sets that will hold unique values of each lbsn type
     
     post_guid = jsonStringDict.get('id_str')
     log.debug(f'\n\n##################### {post_guid} #####################')
@@ -143,7 +150,7 @@ def parseJsonRecord(jsonStringDict,origin):
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),placeID,origin)
             if not postGeoaccuracy:
                 postGeoaccuracy = lbsnPost.COUNTRY      
-            log.debug(f'Placetype detected: country/')     
+            log.debug(f'Placetype detected: country/')
             #sys.exit("COUNTRY DETECTED - should not exist")   #debug  
         if place_type == "city" or place_type == "neighborhood" or place_type  == "admin":
             #city_guid
@@ -168,9 +175,11 @@ def parseJsonRecord(jsonStringDict,origin):
         placeRecord.geom_area = Polygon(bounding_box_points).wkt # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
         if not place_type == "country":
             refCountryRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),origin)
-            refCountryRecord.name = place.get('country') # Needs to be saved        
+            refCountryRecord.name = place.get('country') # Needs to be saved 
+            lbsnRecords.AddRecordsToDict(refCountryRecord)       
             placeRecord.country_pkey.CopyFrom(refCountryRecord) ##Assignment Error!
         log.debug(f'Final Place Record: {placeRecord}')
+        lbsnRecords.AddRecordsToDict(placeRecord)
     # Get Post/Reaction Details of user
     userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('user').get('id_str'),origin)
     # get additional information about the user, if available
@@ -207,7 +216,7 @@ def parseJsonRecord(jsonStringDict,origin):
         userMentionsJson = jsonStringDict.get('entities').get('user_mentions')
     refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,origin)
     log.debug(f'User mentions: {refUserRecords}')
-    
+    lbsnRecords.AddRecordsToDict(refUserRecords)  
     # Assignment Step
     # check first if post is reaction to other post
     # reaction means: reduced structure compared to post
@@ -237,7 +246,7 @@ def parseJsonRecord(jsonStringDict,origin):
         # "Note that retweets of retweets do not show representations of the intermediary retweet [...]"
         # postReactionRecord.referencedPostreaction_pkey.CopyFrom(refPostReactionRecord)    
         log.debug(f'Reaction record: {postReactionRecord}')
-        
+        lbsnRecords.AddRecordsToDict(postReactionRecord)  
     else:
         # if record is a post   
         postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,origin)
@@ -274,9 +283,14 @@ def parseJsonRecord(jsonStringDict,origin):
         # Add mentioned userRecords
         postRecord.user_mentions_pkey.extend([userRef.user_pkey for userRef in refUserRecords])  
         # because standard print statement will produce escaped text, we can use protobuf text_format to give us a human friendly version of the text
-        log.debug(f'Post record: {text_format.MessageToString(postRecord,as_utf8=True)}')
+        # log.debug(f'Post record: {text_format.MessageToString(postRecord,as_utf8=True)}')
+        log.debug(f'Post record: {postRecord}')
+        lbsnRecords.AddRecordsToDict(postRecord) 
     log.debug(f'The user who posted/reacted: {userRecord}')
+    lbsnRecords.AddRecordsToDict(userRecord)
     
+    return lbsnRecords
+
 if __name__ == "__main__":
     main()
     

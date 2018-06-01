@@ -110,3 +110,76 @@ class helperFunctions():
             refUserRecord.user_name = userMention.get('screen_name')
             mentionedUsersList.append(refUserRecord)
         return mentionedUsersList
+
+class lbsnRecordDicts():  
+    def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
+                 lbsnPlaceDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
+        self.lbsnCountryDict = lbsnCountryDict
+        self.lbsnCityDict = lbsnCityDict
+        self.lbsnPlaceDict = lbsnPlaceDict
+        self.lbsnUserDict = lbsnUserDict
+        self.lbsnPostDict = lbsnPostDict
+        self.lbsnPostReactionDict = lbsnPostReactionDict
+        
+    def updateRecordDicts(self,newLbsnRecordDicts):
+        # this will overwrite values of keys in dict 1 with those in dict 2, if keys are the same
+        # optimally, one should compare values and choose merge rules
+        # e.g. https://www.quora.com/How-do-I-compare-two-different-dictionary-values-in-Python
+        # SerializeToString() to compare messages
+        # https://stackoverflow.com/questions/24296221/how-do-i-compare-the-contents-of-two-google-protocol-buffer-messages-for-equalit?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+        self.lbsnCountryDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnCountryDict}
+        self.lbsnCityDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnCityDict}  
+        self.lbsnPlaceDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnPlaceDict}  
+        self.lbsnUserDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnUserDict}  
+        self.lbsnPostDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnPostDict}  
+        self.lbsnPostReactionDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnPostReactionDict}
+        
+    def Count(self):
+        x = 0
+        items = self.__dict__.items()
+        for k,v in items:
+            x += len(v) # count number of entries in specific dict (lbsnCountry, lbsnPost etc.)
+        return x
+
+    def MergeExistingRecords(self, newrecord,pkeyID,dict):
+        # Compare Vaues, keep longer ones
+        if pkeyID in dict:
+            oldRecordString = dict[pkeyID].SerializeToString()
+            newRecordString = newrecord.SerializeToString()
+            if len(oldRecordString) <= len(newRecordString):
+                dict[pkeyID] = newrecord
+                print("overwritten")
+            else:
+                print("kept")
+        else:
+            dict[pkeyID] = newrecord
+            
+    def AddRecordsToDict(self,records):
+        if isinstance(records,(list,)):
+            for record in records:
+                self.AddRecordToDict(record)
+        else:
+            record = records
+            self.AddRecordToDict(record)
+            
+    def AddRecordToDict(self,record):
+        print(type(record))
+        if isinstance(record,lbsnPost):
+            pkeyID = record.post_pkey.id
+            dict = self.lbsnPostDict
+        elif isinstance(record,lbsnCountry):
+            pkeyID = record.country_pkey.id
+            dict = self.lbsnCountryDict            
+        elif isinstance(record,lbsnCity):
+            pkeyID = record.city_pkey.id
+            dict = self.lbsnCityDict              
+        elif isinstance(record,lbsnPlace):
+            pkeyID = record.place_pkey.id
+            dict = self.lbsnPlaceDict              
+        elif isinstance(record,lbsnPostReaction):
+            pkeyID = record.postreaction_pkey.id
+            dict = self.lbsnPostReactionDict            
+        elif isinstance(record,lbsnUser):
+            pkeyID = record.user_pkey.id
+            dict = self.lbsnUserDict
+        self.MergeExistingRecords(record,pkeyID,dict)
