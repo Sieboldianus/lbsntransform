@@ -94,9 +94,22 @@ def main():
             # print(records[0])
     cursor_input.close()
     log.info(f'\n\nProcessed {processedRecords} records. ')
-    print('10 Random samples for each type:\n')
-    for key,keyHash in lbsnRecords.KeyHashes.items():
-        print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')
+    #print('10 Random samples for each type:\n')
+    #for key,keyHash in lbsnRecords.KeyHashes.items():
+    #    print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')
+    print("First Item for each type: \n")
+    print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[random.choice(list(lbsnRecords.lbsnCountryDict))]}')
+    print(f'lbsnCity: {lbsnRecords.lbsnCityDict[random.choice(list(lbsnRecords.lbsnCityDict))]}')
+    print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[random.choice(list(lbsnRecords.lbsnPlaceDict))]}')
+    print(f'lbsnUser: {lbsnRecords.lbsnUserDict[random.choice(list(lbsnRecords.lbsnUserDict))]}')
+    print(f'lbsnPost: {lbsnRecords.lbsnPostDict[random.choice(list(lbsnRecords.lbsnPostDict))]}')
+    print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[random.choice(list(lbsnRecords.lbsnPostReactionDict))]}')
+    #print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[lbsnRecords.lbsnCountryDict.keys()[-1]]}')
+    #print(f'lbsnCity: {lbsnRecords.lbsnCityDict[lbsnRecords.lbsnCityDict.keys()[-1]]}')
+    #print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[lbsnRecords.lbsnPlaceDict.keys()[-1]]}')
+    #print(f'lbsnUser: {lbsnRecords.lbsnUserDict[lbsnRecords.lbsnUserDict.keys()[-1]]}')
+    #print(f'lbsnPost: {lbsnRecords.lbsnPostDict[lbsnRecords.lbsnPostDict.keys()[-1]]}')
+    #print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[lbsnRecords.lbsnPostReactionDict.keys()[-1]]}')    
     print('Done.')
 
     
@@ -111,7 +124,7 @@ def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finis
         if singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice
             continue
-        lbsnRecords.updateRecordDicts(parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords))
+        lbsnRecords = parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords)
         if processedRecords >= transferlimit:
             finished = True
             break

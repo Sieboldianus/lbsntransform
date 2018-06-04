@@ -130,23 +130,6 @@ class lbsnRecordDicts():
         # this can be used to check for duplicates or to get a total count for each type of records (Number of unique Users, Countries, Places etc.)
         # in this case we assume that origin_id remains the same in each program iteration!
         self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
-
-            
-    def updateRecordDicts(self,newLbsnRecordDicts):
-        # this will merge two recordsDicts
-        # values of keys in dict 1 will be overwritten with those in dict 2, if matching keys are found
-        # optimally, one should compare values and choose specific merge rules
-        # e.g. https://www.quora.com/How-do-I-compare-two-different-dictionary-values-in-Python
-        # SerializeToString() to compare messages
-        # https://stackoverflow.com/questions/24296221/how-do-i-compare-the-contents-of-two-google-protocol-buffer-messages-for-equalit?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-        self.lbsnCountryDict = {** self.lbsnCountryDict, **newLbsnRecordDicts.lbsnCountryDict}
-        self.lbsnCityDict = {** self.lbsnCityDict, **newLbsnRecordDicts.lbsnCityDict}  
-        self.lbsnPlaceDict = {** self.lbsnPlaceDict, **newLbsnRecordDicts.lbsnPlaceDict}  
-        self.lbsnUserDict = {** self.lbsnUserDict, **newLbsnRecordDicts.lbsnUserDict}  
-        self.lbsnPostDict = {** self.lbsnPostDict, **newLbsnRecordDicts.lbsnPostDict}  
-        self.lbsnPostReactionDict = {** self.lbsnPostReactionDict, **newLbsnRecordDicts.lbsnPostReactionDict}
-        for dictKey in self.KeyHashes:
-            self.KeyHashes[dictKey].union(newLbsnRecordDicts.KeyHashes[dictKey])
         
     def MergeExistingRecords(self, newrecord, dict):
         # Basic Compare function for GUIDS
@@ -154,18 +137,51 @@ class lbsnRecordDicts():
         # This should be updated to compare the complete structure, including taking into account the timestamp of data, if two values exist
         pkeyID = newrecord.pkey.id
         if pkeyID in dict:
+            # First check if length of both ProtoBuf Messages are the same
             oldRecordString = dict[pkeyID].SerializeToString()
             newRecordString = newrecord.SerializeToString()
-            if len(oldRecordString) >= len(newRecordString):
+            if len(oldRecordString) == len(newRecordString):
+                # no need to do anything
                 return
-            #log = logging.getLogger(__name__)
-            #log.warning(f'Message Overwritten! \n Old {type(dict[pkeyID])}: {oldRecordString} \n New {type(newrecord)}: {newRecordString}')
-            #log.warning(f'OLD: {dict[pkeyID]}\n')
-            #log.warning(f'NEW: {newrecord}\n' )
-            #input("Press Enter to continue...")
-        self.update_keyHash(newrecord)                                                                                              
+            else:
+                # Do a deep compare
+                dict[pkeyID] = self.deepCompareMergeMessages(dict[pkeyID],newrecord)
+                return
+        self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                          
         dict[pkeyID] = newrecord
-            
+
+    def deepCompareMergeMessages(self,oldRecord,newRecord):
+        # this is a basic routine that will make a full compare of all fields of two lbsnRecords
+        # None Values will be filled, repeated fields will be updated with new values
+        # similar values remain, changed values will overwrite older values
+        for descriptor in newRecord.DESCRIPTOR.fields:
+            value_old = getattr(oldRecord, descriptor.name)
+            value_new = getattr(newRecord, descriptor.name)
+            # only compare if not Empty or None
+            if value_new:
+                if descriptor.label == descriptor.LABEL_REPEATED:
+                    if value_old == value_new:
+                        return oldRecord
+                    elif not value_old:
+                        newEntries = value_new
+                    else:
+                        # only add difference (e.g. = new values)
+                        newEntries = list(set(value_new) - set(value_old))    
+                    x = getattr(oldRecord, descriptor.name)
+                    x.extend(newEntries)
+                #elif descriptor.label == descriptor.TYPE_ENUM: 
+                elif descriptor.type == descriptor.TYPE_MESSAGE:
+                   x = getattr(oldRecord, descriptor.name)
+                   x.CopyFrom(value_new)
+                else:
+                    if not value_old:
+                        setattr(oldRecord, descriptor.name, value_new)
+                    else:
+                        if not value_old == value_new:
+                            # overwrite old value with new value
+                            setattr(oldRecord,descriptor.name,value_new)
+        return oldRecord
+           
     def AddRecordsToDict(self,records):
         if isinstance(records,(list,)):
             for record in records:
