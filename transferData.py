@@ -72,6 +72,7 @@ def main():
                                    args.passwordOutput
                                    )
     conn_output, cursor_output = outputConnection.connect()
+    outputDB = lbsnDB(dbCursor = cursor_output,dbConnection = conn_output)
     inputConnection = dbConnection(args.serveradressInput,
                                    args.dbnameInput,
                                    args.usernameInput,
@@ -99,6 +100,8 @@ def main():
             
     # Close connections to DBs        
     cursor_input.close()
+    outputDB.submitLbsnRecordDicts(lbsnRecords)
+    outputDB.commitChanges()
     cursor_output.close()
     log.info(f'\n\nProcessed {processedRecords} records. From DBRowNumber {firstDBRowNumber} to {lastDBRowNumber}.')
     #print('10 Random samples for each type:\n')

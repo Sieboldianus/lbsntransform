@@ -102,7 +102,7 @@ class helperFunctions():
             mentionedUsersList.append(refUserRecord)
         return mentionedUsersList
 
-class lbsnRecordDicts():  
+class lbsnRecordDicts():
     def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
                  lbsnPlaceDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
         self.lbsnCountryDict = lbsnCountryDict

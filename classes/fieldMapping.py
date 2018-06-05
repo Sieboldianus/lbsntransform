@@ -99,16 +99,19 @@ class fieldMappingTwitter():
             if not userRecord.user_language.language_short or userRecord.user_language.language_short in ('en','und'):
                 placeRecord.name = place.get('name')
             else:
-                placeRecord.name_alternatives.append(place.get('name'))
+                alt_name = place.get('name')              
+                placeRecord.name_alternatives.append(alt_name)
             placeRecord.url = place.get('url')
             placeRecord.geom_center = "POINT(%s %s)" % (lon_center,lat_center)
             placeRecord.geom_area = Polygon(bounding_box_points).wkt # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
             if isinstance(placeRecord,lbsnCity):
                 refCountryRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),origin)
                 # At the moment, only English name references are processed
-                if userRecord.user_language.language_short in ('en','und'):
+                if not userRecord.user_language.language_short or userRecord.user_language.language_short in ('en','und'):
                     refCountryRecord.name = place.get('country') # Needs to be saved 
-                    refCountryRecord.name_alternatives.append(place.get('country'))
+                else:
+                    alt_name = place.get('country')
+                    refCountryRecord.name_alternatives.append(alt_name)
                 lbsnRecords.AddRecordsToDict(refCountryRecord)
                 placeRecord.country_pkey.CopyFrom(refCountryRecord.pkey)
             # log.debug(f'Final Place Record: {placeRecord}')
