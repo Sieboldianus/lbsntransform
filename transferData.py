@@ -12,26 +12,24 @@ from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import io
 import sys
-
-#Old Structure in Python:
-#from classes.fieldMapping import lbsnPost,lbsnPlace,lbsnUser,lbsnPostReaction  
-import pandas as pd
 import datetime
 from google.protobuf import text_format
 import random
 
 def import_config():
     import config
-    username = getattr(config, 'dbUser', 0)
-    userpw = getattr(config, 'dbPassword', 0)
-    return username,userpw
+    input_username = getattr(config, 'dbUser_Input', 0)
+    input_userpw = getattr(config, 'dbPassword_Input', 0)
+    output_username = getattr(config, 'dbUser_Output', 0)
+    output_userpw = getattr(config, 'dbPassword_Output', 0)    
+    return input_username,input_userpw,output_username,output_userpw
     
 def main():
     # Set Output to Replace in case of encoding issues (console/windows)
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
     # Load Config
     # will be overwritten if args are given
-    input_username,input_userpw = import_config()
+    input_username,input_userpw,output_username,output_userpw = import_config()
     # Parse args
     parser = argparse.ArgumentParser()
     parser.add_argument('-pO', "--passwordOutput", default=0) 
@@ -76,32 +74,34 @@ def main():
                                    )
     processedRecords = 0
     lastDBRowNumber = 0 # Start Value, Modify to continue from last processing
+    firstDBRowNumber = 0
     conn_input, cursor_input = inputConnection.connect()
     finished = False
     lbsnRecords = lbsnRecordDicts()
     while not finished:
         records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, lastDBRowNumber)
+        if not firstDBRowNumber:
+            firstDBRowNumber= records[0][0]        
         if returnedRecord_count == 0:
             finished = True
             break
         else:
             lbsnRecords, processedRecords, lastDBRowNumber, finished = loopInputRecords(records, origin, processedRecords, transferlimit, finished, lbsnRecords)
             print(f'{processedRecords} Processed. Count per type: {lbsnRecords.getTypeCounts()}records.', end='\r')
-            
+            # update console
             sys.stdout.flush()
-            # print(records[0])
     cursor_input.close()
-    log.info(f'\n\nProcessed {processedRecords} records. ')
+    log.info(f'\n\nProcessed {processedRecords} records. From DBRowNumber {firstDBRowNumber} to {lastDBRowNumber}.')
     #print('10 Random samples for each type:\n')
     #for key,keyHash in lbsnRecords.KeyHashes.items():
     #    print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')
-    print("Random Item for each type: \n")
-    print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[random.choice(list(lbsnRecords.lbsnCountryDict))]}')
-    print(f'lbsnCity: {lbsnRecords.lbsnCityDict[random.choice(list(lbsnRecords.lbsnCityDict))]}')
-    print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[random.choice(list(lbsnRecords.lbsnPlaceDict))]}')
-    print(f'lbsnUser: {lbsnRecords.lbsnUserDict[random.choice(list(lbsnRecords.lbsnUserDict))]}')
-    print(f'lbsnPost: {lbsnRecords.lbsnPostDict[random.choice(list(lbsnRecords.lbsnPostDict))]}')
-    print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[random.choice(list(lbsnRecords.lbsnPostReactionDict))]}')  
+    #print("Random Item for each type: \n")
+    #print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[random.choice(list(lbsnRecords.lbsnCountryDict))]}')
+    #print(f'lbsnCity: {lbsnRecords.lbsnCityDict[random.choice(list(lbsnRecords.lbsnCityDict))]}')
+    #print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[random.choice(list(lbsnRecords.lbsnPlaceDict))]}')
+    #print(f'lbsnUser: {lbsnRecords.lbsnUserDict[random.choice(list(lbsnRecords.lbsnUserDict))]}')
+    #print(f'lbsnPost: {lbsnRecords.lbsnPostDict[random.choice(list(lbsnRecords.lbsnPostDict))]}')
+    #print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[random.choice(list(lbsnRecords.lbsnPostReactionDict))]}')  
     print('Done.')
 
     
@@ -119,7 +119,6 @@ def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finis
         lbsnRecords = fieldMappingTwitter.parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords)
         if processedRecords >= transferlimit:
             finished = True
-            break
     return lbsnRecords, processedRecords, lastDBRowNumber, finished
    
 def fetchJsonData_from_LBSN(cursor, startID = 0):
