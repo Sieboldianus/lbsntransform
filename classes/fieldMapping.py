@@ -48,10 +48,9 @@ class fieldMappingTwitter():
         if not userProfileImageURL == "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png":
             userRecord.profile_image_url = userProfileImageURL
                     
-        #Some preprocessing for all types:
+        # Some preprocessing for all types:
         post_coordinates = jsonStringDict.get('coordinates') 
         if not post_coordinates:
-            #print("No Coordinates")
             l_lng = 0 
             l_lat = 0
         else:
@@ -59,7 +58,7 @@ class fieldMappingTwitter():
             l_lat = post_coordinates.get('coordinates')[1]
             postGeoaccuracy = lbsnPost.LATLNG
         
-        #Check if Place is mentioned
+        # Check if Place is mentioned
         place = jsonStringDict.get('place')
         if place:
             placeID = place.get('id')
@@ -76,7 +75,6 @@ class fieldMappingTwitter():
                 if not postGeoaccuracy:
                     postGeoaccuracy = lbsnPost.COUNTRY      
                 #log.debug(f'Placetype detected: country')
-                #sys.exit(place)
             elif place_type in ("city","neighborhood","admin"):
                 # city_guid
                 placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCity(),place.get('id'),origin)

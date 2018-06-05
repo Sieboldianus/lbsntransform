@@ -121,7 +121,6 @@ class lbsnRecordDicts():
     def getTypeCounts(self):
         countList = []
         for x, y in self.KeyHashes.items():
-            #sys.exit(f'Length: {len(y)}')
             countList.append(f'{x}: {len(y)} ')
         return ''.join(countList)
             
@@ -175,7 +174,8 @@ class lbsnRecordDicts():
                             newEntries.remove(mainName)
                     x = getattr(oldRecord, descriptor.name)
                     x.extend(newEntries)
-                #elif descriptor.label == descriptor.TYPE_ENUM: 
+                # todo?
+                #elif descriptor.label == descriptor.TYPE_ENUM:
                 elif descriptor.type == descriptor.TYPE_MESSAGE:
                    x = getattr(oldRecord, descriptor.name)
                    x.CopyFrom(value_new)
@@ -208,6 +208,5 @@ class lbsnRecordDicts():
         return dictSwitcher.get(record.DESCRIPTOR.name)
             
     def AddRecordToDict(self,record):
-        #print(type(record))
         dict = self.dictSelector(record)
         self.MergeExistingRecords(record,dict)

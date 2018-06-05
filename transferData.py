@@ -26,6 +26,8 @@ def import_config():
     
 def main():
     # Set Output to Replace in case of encoding issues (console/windows)
+    # Necessary? ProtoBuf will convert any problematic characters to Octal Escape Sequences anyway
+    # see https://stackoverflow.com/questions/23173340/how-to-convert-octal-escape-sequences-with-python
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
     # Load Config
     # will be overwritten if args are given
@@ -96,22 +98,19 @@ def main():
     #for key,keyHash in lbsnRecords.KeyHashes.items():
     #    print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')
     #print("Random Item for each type: \n")
-    print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[random.choice(list(lbsnRecords.lbsnCountryDict))]}')
-    print(f'lbsnCity: {lbsnRecords.lbsnCityDict[random.choice(list(lbsnRecords.lbsnCityDict))]}')
-    print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[random.choice(list(lbsnRecords.lbsnPlaceDict))]}')
-    print(f'lbsnUser: {lbsnRecords.lbsnUserDict[random.choice(list(lbsnRecords.lbsnUserDict))]}')
-    print(f'lbsnPost: {lbsnRecords.lbsnPostDict[random.choice(list(lbsnRecords.lbsnPostDict))]}')
-    print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[random.choice(list(lbsnRecords.lbsnPostReactionDict))]}')  
+    #print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[random.choice(list(lbsnRecords.lbsnCountryDict))]}')
+    #print(f'lbsnCity: {lbsnRecords.lbsnCityDict[random.choice(list(lbsnRecords.lbsnCityDict))]}')
+    #print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[random.choice(list(lbsnRecords.lbsnPlaceDict))]}')
+    #print(f'lbsnUser: {lbsnRecords.lbsnUserDict[random.choice(list(lbsnRecords.lbsnUserDict))]}')
+    #print(f'lbsnPost: {lbsnRecords.lbsnPostDict[random.choice(list(lbsnRecords.lbsnPostDict))]}')
+    #print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[random.choice(list(lbsnRecords.lbsnPostReactionDict))]}')  
     print('Done.')
 
     
 def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finished, lbsnRecords):
-    #if not lbsnRecords:
-    #    lbsnRecords = lbsnRecordDicts()
     for record in jsonRecords:
         processedRecords += 1
         lastDBRowNumber = record[0]
-        #singleUJSONRecord = ujson.loads(record[2])
         singleJSONRecordDict = record[2]
         if singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice
