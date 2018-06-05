@@ -166,7 +166,13 @@ class lbsnRecordDicts():
                         newEntries = value_new
                     else:
                         # only add difference (e.g. = new values)
-                        newEntries = list(set(value_new) - set(value_old))    
+                        newEntries = list(set(value_new) - set(value_old))   
+                    if descriptor.name == "name_alternatives":
+                        # necessary because sometimes Twitter submits English names that are not marked as English
+                        # these get moved to name_alternatives, although they exist already as the main name
+                        mainName = getattr(oldRecord, "name")
+                        if mainName and mainName in newEntries:
+                            newEntries.remove(mainName)
                     x = getattr(oldRecord, descriptor.name)
                     x.extend(newEntries)
                 #elif descriptor.label == descriptor.TYPE_ENUM: 

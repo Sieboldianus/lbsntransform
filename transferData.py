@@ -12,8 +12,7 @@ from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import io
 import sys
-import shapely.geometry as geometry
-from shapely.geometry.polygon import Polygon
+
 #Old Structure in Python:
 #from classes.fieldMapping import lbsnPost,lbsnPlace,lbsnUser,lbsnPostReaction  
 import pandas as pd
