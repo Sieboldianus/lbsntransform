@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+__author__      = "Alexander Dunkel"
+__license__   = "GNU GPLv3"
+__version__ = "0.1.0"
+
 import getpass
 import argparse
 import logging 
@@ -7,6 +11,7 @@ from classes.dbConnection import dbConnection
 from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from classes.fieldMapping import fieldMappingTwitter as fieldMappingTwitter
+from classes.submitData import lbsnDB as lbsnDB
 #LBSN Structure Import from ProtoBuf
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
@@ -67,7 +72,6 @@ def main():
                                    args.passwordOutput
                                    )
     conn_output, cursor_output = outputConnection.connect()
-    cursor_output.close()
     inputConnection = dbConnection(args.serveradressInput,
                                    args.dbnameInput,
                                    args.usernameInput,
@@ -92,7 +96,10 @@ def main():
             print(f'{processedRecords} Processed. Count per type: {lbsnRecords.getTypeCounts()}records.', end='\r')
             # update console
             sys.stdout.flush()
+            
+    # Close connections to DBs        
     cursor_input.close()
+    cursor_output.close()
     log.info(f'\n\nProcessed {processedRecords} records. From DBRowNumber {firstDBRowNumber} to {lastDBRowNumber}.')
     #print('10 Random samples for each type:\n')
     #for key,keyHash in lbsnRecords.KeyHashes.items():
