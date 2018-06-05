@@ -98,7 +98,7 @@ class fieldMappingTwitter():
                 # log.debug(f'Placetype detected: place/poi')
             # At the moment, English name are the main references; all other language specific references are stored in name_alternatives
             # Bugfix necessary: some English names get still saved as name_alternatives
-            if not userRecord.user_language.language_short or userRecord.user_language.language_short == 'en':
+            if not userRecord.user_language.language_short or userRecord.user_language.language_short in ('en','und'):
                 placeRecord.name = place.get('name')
             else:
                 placeRecord.name_alternatives.append(place.get('name'))
@@ -108,7 +108,7 @@ class fieldMappingTwitter():
             if isinstance(placeRecord,lbsnCity):
                 refCountryRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),origin)
                 # At the moment, only English name references are processed
-                if userRecord.user_language.language_short == 'en':
+                if userRecord.user_language.language_short in ('en','und'):
                     refCountryRecord.name = place.get('country') # Needs to be saved 
                     refCountryRecord.name_alternatives.append(place.get('country'))
                 lbsnRecords.AddRecordsToDict(refCountryRecord)
@@ -171,6 +171,19 @@ class fieldMappingTwitter():
             postRecord.post_geoaccuracy = postGeoaccuracy
             postRecord.user_pkey.CopyFrom(userRecord.pkey)
             postRecord.post_latlng = "POINT(%s %s)" % (l_lng,l_lat)
+            if place:
+                try:
+                    refCountryRecord
+                    if refCountryRecord:
+                        postRecord.country_pkey.CopyFrom(refCountryRecord.pkey)
+                except NameError:
+                    pass
+                if place_type == "country":
+                    postRecord.country_pkey.CopyFrom(placeRecord.pkey) 
+                if place_type in ("city","neighborhood","admin"):
+                    postRecord.city_pkey.CopyFrom(placeRecord.pkey)
+                elif place_type == "poi":
+                    postRecord.place_pkey.CopyFrom(placeRecord.pkey)
             valueCount = lambda x: 0 if x is None else x
             postRecord.post_quote_count = valueCount(jsonStringDict.get('quote_count'))
             postRecord.post_reply_count = valueCount(jsonStringDict.get('reply_count'))
