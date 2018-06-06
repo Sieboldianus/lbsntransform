@@ -106,7 +106,7 @@ def main():
     outputDB.submitLbsnRecordDicts(lbsnRecords)
     outputDB.commitChanges()
     cursor_output.close()
-    log.info(f'\n\nProcessed {processedRecords} records. From DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}.')
+    log.info(f'\n\nProcessed {processedRecords} records (DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}).')
     #print('10 Random samples for each type:\n')
     #for key,keyHash in lbsnRecords.KeyHashes.items():
     #    print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')

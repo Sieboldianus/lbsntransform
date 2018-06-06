@@ -62,6 +62,8 @@ class fieldMappingTwitter():
         place = jsonStringDict.get('place')
         if place:
             placeID = place.get('id')
+            #if not placeID:
+            #    sys.exit(print(jsonStringDict))
             bounding_box_points = place.get('bounding_box').get('coordinates')[0]
             limYMin,limYMax,limXMin,limXMax = helperFunctions.getRectangleBounds(bounding_box_points)
             bound_points_shapely = geometry.MultiPoint([(limXMin, limYMin), (limXMax, limYMax)])

@@ -101,7 +101,18 @@ class helperFunctions():
             refUserRecord.user_name = userMention.get('screen_name')
             mentionedUsersList.append(refUserRecord)
         return mentionedUsersList
-
+    
+    def null_check(recordAttr):
+        if not recordAttr:
+            return None
+        else:
+            return recordAttr
+    
+    def geoconvertOrNone(geom):
+        if geom:
+            return "ST_GeomFromText(%s,4326)"
+        else:
+            return "%s" 
 class lbsnRecordDicts():
     def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
                  lbsnPlaceDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
@@ -117,7 +128,24 @@ class lbsnRecordDicts():
                          lbsnPlace.DESCRIPTOR.name: set(),
                          lbsnUser.DESCRIPTOR.name: set(),
                          lbsnPostReaction.DESCRIPTOR.name: set()}
-        
+        # returns all recordsDicts in correct order, with names as references (tuple)
+        self.allDicts = [
+            (self.lbsnCountryDict,lbsnCountry().DESCRIPTOR.name),
+            (self.lbsnCityDict,lbsnCity().DESCRIPTOR.name),
+            (self.lbsnPlaceDict,lbsnPlace().DESCRIPTOR.name),
+            (self.lbsnUserDict,lbsnUser().DESCRIPTOR.name),
+            (self.lbsnPostDict,lbsnPost().DESCRIPTOR.name),
+            (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name)
+            ]
+
+    #def allDicts(self):
+    #    # returns all recordsDicts
+    #    recordsDictsMembers = []
+    #    for attr, value in self.__dict__.items():
+    #        if not attr == "KeyHashes":
+    #            recordsDictsMembers.append(value)
+    #    return recordsDictsMembers
+                    
     def getTypeCounts(self):
         countList = []
         for x, y in self.KeyHashes.items():
