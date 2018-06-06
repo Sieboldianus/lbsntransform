@@ -80,6 +80,8 @@ class fieldMappingTwitter():
             elif place_type in ("city","neighborhood","admin"):
                 # city_guid
                 placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCity(),place.get('id'),origin)
+                if not place_type == "city":
+                    placeRecord.sub_type = place_type
                 if not postGeoaccuracy or postGeoaccuracy == lbsnPost.COUNTRY:
                     postGeoaccuracy = lbsnPost.CITY  
                     l_lng = lon_center
@@ -89,7 +91,7 @@ class fieldMappingTwitter():
                 # place_guid
                 # For POIs, City is not available on Twitter
                 placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPlace(),place.get('id'),origin)
-                if not postGeoaccuracy or postGeoaccuracy == lbsnPost.CITY:
+                if not postGeoaccuracy or postGeoaccuracy in (lbsnPost.COUNTRY, lbsnPost.CITY):
                     postGeoaccuracy = lbsnPost.PLACE  
                     l_lng = lon_center
                     l_lat = lat_center
@@ -143,6 +145,7 @@ class fieldMappingTwitter():
             postReactionRecord.reaction_like_count = jsonStringDict.get('favorite_count')
             postReactionRecord.reaction_content = jsonStringDict.get('text')
             postReactionRecord.reaction_type = postReaction.reaction_type
+            postReactionRecord.user_mentions_pkey.extend([userRef.pkey for userRef in refUserRecords])
             if postReaction.reaction_type == lbsnPostReaction.REPLY:
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('in_reply_to_status_id_str'),origin)
                 refUserRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('in_reply_to_user_id_str'),origin)
@@ -151,6 +154,8 @@ class fieldMappingTwitter():
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('quoted_status_id_str'),origin)
             elif postReaction.reaction_type  == lbsnPostReaction.SHARE:
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('retweeted_status').get('id_str'),origin)
+            if refPostRecord:
+                lbsnRecords.AddRecordsToDict(refPostRecord)  
             postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
             # ToDo: if a Reaction refers to another reaction (Information Spread)
             # This information is currently not [available from Twitter](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object):

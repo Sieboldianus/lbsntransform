@@ -107,7 +107,16 @@ class helperFunctions():
             return None
         else:
             return recordAttr
-    
+
+    def null_check_datetime(recordAttr):
+        if not recordAttr:
+            return None
+        else:
+            if recordAttr.ToDatetime() == datetime.datetime(1970, 1, 1, 0, 0, 0):
+                return None
+            else:
+                return recordAttr.ToDatetime()
+            
     def geoconvertOrNone(geom):
         if geom:
             return "ST_GeomFromText(%s,4326)"
