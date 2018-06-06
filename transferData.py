@@ -50,6 +50,8 @@ def main():
     parser.add_argument('-t', "--transferlimit", default=0)
     parser.add_argument('-tR', "--transferReactions", default=0)
     parser.add_argument('-tG', "--transferNotGeotagged", default=0) 
+    parser.add_argument('-rS', "--startWithDBRowNumber", default=0) 
+    parser.add_argument('-rE', "--endWithDBRowNumber", default=None) 
     parser.add_argument('-d', "--debugMode", default="INFO") #needs to be implemented
     args = parser.parse_args()
     logging.basicConfig(handlers=[logging.FileHandler('test.log', 'w', 'utf-8')],
@@ -80,20 +82,21 @@ def main():
                                    True # ReadOnly Mode
                                    )
     processedRecords = 0
-    lastDBRowNumber = 0 # Start Value, Modify to continue from last processing
-    firstDBRowNumber = 0
+    firstDBRowNumber = 0   
+    continueWithDBRowNumber = args.startWithDBRowNumber # Start Value, Modify to continue from last processing  
+    endWithDBRowNumber = args.endWithDBRowNumber # End Value, Modify to continue from last processing    
     conn_input, cursor_input = inputConnection.connect()
     finished = False
     lbsnRecords = lbsnRecordDicts()
     while not finished:
-        records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, lastDBRowNumber)
+        records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber)
         if not firstDBRowNumber:
-            firstDBRowNumber= records[0][0]        
+            firstDBRowNumber = records[0][0]        
         if returnedRecord_count == 0:
             finished = True
             break
         else:
-            lbsnRecords, processedRecords, lastDBRowNumber, finished = loopInputRecords(records, origin, processedRecords, transferlimit, finished, lbsnRecords)
+            lbsnRecords, processedRecords, continueWithDBRowNumber, finished = loopInputRecords(records, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber)
             print(f'{processedRecords} Processed. Count per type: {lbsnRecords.getTypeCounts()}records.', end='\r')
             # update console
             sys.stdout.flush()
@@ -103,7 +106,7 @@ def main():
     outputDB.submitLbsnRecordDicts(lbsnRecords)
     outputDB.commitChanges()
     cursor_output.close()
-    log.info(f'\n\nProcessed {processedRecords} records. From DBRowNumber {firstDBRowNumber} to {lastDBRowNumber}.')
+    log.info(f'\n\nProcessed {processedRecords} records. From DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}.')
     #print('10 Random samples for each type:\n')
     #for key,keyHash in lbsnRecords.KeyHashes.items():
     #    print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')
@@ -117,18 +120,18 @@ def main():
     print('Done.')
 
     
-def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finished, lbsnRecords):
+def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber):
     for record in jsonRecords:
         processedRecords += 1
-        lastDBRowNumber = record[0]
+        continueWithDBRowNumber = record[0]
         singleJSONRecordDict = record[2]
         if singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice
             continue
         lbsnRecords = fieldMappingTwitter.parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords)
-        if processedRecords >= transferlimit:
+        if processedRecords >= transferlimit or (endWithDBRowNumber and continueWithDBRowNumber >= endWithDBRowNumber):
             finished = True
-    return lbsnRecords, processedRecords, lastDBRowNumber, finished
+    return lbsnRecords, processedRecords, continueWithDBRowNumber, finished
    
 def fetchJsonData_from_LBSN(cursor, startID = 0):
     query_sql = '''

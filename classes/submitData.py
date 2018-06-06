@@ -101,11 +101,15 @@ class lbsnDB():
                         ON CONFLICT (origin_id,country_guid)
                         DO UPDATE SET
                             name = COALESCE(EXCLUDED.name, "country".name),
-                            name_alternatives = COALESCE(mergeArrays(EXCLUDED.name_alternatives, "country".name_alternatives),ARRAY[]::text[]),
+                            name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,"country".name) from mergeArrays(EXCLUDED.name_alternatives, "country".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
                             geom_center = COALESCE(EXCLUDED.geom_center, "country".geom_center),
                             geom_area = COALESCE(EXCLUDED.geom_area, "country".geom_area),
                             url = COALESCE(EXCLUDED.url, "country".url);
                         '''
+            # Array merge of alternatives:
+            # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empoty array])
+            # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
+            # Finally, merge New Entries with existing ones mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
             self.dbCursor.execute(insert_sql,(iCountry_OriginID,iCountry_Guid,iCountry_name,iCountry_name_alternatives,iCountry_geom_center,iCountry_geom_area,iCountry_url))
             self.country_already_inserted.add(iCountry_Guid)
           
