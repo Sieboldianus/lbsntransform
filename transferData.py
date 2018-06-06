@@ -116,16 +116,6 @@ def main():
     cursor_input.close()
     cursor_output.close()
     log.info(f'\n\nProcessed {processedRecords} records (DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}).')
-    #print('10 Random samples for each type:\n')
-    #for key,keyHash in lbsnRecords.KeyHashes.items():
-    #    print(f'{key}: {", ".join(val for i, val in enumerate(random.sample(keyHash, min(10,len(keyHash)))))}')
-    #print("Random Item for each type: \n")
-    #print(f'lbsnCountry: {lbsnRecords.lbsnCountryDict[random.choice(list(lbsnRecords.lbsnCountryDict))]}')
-    #print(f'lbsnCity: {lbsnRecords.lbsnCityDict[random.choice(list(lbsnRecords.lbsnCityDict))]}')
-    #print(f'lbsnPlace: {lbsnRecords.lbsnPlaceDict[random.choice(list(lbsnRecords.lbsnPlaceDict))]}')
-    #print(f'lbsnUser: {lbsnRecords.lbsnUserDict[random.choice(list(lbsnRecords.lbsnUserDict))]}')
-    #print(f'lbsnPost: {lbsnRecords.lbsnPostDict[random.choice(list(lbsnRecords.lbsnPostDict))]}')
-    #print(f'lbsnPostReaction: {lbsnRecords.lbsnPostReactionDict[random.choice(list(lbsnRecords.lbsnPostReactionDict))]}')  
     print('Done.')
 
     
