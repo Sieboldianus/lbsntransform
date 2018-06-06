@@ -49,11 +49,17 @@ def main():
     parser.add_argument('-nI', "--dbnameInput", default="test_db2")    
     parser.add_argument('-t', "--transferlimit", default=0)
     parser.add_argument('-tR', "--transferReactions", default=0)
+    parser.add_argument('-rR', "--disableReactionPostReferencing", default=0)
     parser.add_argument('-tG', "--transferNotGeotagged", default=0) 
     parser.add_argument('-rS', "--startWithDBRowNumber", default=0) 
     parser.add_argument('-rE', "--endWithDBRowNumber", default=None) 
     parser.add_argument('-d', "--debugMode", default="INFO") #needs to be implemented
     args = parser.parse_args()
+    if args.disableReactionPostReferencing == 0:
+        # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
+        disableReactionPostReferencing = None
+    else:
+        disableReactionPostReferencing = True
     logging.basicConfig(handlers=[logging.FileHandler('test.log', 'w', 'utf-8')],
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                         datefmt='%H:%M:%S',
@@ -74,7 +80,8 @@ def main():
                                    args.passwordOutput
                                    )
     conn_output, cursor_output = outputConnection.connect()
-    outputDB = lbsnDB(dbCursor = cursor_output,dbConnection = conn_output)
+    outputDB = lbsnDB(dbCursor = cursor_output, 
+                      dbConnection = conn_output)
     inputConnection = dbConnection(args.serveradressInput,
                                    args.dbnameInput,
                                    args.usernameInput,
@@ -87,24 +94,26 @@ def main():
     endWithDBRowNumber = args.endWithDBRowNumber # End Value, Modify to continue from last processing    
     conn_input, cursor_input = inputConnection.connect()
     finished = False
-    lbsnRecords = lbsnRecordDicts()
     while not finished:
+        lbsnRecords = lbsnRecordDicts()
         records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber)
+        continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
         if not firstDBRowNumber:
-            firstDBRowNumber = records[0][0]        
+            firstDBRowNumber = records[0][0] #first returned DBRowNumber    
         if returnedRecord_count == 0:
             finished = True
             break
         else:
-            lbsnRecords, processedRecords, continueWithDBRowNumber, finished = loopInputRecords(records, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber)
-            print(f'{processedRecords} Processed. Count per type: {lbsnRecords.getTypeCounts()}records.', end='\r')
+            lbsnRecords, processedRecords, finished = loopInputRecords(records, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber, disableReactionPostReferencing)
+            print(f'{processedRecords} Processed. Count per type: {lbsnRecords.getTypeCounts()}records.', end='\n')
             # update console
             sys.stdout.flush()
+        outputDB.submitLbsnRecordDicts(lbsnRecords)
+        outputDB.commitChanges()
+        sys.stdout.flush()
             
     # Close connections to DBs        
     cursor_input.close()
-    outputDB.submitLbsnRecordDicts(lbsnRecords)
-    outputDB.commitChanges()
     cursor_output.close()
     log.info(f'\n\nProcessed {processedRecords} records (DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}).')
     #print('10 Random samples for each type:\n')
@@ -120,24 +129,24 @@ def main():
     print('Done.')
 
     
-def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber):
+def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber, disableReactionPostReferencing):
     for record in jsonRecords:
         processedRecords += 1
-        continueWithDBRowNumber = record[0]
+        DBRowNumber = record[0]
         singleJSONRecordDict = record[2]
         if singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice
             continue
-        lbsnRecords = fieldMappingTwitter.parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords)
-        if processedRecords >= transferlimit or (endWithDBRowNumber and continueWithDBRowNumber >= endWithDBRowNumber):
+        lbsnRecords = fieldMappingTwitter.parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords, disableReactionPostReferencing)
+        if processedRecords >= transferlimit or (endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
-    return lbsnRecords, processedRecords, continueWithDBRowNumber, finished
+    return lbsnRecords, processedRecords, finished
    
 def fetchJsonData_from_LBSN(cursor, startID = 0):
     query_sql = '''
             SELECT in_id,insert_time,data::json FROM public."input"
             WHERE in_id > %s
-            ORDER BY in_id ASC LIMIT 10;
+            ORDER BY in_id ASC LIMIT 10000;
             '''
     cursor.execute(query_sql,(startID,))
     records = cursor.fetchall()

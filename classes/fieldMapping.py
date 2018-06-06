@@ -9,7 +9,7 @@ from shapely.geometry.polygon import Polygon
 import logging 
 
 class fieldMappingTwitter():  
-    def parseJsonRecord(jsonStringDict,origin,lbsnRecords):    
+    def parseJsonRecord(jsonStringDict,origin,lbsnRecords, disableReactionPostReferencing):    
         log = logging.getLogger('__main__')#logging.getLogger()
         # log.debug(jsonStringDict)
         # Define Sets that will hold unique values of each lbsn type
@@ -154,9 +154,10 @@ class fieldMappingTwitter():
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('quoted_status_id_str'),origin)
             elif postReaction.reaction_type  == lbsnPostReaction.SHARE:
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('retweeted_status').get('id_str'),origin)
-            if refPostRecord:
-                lbsnRecords.AddRecordsToDict(refPostRecord)  
-            postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
+            if not disableReactionPostReferencing:
+                postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
+                if refPostRecord:
+                    lbsnRecords.AddRecordsToDict(refPostRecord)  
             # ToDo: if a Reaction refers to another reaction (Information Spread)
             # This information is currently not [available from Twitter](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object):
             # "Note that retweets of retweets do not show representations of the intermediary retweet [...]"

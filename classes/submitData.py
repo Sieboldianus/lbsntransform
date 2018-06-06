@@ -1,23 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import psycopg2
-from decimal import Decimal
 from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import logging 
 from sys import exit
-from pygments.lexers import eiffel
-#from classes.helperFunctions import null_check #helperFunctions.null_check as null_check
-#from classes.helperFunctions import null_check #helperFunctions.geoconvertOrNone as geoconvertOrNone
 
- 
 
 class lbsnDB():
     def __init__(self, dbCursor = None, 
                  dbConnection = None,
-                 commit_volume = 10000):
+                 commit_volume = 10000,
+                 disableReactionPostReferencing = 0):
         self.dbCursor = dbCursor
         self.dbConnection = dbConnection
         if not self.dbCursor:
@@ -28,6 +24,7 @@ class lbsnDB():
         self.null_island_count = 0
         self.country_already_inserted = set()
         self.city_already_inserted = set()
+        self.disableReactionPostReferencing = disableReactionPostReferencing
     
     def commitChanges(self):
         self.dbConnection.commit() # commit changes to db
