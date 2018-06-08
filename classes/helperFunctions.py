@@ -46,7 +46,9 @@ class helperFunctions():
             return record
         
     def isPostReaction(jsonString):
-        if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('retweeted') or jsonString.get('in_reply_to_status_id_str'):
+        if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
+            # The retweeted field will return true if a tweet _got_ retweeted
+            # To detect if a tweet is a retweet of other tweet, check the retweeted_status field
             return True
         else:
             return False

@@ -27,7 +27,7 @@ class fieldMappingTwitter():
         #    1.c extract place attributes (poi, city, neigborhood, admin, country)
         #    1.d extract extract extended tweet, if available, and extended entities, if available
         # 2. decide if post is reaction (reply, quote, share, see https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/entities-object.html)
-        # 3. if post is reaction, copy reaction attributes from extracted lbsnPost
+        # 3. if post is reaction, copy reduced reaction attributes from extracted lbsnPost
         # 4. add post/reaction to recordDict
         # 5. process all referenced posts
         #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
@@ -44,8 +44,12 @@ class fieldMappingTwitter():
             if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
                 postReactionRecord.reaction_type = lbsnPostReaction.QUOTE
                 refPostRecord = self.extractPost(jsonStringDict.get('quoted_status'))
-            elif 'retweeted_status' in jsonStringDict or jsonStringDict.get('retweeted'): #quoted_status_id_str
+            #elif 'retweeted_status' in jsonStringDict: #quoted_status_id_str 
+            elif hasattr(jsonStringDict, 'retweeted_status'):
                 sys.exit(jsonStringDict)
+                # no retweets are available because of Geo-Tweet limitation:
+                # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
+                # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html
                 postReactionRecord.reaction_type = lbsnPostReaction.SHARE 
                 refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))
             elif jsonStringDict.get('in_reply_to_status_id_str'):
@@ -213,8 +217,10 @@ class fieldMappingTwitter():
     def extractPlace(self,postPlace_json, postGeoaccuracy, userLanguage):
         place = postPlace_json
         placeID = place.get('id')
-        #if not placeID:
-        #    sys.exit(print(jsonStringDict))
+        if not placeID:
+           log.warning(f'No PlaceGuid\n\n{postPlace_json}')
+           input("Press Enter to continue... (entry will be skipped)")
+           return None,postGeoaccuracy,None
         bounding_box_points = place.get('bounding_box').get('coordinates')[0]
         limYMin,limYMax,limXMin,limXMax = helperFunctions.getRectangleBounds(bounding_box_points)
         bound_points_shapely = geometry.MultiPoint([(limXMin, limYMin), (limXMax, limYMax)])
@@ -227,7 +233,6 @@ class fieldMappingTwitter():
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),self.origin)
             if not postGeoaccuracy:
                 postGeoaccuracy = lbsnPost.COUNTRY      
-            #log.debug(f'Placetype detected: country')
         elif place_type in ("city","neighborhood","admin"):
             # city_guid
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCity(),place.get('id'),self.origin)
@@ -235,20 +240,14 @@ class fieldMappingTwitter():
                 placeRecord.sub_type = place_type
             if not postGeoaccuracy or postGeoaccuracy == lbsnPost.COUNTRY:
                 postGeoaccuracy = lbsnPost.CITY
-                #l_lng = lon_center
-                #l_lat = lat_center
-            # log.debug(f'Placetype detected: city/neighborhood/admin')
         elif place_type == "poi":
             # place_guid
             # For POIs, City is not available on Twitter
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPlace(),place.get('id'),self.origin)
             if not postGeoaccuracy or postGeoaccuracy in (lbsnPost.COUNTRY, lbsnPost.CITY):
                 postGeoaccuracy = lbsnPost.PLACE  
-                #l_lng = lon_center
-                #l_lat = lat_center
         else:
             log.warning(f'No Place Type Detected: {jsonStringDict}')                 
-            # log.debug(f'Placetype detected: place/poi')
         #for some reason, twitter place entities sometimes contain linebreaks or whitespaces. We don't want this.
         placeName = place.get('name').replace('\n\r','') 
         placeName = re.sub(' +',' ',placeName) # remove multiple whitespace
