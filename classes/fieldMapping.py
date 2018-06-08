@@ -250,7 +250,7 @@ class fieldMappingTwitter():
             log.warning(f'No Place Type Detected: {jsonStringDict}')                 
             # log.debug(f'Placetype detected: place/poi')
         #for some reason, twitter place entities sometimes contain linebreaks or whitespaces. We don't want this.
-        placeName =  = place.get('name').replace('\n\r','') 
+        placeName = place.get('name').replace('\n\r','') 
         placeName = re.sub(' +',' ',placeName) # remove multiple whitespace
         if place_type == "poi" or (userLanguage.language_short and userLanguage.language_short in ('en','und')):
             # At the moment, English name are the main references; all other language specific references are stored in name_alternatives - except for places, where twitter has no alternative place names
