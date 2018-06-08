@@ -249,14 +249,15 @@ class fieldMappingTwitter():
         else:
             log.warning(f'No Place Type Detected: {jsonStringDict}')                 
             # log.debug(f'Placetype detected: place/poi')
-        # At the moment, English name are the main references; all other language specific references are stored in name_alternatives
-        # Bugfix necessary: some English names get still saved as name_alternatives
-        if not userLanguage.language_short or userLanguage.language_short in ('en','und'):
-            #for some reason, twitter place entities sometimes contain linebreaks. We don't want this.
-            placeRecord.name = place.get('name').replace('\n\r','')
-        else:
-            alt_name = place.get('name').replace('\n\r','')              
-            placeRecord.name_alternatives.append(alt_name)
+        #for some reason, twitter place entities sometimes contain linebreaks or whitespaces. We don't want this.
+        placeName =  = place.get('name').replace('\n\r','') 
+        placeName = re.sub(' +',' ',placeName) # remove multiple whitespace
+        if place_type == "poi" or (userLanguage.language_short and userLanguage.language_short in ('en','und')):
+            # At the moment, English name are the main references; all other language specific references are stored in name_alternatives - except for places, where twitter has no alternative place names
+            # Bugfix necessary: some English names get still saved as name_alternatives
+            placeRecord.name = placeName
+        else:        
+            placeRecord.name_alternatives.append(placeName)
         placeRecord.url = place.get('url')
         placeRecord.geom_center = "POINT(%s %s)" % (lon_center,lat_center)
         placeRecord.geom_area = Polygon(bounding_box_points).wkt # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
