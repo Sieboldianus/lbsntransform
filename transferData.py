@@ -20,6 +20,7 @@ import sys
 import datetime
 from google.protobuf import text_format
 import random
+import psycopg2
 
 def import_config():
     import config
@@ -47,10 +48,10 @@ def main():
     parser.add_argument('-uI', "--usernameInput", default=input_username)
     parser.add_argument('-aI', "--serveradressInput", default="222.22.222.22") 
     parser.add_argument('-nI', "--dbnameInput", default="test_db2")    
-    parser.add_argument('-t', "--transferlimit", default=0)
-    parser.add_argument('-tR', "--transferReactions", default=0)
-    parser.add_argument('-rR', "--disableReactionPostReferencing", default=0)
-    parser.add_argument('-tG', "--transferNotGeotagged", default=0) 
+    parser.add_argument('-t', "--transferlimit", default=None)
+    parser.add_argument('-tR', "--transferReactions", default=1)
+    parser.add_argument('-rR', "--disableReactionPostReferencing", default=0) # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
+    parser.add_argument('-tG', "--transferNotGeotagged", default=1) 
     parser.add_argument('-rS', "--startWithDBRowNumber", default=0) 
     parser.add_argument('-rE', "--endWithDBRowNumber", default=None) 
     parser.add_argument('-d', "--debugMode", default="INFO") #needs to be implemented
@@ -69,10 +70,9 @@ def main():
     logging.getLogger().addHandler(logging.StreamHandler())
         
     transferlimit = int(args.transferlimit)
-    # We're dealing with Twitter, lets create the OriginID globally
-    # this OriginID is required for all CompositeKeys
-    origin = lbsnOrigin()
-    origin.origin_id = lbsnOrigin.TWITTER
+
+    #origin = lbsnOrigin()
+    #origin.origin_id = lbsnOrigin.TWITTER
     
     outputConnection = dbConnection(args.serveradressOutput,
                                    args.dbnameOutput,
@@ -95,8 +95,9 @@ def main():
     conn_input, cursor_input = inputConnection.connect()
     finished = False
     while not finished:
-        lbsnRecords = lbsnRecordDicts()
-        records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber)
+        #lbsnRecords = lbsnRecordDicts()
+        twitterRecords = fieldMappingTwitter(disableReactionPostReferencing)
+        records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, transferlimit)
         continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
         if not firstDBRowNumber:
             firstDBRowNumber = records[0][0] #first returned DBRowNumber    
@@ -104,11 +105,15 @@ def main():
             finished = True
             break
         else:
-            lbsnRecords, processedRecords, finished = loopInputRecords(records, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber, disableReactionPostReferencing)
-            print(f'{processedRecords} Processed. Count per type: {lbsnRecords.getTypeCounts()}records.', end='\n')
+            twitterRecords, processedRecords, finished = loopInputRecords(records, processedRecords, transferlimit, finished, twitterRecords, endWithDBRowNumber)
+            print(f'{processedRecords} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
             # update console
             sys.stdout.flush()
-        outputDB.submitLbsnRecordDicts(lbsnRecords)
+        try:
+            outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
+        except psycopg2.IntegrityError as e:
+            print(f'\nTransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, insert language first..')
+            sys.exit(e)
         outputDB.commitChanges()
         sys.stdout.flush()
             
@@ -119,7 +124,7 @@ def main():
     print('Done.')
 
     
-def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finished, lbsnRecords, endWithDBRowNumber, disableReactionPostReferencing):
+def loopInputRecords(jsonRecords, processedRecords, transferlimit, finished, twitterRecords, endWithDBRowNumber):
     for record in jsonRecords:
         processedRecords += 1
         DBRowNumber = record[0]
@@ -127,18 +132,23 @@ def loopInputRecords(jsonRecords, origin, processedRecords, transferlimit, finis
         if singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice
             continue
-        lbsnRecords = fieldMappingTwitter.parseJsonRecord(singleJSONRecordDict, origin, lbsnRecords, disableReactionPostReferencing)
+        twitterRecords.parseJsonRecord(singleJSONRecordDict)
+        #lbsnRecords = fieldMappingTwitter
         if processedRecords >= transferlimit or (endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
-    return lbsnRecords, processedRecords, finished
+    return twitterRecords, processedRecords, finished
    
-def fetchJsonData_from_LBSN(cursor, startID = 0):
+def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None):
+    if transferlimit:
+        numberOfRecordsToFetch = min(10000,transferlimit)
+    else:
+        numberOfRecordsToFetch = 10000
     query_sql = '''
             SELECT in_id,insert_time,data::json FROM public."input"
             WHERE in_id > %s
-            ORDER BY in_id ASC LIMIT 10000;
+            ORDER BY in_id ASC LIMIT %s;
             '''
-    cursor.execute(query_sql,(startID,))
+    cursor.execute(query_sql,(startID,numberOfRecordsToFetch)) #if transferlimit is below 10000, retrieve only necessary volume of records
     records = cursor.fetchall()
     return records, cursor.rowcount
 

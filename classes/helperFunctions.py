@@ -45,46 +45,28 @@ class helperFunctions():
             record.pkey.CopyFrom(c_Key)                        
             return record
         
-    def isPostReaction_Type(jsonString,return_type = False):
-        reaction = lbsnPostReaction()
-        if jsonString.get('in_reply_to_status_id_str'):
-            if return_type:
-                reaction.reaction_type = lbsnPostReaction.REPLY
-                return reaction
-            else:
-                return True
-        elif jsonString.get('quoted_status_id_str'):
-            if return_type:
-                reaction.reaction_type = lbsnPostReaction.QUOTE
-                return reaction
-            else:
-                return True            
-        elif jsonString.get('retweeted_status'):
-            if return_type:
-                reaction.reaction_type = lbsnPostReaction.SHARE
-                return reaction
-            else:
-                return True         
-        return False
-    
-    def isPost_Type(jsonString):
-        # if post, get type of first entity
-        if 'media' in jsonString:
-            typeString = jsonString.get('entities').get('media')[0].get('type')
-            # type is either photo, video, or animated_gif
-            # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
-            if typeString:
-                post = lbsnPost()
-                if typeString == "photo":
-                    post.post_type = lbsnPost.IMAGE
-                elif typeString == "video" or typeString == "animated_gif":
-                    post.post_type = lbsnPost.VIDEO
-                else:
-                    post.post_type = lbsnPost.TEXT
-                return post
-        else: 
+    def isPostReaction(jsonString):
+        if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
+            return True
+        else:
             return False
-      
+    
+    def assignMediaPostType(jsonMediaString):
+        # if post, get type of first entity
+        typeString = jsonMediaString[0].get('type')
+        # type is either photo, video, or animated_gif
+        # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
+        if typeString:
+            if typeString == "photo":
+                post_type = lbsnPost.IMAGE
+            elif typeString in ("video","animated_gif"):
+                post_type = lbsnPost.VIDEO
+            
+        else:
+            post_type = lbsnPost.OTHER
+            log.debug(f'Other Post type detected: {jsonMediaString}')
+        return post_type
+    
     def parseJSONDateStringToProtoBuf(jsonDateString):
         # Parse String -Timestamp Format found in Twitter json
         dateTimeRecord = datetime.datetime.strptime(jsonDateString,'%a %b %d %H:%M:%S +0000 %Y') 
