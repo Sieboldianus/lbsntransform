@@ -68,12 +68,7 @@ def main():
     log = logging.getLogger(__name__)
     # Get Stream handler, so we can also print to console while logging to file
     logging.getLogger().addHandler(logging.StreamHandler())
-        
     transferlimit = int(args.transferlimit)
-
-    #origin = lbsnOrigin()
-    #origin.origin_id = lbsnOrigin.TWITTER
-    
     outputConnection = dbConnection(args.serveradressOutput,
                                    args.dbnameOutput,
                                    args.usernameOutput,
@@ -94,20 +89,18 @@ def main():
     endWithDBRowNumber = args.endWithDBRowNumber # End Value, Modify to continue from last processing    
     conn_input, cursor_input = inputConnection.connect()
     finished = False
-    while not finished:
-        #lbsnRecords = lbsnRecordDicts()
+    while not finished:    
         twitterRecords = fieldMappingTwitter(disableReactionPostReferencing)
-        records, returnedRecord_count = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, transferlimit)
-        continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
+        records = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, transferlimit)
+        if not records:
+            break 
         if not firstDBRowNumber:
-            firstDBRowNumber = records[0][0] #first returned DBRowNumber    
-        if returnedRecord_count == 0:
-            break
-        else:
-            twitterRecords, processedRecords, finished = loopInputRecords(records, processedRecords, transferlimit, twitterRecords, endWithDBRowNumber)
-            print(f'{processedRecords} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
-            # update console
-            sys.stdout.flush()
+            firstDBRowNumber = records[0][0] #first returned DBRowNumber        
+        continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
+        twitterRecords, processedRecords, finished = loopInputRecords(records, processedRecords, transferlimit, twitterRecords, endWithDBRowNumber)
+        print(f'{processedRecords} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
+        # update console
+        sys.stdout.flush()
         tsuccessful = False
         tcount = 0
         while not tsuccessful and tcount < 5:
@@ -162,7 +155,10 @@ def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None):
             '''
     cursor.execute(query_sql,(startID,numberOfRecordsToFetch)) #if transferlimit is below 10000, retrieve only necessary volume of records
     records = cursor.fetchall()
-    return records, cursor.rowcount
+    if cursor.rowcount == 0:
+        return None
+    else:
+        return records
 
 if __name__ == "__main__":
     main()
