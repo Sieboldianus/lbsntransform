@@ -119,6 +119,7 @@ def main():
                 # If language does not exist, we'll trust Twitter and add this to our language list
                 missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
                 print(f'\nTransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, inserting language "{missingLanguage}" first..')
+                conn_output.rollback()
                 insert_sql = '''
                        INSERT INTO "language" (language_short,language_name,language_name_de)
                        VALUES (%s,NULL,NULL)
