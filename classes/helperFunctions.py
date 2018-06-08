@@ -46,7 +46,7 @@ class helperFunctions():
             return record
         
     def isPostReaction(jsonString):
-        if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
+        if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('retweeted') or jsonString.get('in_reply_to_status_id_str'):
             return True
         else:
             return False

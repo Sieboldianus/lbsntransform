@@ -109,11 +109,25 @@ def main():
             print(f'{processedRecords} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
             # update console
             sys.stdout.flush()
-        try:
-            outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
-        except psycopg2.IntegrityError as e:
-            print(f'\nTransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, insert language first..')
-            sys.exit(e)
+        tsuccessful = False
+        tcount = 0
+        while not tsuccessful and tcount < 5:
+            try:
+                outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
+                tsuccessful = True
+            except psycopg2.IntegrityError as e:
+                # If language does not exist, we'll trust Twitter and add this to our language list
+                missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
+                print(f'\nTransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, inserting language "{missingLanguage}" first..')
+                insert_sql = '''
+                       INSERT INTO "language" (language_short,language_name,language_name_de)
+                       VALUES (%s,NULL,NULL)
+                       ON CONFLICT (language_short)
+                       DO UPDATE SET                                                                                           
+                           language_short = EXCLUDED.language_short;                                
+                       '''
+                outputDB.dbCursor.execute(insert_sql,(missingLanguage,))
+            tcount += 1 
         outputDB.commitChanges()
         sys.stdout.flush()
             
