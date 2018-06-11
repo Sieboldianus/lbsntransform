@@ -52,15 +52,17 @@ class baseconfig():
         self.dbPassword_Output = args.dbPassword_Output
         self.dbServeradressOutput = args.dbServeradressOutput
         self.dbNameOutput = args.dbNameOutput
-        self.transferlimit = int(args.transferlimit)
-        self.transferCount = int(args.transferCount)
+        if args.transferlimit:
+            self.transferlimit = int(args.transferlimit)
+        if args.transferCount:
+            self.transferCount = int(args.transferCount)
         self.numberOfRecordsToFetch = int(args.numberOfRecordsToFetch)
         self.transferReactions = args.transferReactions
-        if args.disableReactionPostReferencing == 0:
+        if args.disableReactionPostReferencing and int(args.disableReactionPostReferencing) == 1:
         # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
-            self.disableReactionPostReferencing = None
+            self.disableReactionPostReferencing = True
         else:
-            self.disableReactionPostReferencing = True        
+            self.disableReactionPostReferencing = False    
         self.transferNotGeotagged = args.transferNotGeotagged
         self.startWithDBRowNumber = args.startWithDBRowNumber
         self.endWithDBRowNumber = args.endWithDBRowNumber

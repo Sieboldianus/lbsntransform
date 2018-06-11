@@ -32,7 +32,6 @@ class fieldMappingTwitter():
         # 5. process all referenced posts
         #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
         #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
-        
         # process tweet-post object
         postRecord = self.extractPost(jsonStringDict)
         # Assignment Step
@@ -54,7 +53,7 @@ class fieldMappingTwitter():
                 refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))
             elif jsonStringDict.get('in_reply_to_status_id_str'):
                 # if reply, original tweet is not available (?)
-                postReactionRecord.reaction_type = lbsnPostReaction.REPLY
+                postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('in_reply_to_status_id_str'),self.origin)
                 refUserRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('in_reply_to_user_id_str'),self.origin)
                 refUserRecord.user_name = jsonStringDict.get('in_reply_to_screen_name') # Needs to be saved
@@ -161,7 +160,7 @@ class fieldMappingTwitter():
         postRecord.user_pkey.CopyFrom(userRecord.pkey)
         valueCount = lambda x: 0 if x is None else x
         postRecord.post_quote_count = valueCount(jsonStringDict.get('quote_count'))
-        postRecord.post_reply_count = valueCount(jsonStringDict.get('reply_count'))
+        postRecord.post_comment_count = valueCount(jsonStringDict.get('reply_count'))
         postRecord.post_share_count = valueCount(jsonStringDict.get('retweet_count'))
         postRecord.post_like_count = valueCount(jsonStringDict.get('favorite_count'))
         postRecord.post_url = f'https://twitter.com/statuses/{post_guid}'    

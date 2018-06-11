@@ -156,7 +156,7 @@ class lbsnDB():
     def submitLbsnPost(self, record):
         postRecord = postAttrShared(record)
         insert_sql = '''
-                   INSERT INTO "post" (origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_reply_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source)
+                   INSERT INTO "post" (origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source)
                    VALUES (%s,%s,''' + postRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                    ON CONFLICT (origin_id, post_guid)
                    DO UPDATE SET                                                                                           
@@ -174,7 +174,7 @@ class lbsnDB():
                        hashtags = COALESCE(EXCLUDED.hashtags, "post".hashtags),                                            
                        emoji = COALESCE(EXCLUDED.emoji, "post".emoji),                                                     
                        post_like_count = COALESCE(EXCLUDED.post_like_count, "post".post_like_count),                       
-                       post_reply_count = COALESCE(EXCLUDED.post_reply_count, "post".post_reply_count),                    
+                       post_comment_count = COALESCE(EXCLUDED.post_comment_count, "post".post_comment_count),                    
                        post_views_count = COALESCE(EXCLUDED.post_views_count, "post".post_views_count),                    
                        post_title = COALESCE(EXCLUDED.post_title, "post".post_title),                                      
                        post_thumbnail_url = COALESCE(EXCLUDED.post_thumbnail_url, "post".post_thumbnail_url),              
@@ -201,7 +201,7 @@ class lbsnDB():
                                          postRecord.hashtags,
                                          postRecord.emoji,
                                          postRecord.post_like_count,
-                                         postRecord.post_reply_count,
+                                         postRecord.post_comment_count,
                                          postRecord.post_views_count,
                                          postRecord.post_title,
                                          postRecord.post_thumbnail_url,
@@ -299,7 +299,7 @@ class postAttrShared():
         self.hashtags = list(record.hashtags)
         self.emoji = list(record.emoji)
         self.post_like_count = helperFunctions.null_check(record.post_like_count)
-        self.post_reply_count = helperFunctions.null_check(record.post_reply_count)
+        self.post_comment_count = helperFunctions.null_check(record.post_comment_count)
         self.post_views_count = helperFunctions.null_check(record.post_views_count)
         self.post_title = helperFunctions.null_check(record.post_title)
         self.post_thumbnail_url = helperFunctions.null_check(record.post_thumbnail_url)
