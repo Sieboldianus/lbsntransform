@@ -2,17 +2,17 @@
 
 __author__      = "Alexander Dunkel"
 __license__   = "GNU GPLv3"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 import getpass
-import argparse
 import logging 
 from classes.dbConnection import dbConnection
 from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from classes.fieldMapping import fieldMappingTwitter as fieldMappingTwitter
 from classes.submitData import lbsnDB as lbsnDB
-#LBSN Structure Import from ProtoBuf
+from config.config import baseconfig as baseconfig
+# LBSN Structure Import from ProtoBuf
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import io
@@ -22,14 +22,6 @@ from google.protobuf import text_format
 import random
 import psycopg2
 
-def import_config():
-    import config
-    input_username = getattr(config, 'dbUser_Input', 0)
-    input_userpw = getattr(config, 'dbPassword_Input', 0)
-    output_username = getattr(config, 'dbUser_Output', 0)
-    output_userpw = getattr(config, 'dbPassword_Output', 0)    
-    return input_username,input_userpw,output_username,output_userpw
-    
 def main():
     # Set Output to Replace in case of encoding issues (console/windows)
     # Necessary? ProtoBuf will convert any problematic characters to Octal Escape Sequences anyway
@@ -37,30 +29,10 @@ def main():
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
     # Load Config
     # will be overwritten if args are given
-    input_username,input_userpw,output_username,output_userpw = import_config()
+    config = baseconfig()
     # Parse args
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-pO', "--passwordOutput", default=0) 
-    parser.add_argument('-uO', "--usernameOutput", default="test")
-    parser.add_argument('-aO', "--serveradressOutput", default="111.11.11.11")
-    parser.add_argument('-nO', "--dbnameOutput", default="test_db")
-    parser.add_argument('-pI', "--passwordInput", default=input_userpw) 
-    parser.add_argument('-uI', "--usernameInput", default=input_username)
-    parser.add_argument('-aI', "--serveradressInput", default="222.22.222.22") 
-    parser.add_argument('-nI', "--dbnameInput", default="test_db2")    
-    parser.add_argument('-t', "--transferlimit", default=None)
-    parser.add_argument('-tR', "--transferReactions", default=1)
-    parser.add_argument('-rR', "--disableReactionPostReferencing", default=0) # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
-    parser.add_argument('-tG', "--transferNotGeotagged", default=1) 
-    parser.add_argument('-rS', "--startWithDBRowNumber", default=0) 
-    parser.add_argument('-rE', "--endWithDBRowNumber", default=None) 
-    parser.add_argument('-d', "--debugMode", default="INFO") #needs to be implemented
-    args = parser.parse_args()
-    if args.disableReactionPostReferencing == 0:
-        # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
-        disableReactionPostReferencing = None
-    else:
-        disableReactionPostReferencing = True
+    config.parseArgs()
+    # set logger
     logging.basicConfig(handlers=[logging.FileHandler('test.log', 'w', 'utf-8')],
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                         datefmt='%H:%M:%S',
@@ -68,36 +40,40 @@ def main():
     log = logging.getLogger(__name__)
     # Get Stream handler, so we can also print to console while logging to file
     logging.getLogger().addHandler(logging.StreamHandler())
-    transferlimit = int(args.transferlimit)
-    outputConnection = dbConnection(args.serveradressOutput,
-                                   args.dbnameOutput,
-                                   args.usernameOutput,
-                                   args.passwordOutput
+    # establish output connection
+    outputConnection = dbConnection(config.dbServeradressOutput,
+                                   config.dbNameOutput,
+                                   config.dbUser_Output,
+                                   config.dbPassword_Output
                                    )
     conn_output, cursor_output = outputConnection.connect()
     outputDB = lbsnDB(dbCursor = cursor_output, 
                       dbConnection = conn_output)
-    inputConnection = dbConnection(args.serveradressInput,
-                                   args.dbnameInput,
-                                   args.usernameInput,
-                                   args.passwordInput,
+    # establish input connection
+    inputConnection = dbConnection(config.dbServeradressInput,
+                                   config.dbNameInput,
+                                   config.dbUser_Input,
+                                   config.dbPassword_Input,
                                    True # ReadOnly Mode
                                    )
+    # start settings
     processedRecords = 0
     firstDBRowNumber = 0   
-    continueWithDBRowNumber = args.startWithDBRowNumber # Start Value, Modify to continue from last processing  
-    endWithDBRowNumber = args.endWithDBRowNumber # End Value, Modify to continue from last processing    
+    continueWithDBRowNumber = config.startWithDBRowNumber # Start Value, Modify to continue from last processing  
+    endWithDBRowNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing    
     conn_input, cursor_input = inputConnection.connect()
     finished = False
+    
+    # loop input DB until transferlimit reached or no more rows are returned
     while not finished:    
-        twitterRecords = fieldMappingTwitter(disableReactionPostReferencing)
-        records = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, transferlimit)
+        twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
+        records = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, config.transferlimit)
         if not records:
             break 
         if not firstDBRowNumber:
             firstDBRowNumber = records[0][0] #first returned DBRowNumber        
         continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
-        twitterRecords, processedRecords, finished = loopInputRecords(records, processedRecords, transferlimit, twitterRecords, endWithDBRowNumber)
+        twitterRecords, processedRecords, finished = loopInputRecords(records, processedRecords, config.transferlimit, twitterRecords, endWithDBRowNumber)
         print(f'{processedRecords} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         sys.stdout.flush()
@@ -144,6 +120,7 @@ def loopInputRecords(jsonRecords, processedRecords, transferlimit, twitterRecord
     return twitterRecords, processedRecords, finished
    
 def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None):
+    #if transferlimit is below 10000, retrieve only necessary volume of records
     if transferlimit:
         numberOfRecordsToFetch = min(10000,transferlimit)
     else:
@@ -153,7 +130,7 @@ def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None):
             WHERE in_id > %s
             ORDER BY in_id ASC LIMIT %s;
             '''
-    cursor.execute(query_sql,(startID,numberOfRecordsToFetch)) #if transferlimit is below 10000, retrieve only necessary volume of records
+    cursor.execute(query_sql,(startID,numberOfRecordsToFetch)) 
     records = cursor.fetchall()
     if cursor.rowcount == 0:
         return None
