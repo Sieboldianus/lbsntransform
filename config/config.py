@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import argparse
+import os
 
 class baseconfig():
     def __init__(self):
         ## Set Default Config options here
         ## or define options as input args
+        self.LocalInput = 0 # Read from File/CSV
+        self.LocalFileType = '*.json' # If localread, specify filetype (*.json, *.csv etc.)
+        self.InputPath = None # optionally provide path to input folder, otherwise ./Input/ will be used
         self.dbUser_Input = 'example-user-name'
         self.dbPassword_Input = 'example-user-password'
         self.dbServeradressInput = '222.22.222.22'
@@ -14,7 +18,7 @@ class baseconfig():
         self.dbServeradressOutput = '111.11.11.11'
         self.dbNameOutput = 'test_db'
         self.transferlimit = None
-        self.transferCount = 500000 # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Pyhton and not in Postgres Coalesce; larger values are heavier on memory.
+        self.transferCount = 200000 # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Pyhton and not in Postgres Coalesce; larger values are heavier on memory.
         self.numberOfRecordsToFetch = 10000
         self.transferReactions = 1
         self.disableReactionPostReferencing = None # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
@@ -25,6 +29,9 @@ class baseconfig():
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
+        parser.add_argument('-lI', "--LocalInput", default=self.LocalInput)
+        parser.add_argument('-lT', "--LocalFileType", default=self.LocalFileType)
+        parser.add_argument('-iP', "--InputPath", default=self.LocalFileType) 
         parser.add_argument('-pO', "--dbPassword_Output", default=self.dbPassword_Output) 
         parser.add_argument('-uO', "--dbUser_Output", default=self.dbUser_Output)
         parser.add_argument('-aO', "--dbServeradressOutput", default=self.dbServeradressOutput)
@@ -44,10 +51,19 @@ class baseconfig():
         parser.add_argument('-d', "--debugMode", default=self.debugMode) 
          
         args = parser.parse_args()
-        self.dbUser_Input = args.dbUser_Input
-        self.dbPassword_Input = args.dbPassword_Input
-        self.dbServeradressInput = args.dbServeradressInput
-        self.dbNameInput = args.dbNameInput
+        if args.LocalInput and int(args.LocalInput) == 1:
+            self.LocalInput = True
+            self.LocalFileType = args.LocalFileType
+            if not self.InputPath:
+                self.InputPath = f'{os.getcwd()}\\Input\\'
+                print(f'Using Path: {self.InputPath}')
+            else:
+                self.InputPath = args.InputPath
+        else:
+            self.dbUser_Input = args.dbUser_Input
+            self.dbPassword_Input = args.dbPassword_Input
+            self.dbServeradressInput = args.dbServeradressInput
+            self.dbNameInput = args.dbNameInput
         self.dbUser_Output = args.dbUser_Output
         self.dbPassword_Output = args.dbPassword_Output
         self.dbServeradressOutput = args.dbServeradressOutput

@@ -21,6 +21,9 @@ import datetime
 from google.protobuf import text_format
 import random
 import psycopg2
+# Only necessary for local import:
+from glob import glob
+import json
 #from multiprocessing.pool import ThreadPool
 #pool = ThreadPool(processes=1)
 
@@ -42,6 +45,7 @@ def main():
     log = logging.getLogger(__name__)
     # Get Stream handler, so we can also print to console while logging to file
     logging.getLogger().addHandler(logging.StreamHandler())
+    
     # establish output connection
     outputConnection = dbConnection(config.dbServeradressOutput,
                                    config.dbNameOutput,
@@ -51,36 +55,51 @@ def main():
     conn_output, cursor_output = outputConnection.connect()
     outputDB = lbsnDB(dbCursor = cursor_output, 
                       dbConnection = conn_output)
-    # establish input connection
-    inputConnection = dbConnection(config.dbServeradressInput,
-                                   config.dbNameInput,
-                                   config.dbUser_Input,
-                                   config.dbPassword_Input,
-                                   True # ReadOnly Mode
-                                   )
+    # load from local json/csv or from PostgresDB
+    if config.LocalInput:
+        loc_filelist = glob(f'{config.InputPath}{config.LocalFileType}')
+        fileCount = (len(loc_filelist))
+        if fileCount == 0:
+            sys.exit("No location files found.")
+    else:
+        # establish input connection
+        inputConnection = dbConnection(config.dbServeradressInput,
+                                       config.dbNameInput,
+                                       config.dbUser_Input,
+                                       config.dbPassword_Input,
+                                       True # ReadOnly Mode
+                                       )
+        conn_input, cursor_input = inputConnection.connect()
+        
     # start settings
     processedRecords = 0
     processedTotal = 0
-    firstDBRowNumber = 0   
-    continueWithDBRowNumber = config.startWithDBRowNumber # Start Value, Modify to continue from last processing  
-    endWithDBRowNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing    
-    conn_input, cursor_input = inputConnection.connect()
+    startNumber = 0   
+    continueNumber = config.startWithDBRowNumber # Start Value, Modify to continue from last processing  
+    endNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing    
+    
     finished = False
     twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
     # loop input DB until transferlimit reached or no more rows are returned
-    while not finished:    
-        records = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, config.transferlimit, config.numberOfRecordsToFetch)
+    while not finished:
+        if config.LocalInput:
+            records = fetchJsonData_from_File(loc_filelist, continueNumber)
+        else:
+            records = fetchJsonData_from_LBSN(cursor_input, continueNumber, config.transferlimit, config.numberOfRecordsToFetch) 
         if not records:
-            break      
-        continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
-        twitterRecords, processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endWithDBRowNumber)
+            break
+        if config.LocalInput:
+            continueNumber += 1
+        else:
+            continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
+        twitterRecords, processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput)
         processedRecords += processedCount
         processedTotal += processedCount        
         print(f'{processedTotal} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         sys.stdout.flush()
         # On the first loop or after 500.000 processed records, transfer results to DB
-        if not firstDBRowNumber or processedRecords >= config.transferCount or finished:
+        if not startNumber or processedRecords >= config.transferCount or finished:
             print(f'Transferring {processedRecords} records to output db..', end='\r')
             sys.stdout.flush()
             # Async Submit needs further work:
@@ -105,35 +124,47 @@ def main():
             outputDB.commitChanges()
             # create a new empty dict of records
             twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
-            print(f'Transferring {processedRecords} records to output db..Done (up to DB Row {continueWithDBRowNumber}).')
+            print(f'Transferring {processedRecords} records to output db..Done (up to DB Row {continueNumber}).')
             processedRecords = 0
         # remember the first processed DBRow ID
-        if not firstDBRowNumber:
-            firstDBRowNumber = records[0][0] #first returned DBRowNumber       
-    # Close connections to DBs        
-    cursor_input.close()
+        if not startNumber:
+            if config.LocalInput:
+                startNumber = 1
+            else:
+                startNumber = records[0][0] #first returned DBRowNumber       
+    # Close connections to DBs       
+    if not config.LocalInput: 
+        cursor_input.close()
     cursor_output.close()
-    log.info(f'\n\nProcessed {processedTotal} records (DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}).')
+    if config.LocalInput: 
+        log.info(f'\n\nProcessed {processedTotal} records (Filenumber {startNumber} to {continueNumber}).')
+    else:
+        log.info(f'\n\nProcessed {processedTotal} records (DBRowNumber {startNumber} to {continueNumber}).')
     print('Done.')
        
-def loopInputRecords(jsonRecords,transferlimit, twitterRecords, endWithDBRowNumber):
+def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNumber, isLocalInput):
     finished = False
     processedRecords = 0
+    DBRowNumber = 0
     for record in jsonRecords:
         processedRecords += 1
-        DBRowNumber = record[0]
-        singleJSONRecordDict = record[2]
+        if isLocalInput:
+            singleJSONRecordDict = record
+        else:
+            DBRowNumber = record[0]
+            singleJSONRecordDict = record[2]
         if singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice
             continue
+        #sys.exit(singleJSONRecordDict)
         twitterRecords.parseJsonRecord(singleJSONRecordDict)
         #lbsnRecords = fieldMappingTwitter
-        if processedRecords >= transferlimit or (endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
+        if processedRecords >= transferlimit or (not isLocalInput and endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
             break
     return twitterRecords, processedRecords, finished
    
-def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfRecordsToFetch = 10000):
+def fetchJsonData_from_LBSN(cursor, startFileID = 0, transferlimit = None, numberOfRecordsToFetch = 10000):
     #if transferlimit is below 10000, retrieve only necessary volume of records
     if transferlimit:
         numberOfRecordsToFetch = min(numberOfRecordsToFetch,transferlimit)
@@ -148,7 +179,20 @@ def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfR
         return None
     else:
         return records
-
+    
+def fetchJsonData_from_File(loc_filelist, startID = 0):
+    x = 0
+    records = []
+    for locFile in loc_filelist:
+        if x == startID:
+            with open(locFile, 'r', encoding="utf-8", errors='replace') as file:
+                records = json.loads(file.read())
+        x += 1
+    if records:
+        return records
+    else:
+        return None
+    
 if __name__ == "__main__":
     main()
     
