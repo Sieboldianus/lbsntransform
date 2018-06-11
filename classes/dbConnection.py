@@ -48,5 +48,5 @@ class dbConnection():
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
-        log.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}\n')
+        log.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}')
         return conn,cursor

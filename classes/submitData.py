@@ -32,7 +32,7 @@ class lbsnDB():
         
     def submitLbsnRecordDicts(self, recordsDicts):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
-        # therefore, records are processed starting from lowest granularity, which is returned by allDicts()
+        # therefore, records are processed starting from lowest granularity, which is stored in allDicts()
         for recordsDict in recordsDicts.allDicts:
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
@@ -73,7 +73,7 @@ class lbsnDB():
                             url = COALESCE(EXCLUDED.url, "country".url);
                         '''
             # Array merge of alternatives:
-            # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empoty array])
+            # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
             # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
             # Finally, merge New Entries with existing ones mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
             self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url))
@@ -124,12 +124,12 @@ class lbsnDB():
     def submitLbsnUser(self, record):
         userRecord = userAttrShared(record)
         insert_sql = '''
-                   INSERT INTO "user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s)
+                   INSERT INTO "user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s)
                    ON CONFLICT (origin_id, user_guid)
                    DO UPDATE SET
-                   (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url)
-                   = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url);
+                   (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
+                   = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url, EXCLUDED.user_timezone, EXCLUDED.user_utc_offset);
                    '''
         # No coalesce for user: in case user changes or removes information, this should also be removed from the record
         self.dbCursor.execute(insert_sql,(userRecord.OriginID,
@@ -149,7 +149,9 @@ class lbsnDB():
                                           userRecord.user_location_geom,
                                           userRecord.liked_count,
                                           userRecord.active_since,
-                                          userRecord.profile_image_url))
+                                          userRecord.profile_image_url,
+                                          userRecord.user_timezone,
+                                          userRecord.user_utc_offset))
         
     def submitLbsnPost(self, record):
         postRecord = postAttrShared(record)
@@ -275,6 +277,8 @@ class userAttrShared():
         self.liked_count = helperFunctions.null_check(record.liked_count)
         self.active_since = helperFunctions.null_check_datetime(record.active_since)
         self.profile_image_url = helperFunctions.null_check(record.profile_image_url)
+        self.user_timezone = helperFunctions.null_check(record.user_timezone)
+        self.user_utc_offset = helperFunctions.null_check(record.user_utc_offset)        
 
 class postAttrShared():
     def __init__(self, record):

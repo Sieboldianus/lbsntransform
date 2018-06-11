@@ -58,53 +58,63 @@ def main():
                                    )
     # start settings
     processedRecords = 0
-    firstDBRowNumber = 0   
+    processedTotal = 0
+    #firstDBRowNumber = 0   
     continueWithDBRowNumber = config.startWithDBRowNumber # Start Value, Modify to continue from last processing  
     endWithDBRowNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing    
     conn_input, cursor_input = inputConnection.connect()
     finished = False
-    
+    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:    
-        twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
-        records = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, config.transferlimit)
+        records = fetchJsonData_from_LBSN(cursor_input, continueWithDBRowNumber, config.transferlimit, config.numberOfRecordsToFetch)
         if not records:
-            break 
-        if not firstDBRowNumber:
-            firstDBRowNumber = records[0][0] #first returned DBRowNumber        
+            break      
         continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
-        twitterRecords, processedRecords, finished = loopInputRecords(records, processedRecords, config.transferlimit, twitterRecords, endWithDBRowNumber)
+        twitterRecords, processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endWithDBRowNumber)
         print(f'{processedRecords} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
+        processedRecords += processedCount
+        processedTotal += processedCount
         # update console
         sys.stdout.flush()
-        tsuccessful = False
-        tcount = 0
-        while not tsuccessful and tcount < 5:
-            try:
-                outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
-                tsuccessful = True
-            except psycopg2.IntegrityError as e:
-                # If language does not exist, we'll trust Twitter and add this to our language list
-                missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
-                print(f'TransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, inserting language "{missingLanguage}" first..')
-                conn_output.rollback()
-                insert_sql = '''
-                       INSERT INTO "language" (language_short,language_name,language_name_de)
-                       VALUES (%s,NULL,NULL);                                
-                       '''
-                outputDB.dbCursor.execute(insert_sql,(missingLanguage,))
-            tcount += 1 
-        outputDB.commitChanges()
-        sys.stdout.flush()
-            
+        # On the first loop or after 500.000 processed records, transfer results to DB
+        if not firstDBRowNumber or processedRecords >= config.transferCount or finished:
+            log.info(f'Transferring {processedRecords} records to output db..')
+            tsuccessful = False
+            issuesCount = 0
+            while not tsuccessful and issuesCount < 5:
+                try:
+                    outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
+                    tsuccessful = True
+                except psycopg2.IntegrityError as e:
+                    # If language does not exist, we'll trust Twitter and add this to our language list
+                    missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
+                    print(f'TransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, inserting language "{missingLanguage}" first..')
+                    conn_output.rollback()
+                    insert_sql = '''
+                           INSERT INTO "language" (language_short,language_name,language_name_de)
+                           VALUES (%s,NULL,NULL);                                
+                           '''
+                    outputDB.dbCursor.execute(insert_sql,(missingLanguage,))
+                issuesCount += 1 
+            outputDB.commitChanges()
+            # create a new empty dict of records
+            twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
+            processedRecords = 0
+            log.info(f'Done.')
+        # remember the first processed DBRow ID
+        if not firstDBRowNumber:
+            firstDBRowNumber = records[0][0] #first returned DBRowNumber       
     # Close connections to DBs        
     cursor_input.close()
     cursor_output.close()
-    log.info(f'\n\nProcessed {processedRecords} records (DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}).')
+    log.info(f'\n\nProcessed {processedTotal} records (DBRowNumber {firstDBRowNumber} to {continueWithDBRowNumber}).')
     print('Done.')
 
     
-def loopInputRecords(jsonRecords, processedRecords, transferlimit, twitterRecords, endWithDBRowNumber):
+def loopInputRecords(jsonRecords,transferlimit, twitterRecords, endWithDBRowNumber):
+    finished = False
+    processedRecords = 0
     for record in jsonRecords:
         processedRecords += 1
         DBRowNumber = record[0]
@@ -119,12 +129,10 @@ def loopInputRecords(jsonRecords, processedRecords, transferlimit, twitterRecord
             break
     return twitterRecords, processedRecords, finished
    
-def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None):
+def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfRecordsToFetch = 10000):
     #if transferlimit is below 10000, retrieve only necessary volume of records
     if transferlimit:
-        numberOfRecordsToFetch = min(10000,transferlimit)
-    else:
-        numberOfRecordsToFetch = 10000
+        numberOfRecordsToFetch = min(numberOfRecordsToFetch,transferlimit)
     query_sql = '''
             SELECT in_id,insert_time,data::json FROM public."input"
             WHERE in_id > %s

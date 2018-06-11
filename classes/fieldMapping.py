@@ -102,6 +102,12 @@ class fieldMappingTwitter():
         userProfileImageURL = user.get('profile_image_url')
         if not userProfileImageURL == "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png":
             userRecord.profile_image_url = userProfileImageURL
+        userTimezone = user.get('time_zone')
+        if userTimezone:
+            userRecord.user_timezone = userTimezone
+        userUTCOffset = user.get('utc_offset')
+        if userUTCOffset:
+            userRecord.user_utc_offset = userUTCOffset
         return userRecord
           
     def extractPost(self,jsonStringDict):
