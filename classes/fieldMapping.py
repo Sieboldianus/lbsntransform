@@ -31,7 +31,7 @@ class fieldMappingTwitter():
             if userStatus:
                 self.parseJsonPost(userStatus, userPkey = userRecord.pkey)           
         else:
-            parseJsonPost(jsonStringDict)
+            self.parseJsonPost(jsonStringDict)
                
     def parseJsonPost(self, jsonStringDict, userPkey = None):
         # Post    
@@ -57,7 +57,6 @@ class fieldMappingTwitter():
             if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
                 postReactionRecord.reaction_type = lbsnPostReaction.QUOTE
                 refPostRecord = self.extractPost(jsonStringDict.get('quoted_status'))
-            #elif 'retweeted_status' in jsonStringDict: #quoted_status_id_str 
             elif 'retweeted_status' in jsonStringDict:
                 # no retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
                 # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
@@ -91,7 +90,6 @@ class fieldMappingTwitter():
             
             # add referenced post pkey to reaction    
             if not self.disableReactionPostReferencing:
-                #sys.exit(jsonStringDict)
                 postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
                 # ToDo: if a Reaction refers to another reaction (Information Spread)
                 # This information is currently not [available from Twitter](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object):

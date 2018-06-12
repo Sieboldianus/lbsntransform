@@ -91,7 +91,7 @@ def main():
         if config.LocalInput:
             continueNumber += 1
         else:
-            continueWithDBRowNumber = records[-1][0] #last returned DBRowNumber
+            continueNumber = records[-1][0] #last returned DBRowNumber
         twitterRecords, processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput)
         processedRecords += processedCount
         processedTotal += processedCount        
@@ -164,7 +164,7 @@ def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNum
             break
     return twitterRecords, processedRecords, finished
    
-def fetchJsonData_from_LBSN(cursor, startFileID = 0, transferlimit = None, numberOfRecordsToFetch = 10000):
+def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfRecordsToFetch = 10000):
     #if transferlimit is below 10000, retrieve only necessary volume of records
     if transferlimit:
         numberOfRecordsToFetch = min(numberOfRecordsToFetch,transferlimit)
@@ -180,11 +180,11 @@ def fetchJsonData_from_LBSN(cursor, startFileID = 0, transferlimit = None, numbe
     else:
         return records
     
-def fetchJsonData_from_File(loc_filelist, startID = 0):
+def fetchJsonData_from_File(loc_filelist, startFileID = 0):
     x = 0
     records = []
     for locFile in loc_filelist:
-        if x == startID:
+        if x == startFileID:
             with open(locFile, 'r', encoding="utf-8", errors='replace') as file:
                 records = json.loads(file.read())
         x += 1

@@ -72,7 +72,8 @@ class baseconfig():
             self.transferlimit = int(args.transferlimit)
         if args.transferCount:
             self.transferCount = int(args.transferCount)
-        self.numberOfRecordsToFetch = int(args.numberOfRecordsToFetch)
+        if args.numberOfRecordsToFetch:
+            self.numberOfRecordsToFetch = int(args.numberOfRecordsToFetch)
         self.transferReactions = args.transferReactions
         if args.disableReactionPostReferencing and int(args.disableReactionPostReferencing) == 1:
         # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
@@ -80,6 +81,8 @@ class baseconfig():
         else:
             self.disableReactionPostReferencing = False    
         self.transferNotGeotagged = args.transferNotGeotagged
-        self.startWithDBRowNumber = args.startWithDBRowNumber
-        self.endWithDBRowNumber = args.endWithDBRowNumber
+        if args.startWithDBRowNumber:
+            self.startWithDBRowNumber = int(args.startWithDBRowNumber)
+        if args.endWithDBRowNumber:
+            self.endWithDBRowNumber = int(args.endWithDBRowNumber)
         self.debugMode = args.debugMode    
