@@ -87,6 +87,20 @@ class helperFunctions():
             mentionedUsersList.append(refUserRecord)
         return mentionedUsersList
     
+    def substituteReferencedUser(mainPost, origin, log):
+        # Look for mentioned userRecords
+        refUser_pkey = None
+        userMentionsJson = mainPost.get('entities').get('user_mentions')
+        if userMentionsJson:
+            refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,origin)
+            # if it is a retweet, and the status contains 'RT @', and the mentioned UserID is in status, we can almost be certain that it is the userid who posted the original tweet that was retweeted
+            if refUserRecords and refUserRecords[0].user_name.lower() in mainPost.get('text').lower() and  mainPost.get('text').startswith(f'RT @'):
+                refUser_pkey = refUserRecords[0].pkey
+            if refUser_pkey is None:
+                log.warning(f'No User record found for referenced post in: {mainPost}')     
+                input("Press Enter to continue... (post will be saved without userid)")
+        return refUser_pkey
+
     def null_check(recordAttr):
         if not recordAttr:
             return None

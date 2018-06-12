@@ -64,6 +64,8 @@ def main():
         fileCount = (len(loc_filelist))
         if fileCount == 0:
             sys.exit("No location files found.")
+        #if not config.transferlimit:
+        #    config.transferlimit = fileCount
     else:
         # establish input connection
         inputConnection = dbConnection(config.dbServeradressInput,
@@ -160,7 +162,7 @@ def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNum
             # Skip Rate Limiting Notice or empty records
             continue
         twitterRecords.parseJsonRecord(singleJSONRecordDict)
-        if processedRecords >= transferlimit or (not isLocalInput and endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
+        if (transferlimit and processedRecords >= transferlimit) or (not isLocalInput and endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
             break
     return twitterRecords, processedRecords, finished

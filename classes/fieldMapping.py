@@ -22,15 +22,42 @@ class fieldMappingTwitter():
 
     def parseJsonRecord(self, jsonStringDict): 
         # decide if main object is post or user json
-        if 'verified' in jsonStringDict:
+        #if jsonStringDict.get('id_str'):
+        #    idstr = jsonStringDict.get('id_str')
+        #if jsonStringDict.get('status'):
+        #    idstr = jsonStringDict.get('status').get('id_str')
+        #if jsonStringDict.get('quoted_status'):
+        #    idstr = jsonStringDict.get('quoted_status').get('id_str')
+        #if jsonStringDict.get('retweeted_status'):
+        #    idstr = jsonStringDict.get('retweeted_status').get('id_str')                           
+        #if idstr == '951205873979764736':
+        #    self.log.warning(f'No User found for status: {jsonStringDict}')   
+        #    input("Press Enter to continue... (no status will be processed)")
+             
+        if 'screen_name' in jsonStringDict:
             # user
             userRecord = self.extractUser(jsonStringDict)
             self.lbsnRecords.AddRecordsToDict(userRecord)
-            userStatus = jsonStringDict.get('status')
-            # in case user status is available
-            if userStatus:
-                self.parseJsonPost(userStatus, userPkey = userRecord.pkey)           
-        else:
+            userStatus = None
+            if not userRecord.is_private:
+                # if user profile is private, we cannot access posts
+                if 'status' in jsonStringDict:
+                    userStatus = jsonStringDict.get('status')
+                elif 'quoted_status' in jsonStringDict:
+                    userStatus = jsonStringDict.get('quoted_status')
+                elif 'retweeted_status' in jsonStringDict:
+                    userStatus = jsonStringDict.get('retweeted_status')
+                # in case user status is available
+                if userStatus:
+                    if userStatus.get('id_str') == '951205873979764736':
+                    #if not 'user' in userStatus and not userRecord.pkey:
+                        self.log.warning(f'No User found for status: {jsonStringDict}')   
+                        input("Press Enter to continue... (no status will be processed)")   
+                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)  
+                #else:
+                #    self.log.warning(f'No User status found for profile: {jsonStringDict}')   
+                #    input("Press Enter to continue... (no status will be processed)")                    
+        else:              
             self.parseJsonPost(jsonStringDict)
                
     def parseJsonPost(self, jsonStringDict, userPkey = None):
@@ -46,8 +73,8 @@ class fieldMappingTwitter():
         # 5. process all referenced posts
         #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
         #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
-        # process tweet-post object
-        postRecord = self.extractPost(jsonStringDict, userPkey)
+        # process tweet-post object                        
+        postRecord = self.extractPost(jsonStringDict, userPkey)          
         # Assignment Step
         # check if post is reaction to other post
         # reaction means: reduced structure compared to post; 
@@ -55,29 +82,28 @@ class fieldMappingTwitter():
         if helperFunctions.isPostReaction(jsonStringDict):
             postReactionRecord = self.mapPostRecord_To_PostReactionRecord(postRecord)
             if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
+                if not 'user' in jsonStringDict.get('quoted_status'):
+                    refUser_pkey = helperfunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
                 postReactionRecord.reaction_type = lbsnPostReaction.QUOTE
                 refPostRecord = self.extractPost(jsonStringDict.get('quoted_status'))
             elif 'retweeted_status' in jsonStringDict:
-                # no retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
+                # Note: No retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
                 # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
-                # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html
+                # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html                
+                if not 'user' in jsonStringDict.get('retweeted_status'):
+                    # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
+                    # but we can get this from other information, such as user_mentions field from the retweet
+                    # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355                       
+                    refUser_pkey = helperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)                
                 postReactionRecord.reaction_type = lbsnPostReaction.SHARE
-                # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
-                # but we can get this from other information, such as user_mentions field from the retweet
-                # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355
                 retweetPost = jsonStringDict.get('retweeted_status')
-                refUser_pkey = None
-                if not 'user' in retweetPost:
-                    # Look for mentioned userRecords
-                    userMentionsJson = jsonStringDict.get('entities').get('user_mentions')
-                    if userMentionsJson:
-                        refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,self.origin)
-                        # if it is a retweet, and the status contains 'RT @', and the mentioned UserID is in status, we can almost be certain that it is the userid who posted the original tweet that was retweeted
-                        if refUserRecords and refUserRecords[0].user_name.lower() in jsonStringDict.get('text').lower() and  jsonStringDict.get('text').startswith(f'RT @'):
-                            refUser_pkey = refUserRecords[0].pkey          
                 refPostRecord = self.extractPost(retweetPost, refUser_pkey)
                 
             elif jsonStringDict.get('in_reply_to_status_id_str'):
+                if jsonStringDict.get('in_reply_to_status_id_str') == '951205873979764736':
+                    self.log.warning(f'No User found for status: {jsonStringDict}')   
+                    input("Press Enter to continue... (no status will be processed)")  
+                     
                 # if reply, original tweet is not available (?)
                 postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('in_reply_to_status_id_str'),self.origin)
@@ -98,7 +124,7 @@ class fieldMappingTwitter():
             # add postReactionRecord to Dict        
             self.lbsnRecords.AddRecordsToDict(postReactionRecord)      
         else:
-            # add postReactionRecord to Dict 
+            # add postReactionRecord to Dict              
             self.lbsnRecords.AddRecordsToDict(postRecord)
                          
     def extractUser(self,jsonStringDict):
@@ -118,10 +144,11 @@ class fieldMappingTwitter():
         userRecord.url = f'https://twitter.com/intent/user?user_id={userRecord.pkey.id}'
         refUserLanguage = Language()
         refUserLanguage.language_short = user.get('lang')
-        userRecord.user_language.CopyFrom(refUserLanguage)    
+        userRecord.user_language.CopyFrom(refUserLanguage) 
         userLocation = user.get('location')
         if userLocation:
             userRecord.user_location = userLocation
+        #userGeoLocation = user.get('profile_location') # todo!
         userRecord.liked_count = user.get('favourites_count')
         userRecord.active_since.CopyFrom(helperFunctions.parseJSONDateStringToProtoBuf(user.get('created_at'))) 
         userProfileImageURL = user.get('profile_image_url')
@@ -142,8 +169,8 @@ class fieldMappingTwitter():
            input("Press Enter to continue... (entry will be skipped)")
            return None    
         postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin) 
-        postGeoaccuracy = None
-        
+        postGeoaccuracy = None  
+        userRecord = None
         if userPkey:
             # userPkey is already available for posts that are statuses
             userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userPkey.id,self.origin) 
@@ -151,15 +178,13 @@ class fieldMappingTwitter():
             userInfo = jsonStringDict.get('user')
             if userInfo:
                 # Get Post/Reaction Details of User
-                userRecord = self.extractUser(jsonStringDict.get('user'))
-            else:
-                userRecord = None
-                
+                userRecord = self.extractUser(jsonStringDict.get('user'))                
         if userRecord:
             self.lbsnRecords.AddRecordsToDict(userRecord)  
         else:
-            self.log.warning(f'No User record found for post: {post_guid}\n{jsonStringDict}')     
-            input("Press Enter to continue... (post will be saved without userid)")
+            self.log.warning(f'No User record found for post: {post_guid} (post saved without userid)..')    
+            #self.log.warning(f'{originalString}') 
+            #input("Press Enter to continue... (post will be saved without userid)")
             
         # Some preprocessing for all types:
         post_coordinates = jsonStringDict.get('coordinates') 
