@@ -65,7 +65,8 @@ class fieldMappingTwitter():
                 # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
                 # but we can get this from other information, such as user_mentions field from the retweet
                 # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355
-                retweetPost = jsonStringDict.get('retweeted_status') 
+                retweetPost = jsonStringDict.get('retweeted_status')
+                refUser_pkey = None
                 if not 'user' in retweetPost:
                     # Look for mentioned userRecords
                     userMentionsJson = jsonStringDict.get('entities').get('user_mentions')
@@ -73,11 +74,8 @@ class fieldMappingTwitter():
                         refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,self.origin)
                         # if it is a retweet, and the status contains 'RT @', and the mentioned UserID is in status, we can almost be certain that it is the userid who posted the original tweet that was retweeted
                         if refUserRecords and refUserRecords[0].user_name.lower() in jsonStringDict.get('text').lower() and  jsonStringDict.get('text').startswith(f'RT @'):
-                            refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'), refUserRecords[0].pkey)
-                        else:
-                            refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))                                
-                else:
-                    refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))
+                            refUser_pkey = refUserRecords[0].pkey          
+                refPostRecord = self.extractPost(retweetPost, refUser_pkey)
                 
             elif jsonStringDict.get('in_reply_to_status_id_str'):
                 # if reply, original tweet is not available (?)
@@ -140,7 +138,7 @@ class fieldMappingTwitter():
     def extractPost(self,jsonStringDict, userPkey = None):
         post_guid = jsonStringDict.get('id_str')
         if not post_guid:
-           log.warning(f'No PostGuid\n\n{jsonStringDict}')
+           self.log.warning(f'No PostGuid\n\n{jsonStringDict}')
            input("Press Enter to continue... (entry will be skipped)")
            return None    
         postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin) 
@@ -160,7 +158,7 @@ class fieldMappingTwitter():
         if userRecord:
             self.lbsnRecords.AddRecordsToDict(userRecord)  
         else:
-            self.log.warning(f'No User record found for post: {post_guid}')     
+            self.log.warning(f'No User record found for post: {post_guid}\n{jsonStringDict}')     
             input("Press Enter to continue... (post will be saved without userid)")
             
         # Some preprocessing for all types:

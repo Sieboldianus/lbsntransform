@@ -24,6 +24,9 @@ import psycopg2
 # Only necessary for local import:
 from glob import glob
 import json
+
+
+
 #from multiprocessing.pool import ThreadPool
 #pool = ThreadPool(processes=1)
 
@@ -83,7 +86,7 @@ def main():
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
         if config.LocalInput:
-            records = fetchJsonData_from_File(loc_filelist, continueNumber)
+            records = fetchJsonData_from_File(loc_filelist, continueNumber, config.isStackedJson)
         else:
             records = fetchJsonData_from_LBSN(cursor_input, continueNumber, config.transferlimit, config.numberOfRecordsToFetch) 
         if not records:
@@ -113,7 +116,7 @@ def main():
                 except psycopg2.IntegrityError as e:
                     # If language does not exist, we'll trust Twitter and add this to our language list
                     missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
-                    print(f'TransactionIntegrityError occurred on or after DBRowNumber {records[0][0]}, inserting language "{missingLanguage}" first..')
+                    print(f'TransactionIntegrityError occurred on or after DBRowNumber {continueNumber}, inserting language "{missingLanguage}" first..')
                     conn_output.rollback()
                     insert_sql = '''
                            INSERT INTO "language" (language_short,language_name,language_name_de)
@@ -153,12 +156,10 @@ def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNum
         else:
             DBRowNumber = record[0]
             singleJSONRecordDict = record[2]
-        if singleJSONRecordDict.get('limit'):
-            # Skip Rate Limiting Notice
+        if not singleJSONRecordDict or singleJSONRecordDict.get('limit'):
+            # Skip Rate Limiting Notice or empty records
             continue
-        #sys.exit(singleJSONRecordDict)
         twitterRecords.parseJsonRecord(singleJSONRecordDict)
-        #lbsnRecords = fieldMappingTwitter
         if processedRecords >= transferlimit or (not isLocalInput and endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
             break
@@ -180,13 +181,23 @@ def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfR
     else:
         return records
     
-def fetchJsonData_from_File(loc_filelist, startFileID = 0):
+def fetchJsonData_from_File(loc_filelist, startFileID = 0, isStackedJson = False):
     x = 0
     records = []
     for locFile in loc_filelist:
         if x == startFileID:
             with open(locFile, 'r', encoding="utf-8", errors='replace') as file:
-                records = json.loads(file.read())
+                # Stacked JSON is a simple file with many concatenated jsons, e.g. {json1}{json2} etc.
+                if isStackedJson:
+                    try:
+                        for obj in helperFunctions.decode_stacked(file.read()):
+                            records.append(obj)
+                        print(f'Object: {obj[-1]}')
+                    except json.decoder.JSONDecodeError:
+                        pass
+                else:
+                    # normal json nesting, e.g. {{record1},{record2}}
+                    records = json.loads(file.read())
         x += 1
     if records:
         return records
@@ -195,7 +206,9 @@ def fetchJsonData_from_File(loc_filelist, startFileID = 0):
     
 if __name__ == "__main__":
     main()
-    
+
+
+            
 #def submitAsync(outputDB, records):
 #    
 #    tsuccessful = False

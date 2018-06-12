@@ -9,6 +9,7 @@ class baseconfig():
         self.LocalInput = 0 # Read from File/CSV
         self.LocalFileType = '*.json' # If localread, specify filetype (*.json, *.csv etc.)
         self.InputPath = None # optionally provide path to input folder, otherwise ./Input/ will be used
+        self.isStackedJson = 0
         self.dbUser_Input = 'example-user-name'
         self.dbPassword_Input = 'example-user-password'
         self.dbServeradressInput = '222.22.222.22'
@@ -32,6 +33,7 @@ class baseconfig():
         parser.add_argument('-lI', "--LocalInput", default=self.LocalInput)
         parser.add_argument('-lT', "--LocalFileType", default=self.LocalFileType)
         parser.add_argument('-iP', "--InputPath", default=self.LocalFileType) 
+        parser.add_argument('-iS', "--isStackedJson", default=self.isStackedJson) 
         parser.add_argument('-pO', "--dbPassword_Output", default=self.dbPassword_Output) 
         parser.add_argument('-uO', "--dbUser_Output", default=self.dbUser_Output)
         parser.add_argument('-aO', "--dbServeradressOutput", default=self.dbServeradressOutput)
@@ -54,6 +56,11 @@ class baseconfig():
         if args.LocalInput and int(args.LocalInput) == 1:
             self.LocalInput = True
             self.LocalFileType = args.LocalFileType
+            if args.isStackedJson:
+                if int(args.isStackedJson) == 1:
+                    self.isStackedJson = True
+                else:
+                    self.isStackedJson = False
             if not self.InputPath:
                 self.InputPath = f'{os.getcwd()}\\Input\\'
                 print(f'Using Path: {self.InputPath}')

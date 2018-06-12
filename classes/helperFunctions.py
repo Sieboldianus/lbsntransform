@@ -9,6 +9,7 @@ from lbsnstructure.external.timestamp_pb2 import Timestamp
 import datetime
 import logging
 from collections import Counter
+from json import JSONDecoder, JSONDecodeError
 
 class helperFunctions():  
     
@@ -105,7 +106,23 @@ class helperFunctions():
         if geom:
             return "ST_GeomFromText(%s,4326)"
         else:
-            return "%s" 
+            return "%s"
+        
+    def decode_stacked(document, pos=0, decoder=JSONDecoder()):
+        NOT_WHITESPACE = re.compile(r'[^\s]')
+        while True:
+            match = NOT_WHITESPACE.search(document, pos)
+            if not match:
+                return
+            pos = match.start()
+    
+            try:
+                obj, pos = decoder.raw_decode(document, pos)
+            except JSONDecodeError:
+                # do something sensible if there's some error
+                raise
+            yield obj
+                 
 class lbsnRecordDicts():
     def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
                  lbsnPlaceDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
