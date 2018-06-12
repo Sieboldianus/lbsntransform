@@ -37,10 +37,6 @@ class fieldMappingTwitter():
                     userStatus = jsonStringDict.get('retweeted_status')
                 # in case user status is available
                 if userStatus:
-                    if userStatus.get('id_str') == '951205873979764736':
-                    #if not 'user' in userStatus and not userRecord.pkey:
-                        self.log.warning(f'No User found for status: {jsonStringDict}')   
-                        input("Press Enter to continue... (no status will be processed)")   
                     self.parseJsonPost(userStatus, userPkey = userRecord.pkey)                  
         else:              
             self.parseJsonPost(jsonStringDict)
