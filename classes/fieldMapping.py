@@ -22,25 +22,13 @@ class fieldMappingTwitter():
 
     def parseJsonRecord(self, jsonStringDict): 
         # decide if main object is post or user json
-        #if jsonStringDict.get('id_str'):
-        #    idstr = jsonStringDict.get('id_str')
-        #if jsonStringDict.get('status'):
-        #    idstr = jsonStringDict.get('status').get('id_str')
-        #if jsonStringDict.get('quoted_status'):
-        #    idstr = jsonStringDict.get('quoted_status').get('id_str')
-        #if jsonStringDict.get('retweeted_status'):
-        #    idstr = jsonStringDict.get('retweeted_status').get('id_str')                           
-        #if idstr == '951205873979764736':
-        #    self.log.warning(f'No User found for status: {jsonStringDict}')   
-        #    input("Press Enter to continue... (no status will be processed)")
-             
         if 'screen_name' in jsonStringDict:
             # user
             userRecord = self.extractUser(jsonStringDict)
             self.lbsnRecords.AddRecordsToDict(userRecord)
-            userStatus = None
             if not userRecord.is_private:
                 # if user profile is private, we cannot access posts
+                userStatus = None
                 if 'status' in jsonStringDict:
                     userStatus = jsonStringDict.get('status')
                 elif 'quoted_status' in jsonStringDict:
@@ -53,10 +41,7 @@ class fieldMappingTwitter():
                     #if not 'user' in userStatus and not userRecord.pkey:
                         self.log.warning(f'No User found for status: {jsonStringDict}')   
                         input("Press Enter to continue... (no status will be processed)")   
-                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)  
-                #else:
-                #    self.log.warning(f'No User status found for profile: {jsonStringDict}')   
-                #    input("Press Enter to continue... (no status will be processed)")                    
+                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)                  
         else:              
             self.parseJsonPost(jsonStringDict)
                
