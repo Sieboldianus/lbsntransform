@@ -62,8 +62,24 @@ class fieldMappingTwitter():
                 # no retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
                 # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
                 # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html
-                postReactionRecord.reaction_type = lbsnPostReaction.SHARE 
-                refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))
+                postReactionRecord.reaction_type = lbsnPostReaction.SHARE
+                # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
+                # but we can get this from other information, such as user_mentions field from the retweet
+                # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355
+                retweetPost = jsonStringDict.get('retweeted_status') 
+                if not 'user' in retweetPost:
+                    # Look for mentioned userRecords
+                    userMentionsJson = jsonStringDict.get('entities').get('user_mentions')
+                    if userMentionsJson:
+                        refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,self.origin)
+                        # if it is a retweet, and the status contains 'RT @', and the mentioned UserID is in status, we can almost be certain that it is the userid who posted the original tweet that was retweeted
+                        if refUserRecords and refUserRecords[0].user_name.lower() in jsonStringDict.get('text').lower() and  jsonStringDict.get('text').startswith(f'RT @'):
+                            refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'), refUserRecords[0].pkey)
+                        else:
+                            refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))                                
+                else:
+                    refPostRecord = self.extractPost(jsonStringDict.get('retweeted_status'))
+                
             elif jsonStringDict.get('in_reply_to_status_id_str'):
                 # if reply, original tweet is not available (?)
                 postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
@@ -129,8 +145,6 @@ class fieldMappingTwitter():
            log.warning(f'No PostGuid\n\n{jsonStringDict}')
            input("Press Enter to continue... (entry will be skipped)")
            return None    
-        #if 'retweeted_status' in jsonStringDict:
-        #    sys.exit(jsonStringDict)
         postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin) 
         postGeoaccuracy = None
         
@@ -144,9 +158,13 @@ class fieldMappingTwitter():
                 userRecord = self.extractUser(jsonStringDict.get('user'))
             else:
                 userRecord = None
+                
         if userRecord:
-            self.lbsnRecords.AddRecordsToDict(userRecord)         
-
+            self.lbsnRecords.AddRecordsToDict(userRecord)  
+        else:
+            self.log.warning(f'No User record found for post: {post_guid}')     
+            input("Press Enter to continue... (post will be saved without userid)")
+            
         # Some preprocessing for all types:
         post_coordinates = jsonStringDict.get('coordinates') 
         if post_coordinates:
@@ -249,7 +267,7 @@ class fieldMappingTwitter():
         postReactionRecord.user_mentions_pkey.extend([userRefPkey for userRefPkey in postRecord.user_mentions_pkey])
         return postReactionRecord
      
-    def extractPlace(self,postPlace_json, postGeoaccuracy, userLanguage):
+    def extractPlace(self,postPlace_json, postGeoaccuracy, userLanguage = None):
         place = postPlace_json
         placeID = place.get('id')
         if not placeID:
@@ -286,7 +304,7 @@ class fieldMappingTwitter():
         #for some reason, twitter place entities sometimes contain linebreaks or whitespaces. We don't want this.
         placeName = place.get('name').replace('\n\r','') 
         placeName = re.sub(' +',' ',placeName) # remove multiple whitespace
-        if place_type == "poi" or (userLanguage is None or userLanguage.language_short and userLanguage.language_short in ('en','und')):
+        if place_type == "poi" or (userLanguage is None or not userLanguage.language_short or userLanguage.language_short in ('en','und')):
             # At the moment, English name are the main references; all other language specific references are stored in name_alternatives - except for places, where twitter has no alternative place names
             # Bugfix necessary: some English names get still saved as name_alternatives
             placeRecord.name = placeName
