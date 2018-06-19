@@ -152,6 +152,7 @@ class lbsnRecordDicts():
                          lbsnPlace.DESCRIPTOR.name: set(),
                          lbsnUser.DESCRIPTOR.name: set(),
                          lbsnPostReaction.DESCRIPTOR.name: set()}
+        self.CountGlob = 0
         # returns all recordsDicts in correct order, with names as references (tuple)
         self.allDicts = [
             (self.lbsnCountryDict,lbsnCountry().DESCRIPTOR.name),
@@ -244,9 +245,11 @@ class lbsnRecordDicts():
         if isinstance(records,(list,)):
             for record in records:
                 self.AddRecordToDict(record)
+                self.CountGlob += 1
         else:
             record = records
             self.AddRecordToDict(record)
+            self.CountGlob += 1
             
     def dictSelector(self, record):
         dictSwitcher = {

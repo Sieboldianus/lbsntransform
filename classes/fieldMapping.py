@@ -54,7 +54,7 @@ class fieldMappingTwitter():
         # 5. process all referenced posts
         #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
         #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
-        # process tweet-post object                        
+        # process tweet-post object                     
         postRecord = self.extractPost(jsonStringDict, userPkey)          
         # Assignment Step
         # check if post is reaction to other post
@@ -62,6 +62,7 @@ class fieldMappingTwitter():
         # reactions often include the complete original post, therefore nested processing necessary
         if helperFunctions.isPostReaction(jsonStringDict):
             postReactionRecord = self.mapPostRecord_To_PostReactionRecord(postRecord)
+            refUser_pkey = None
             if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
                 if not 'user' in jsonStringDict.get('quoted_status'):
                     refUser_pkey = helperfunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
@@ -81,9 +82,9 @@ class fieldMappingTwitter():
                 refPostRecord = self.extractPost(retweetPost, refUser_pkey)
                 
             elif jsonStringDict.get('in_reply_to_status_id_str'):
-                if jsonStringDict.get('in_reply_to_status_id_str') == '951205873979764736':
-                    self.log.warning(f'No User found for status: {jsonStringDict}')   
-                    input("Press Enter to continue... (no status will be processed)")  
+                #if jsonStringDict.get('in_reply_to_status_id_str') == '778121849687465984':
+                #    self.log.warning(f'No User found for status: {jsonStringDict}')   
+                #    input("Press Enter to continue... (no status will be processed)")  
                      
                 # if reply, original tweet is not available (?)
                 postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
@@ -163,7 +164,7 @@ class fieldMappingTwitter():
         if userRecord:
             self.lbsnRecords.AddRecordsToDict(userRecord)  
         else:
-            self.log.warning(f'No User record found for post: {post_guid} (post saved without userid)..')    
+            self.log.warning(f'Record {self.lbsnRecords.CountGlob}: No User record found for post: {post_guid} (post saved without userid)..')    
             #self.log.warning(f'{originalString}') 
             #input("Press Enter to continue... (post will be saved without userid)")
             

@@ -40,6 +40,7 @@ def main():
     config = baseconfig()
     # Parse args
     config.parseArgs()
+    sys.stdout.flush()
     # set logger
     logging.basicConfig(handlers=[logging.FileHandler('test.log', 'w', 'utf-8')],
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -98,6 +99,9 @@ def main():
         else:
             continueNumber = records[-1][0] #last returned DBRowNumber
         twitterRecords, processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput)
+        #if '732877805860462592' in twitterRecords.lbsnRecords.lbsnUserDict:
+        #    print(twitterRecords.lbsnRecords.lbsnUserDict['732877805860462592'])
+            
         processedRecords += processedCount
         processedTotal += processedCount        
         print(f'{processedTotal} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
@@ -109,23 +113,14 @@ def main():
             sys.stdout.flush()
             # Async Submit needs further work:
             #asyncTransfer = pool.apply_async(submitAsync, (outputDB,twitterRecords.lbsnRecords))
-            tsuccessful = False
-            issuesCount = 0
-            while not tsuccessful and issuesCount < 5:
-                try:
-                    outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
-                    tsuccessful = True
-                except psycopg2.IntegrityError as e:
-                    # If language does not exist, we'll trust Twitter and add this to our language list
-                    missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
-                    print(f'TransactionIntegrityError occurred on or after DBRowNumber {continueNumber}, inserting language "{missingLanguage}" first..')
-                    conn_output.rollback()
-                    insert_sql = '''
-                           INSERT INTO "language" (language_short,language_name,language_name_de)
-                           VALUES (%s,NULL,NULL);                                
-                           '''
-                    outputDB.dbCursor.execute(insert_sql,(missingLanguage,))
-                issuesCount += 1 
+            #tsuccessful = False
+            #issuesCount = 0
+            #while not tsuccessful and issuesCount < 5:
+                #try:
+            outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
+                    #tsuccessful = True
+                
+                #issuesCount += 1 
             outputDB.commitChanges()
             # create a new empty dict of records
             twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
@@ -194,7 +189,7 @@ def fetchJsonData_from_File(loc_filelist, startFileID = 0, isStackedJson = False
                     try:
                         for obj in helperFunctions.decode_stacked(file.read()):
                             records.append(obj)
-                        print(f'Object: {obj[-1]}')
+                        #print(f'Object: {obj[-1]}')
                     except json.decoder.JSONDecodeError:
                         pass
                 else:

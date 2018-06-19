@@ -25,6 +25,7 @@ class lbsnDB():
         self.country_already_inserted = set()
         self.city_already_inserted = set()
         self.disableReactionPostReferencing = disableReactionPostReferencing
+        self.log = logging.getLogger('__main__')#logging.getLogger()
     
     def commitChanges(self):
         self.dbConnection.commit() # commit changes to db
@@ -33,10 +34,42 @@ class lbsnDB():
     def submitLbsnRecordDicts(self, recordsDicts):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
         # therefore, records are processed starting from lowest granularity, which is stored in allDicts()
+        x = 0
         for recordsDict in recordsDicts.allDicts:
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
-                self.submitLbsnRecord(record,type_name)
+                x += 1
+                print(f'Transferring {x} of {recordsDict.CountGlob} records to output db ({type_name})..', end='\r')
+                ## Needs testing: is using Savepoint for each insert slower than rolling back entire commit?
+                ## for performance, see https://stackoverflow.com/questions/12206600/how-to-speed-up-insertion-performance-in-postgresql
+                ## or this: https://stackoverflow.com/questions/8134602/psycopg2-insert-multiple-rows-with-one-query
+                self.dbCursor.execute("SAVEPOINT submit_record")
+                try:
+                    self.submitLbsnRecord(record,type_name)
+                except psycopg2.IntegrityError as e:
+                    if '(post_language)' in e.diag.message_detail:
+                        # If language does not exist, we'll trust Twitter and add this to our language list
+                        missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
+                        print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
+                        #self.dbConnection.rollback()
+                        self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_record")
+                        insert_sql = '''
+                               INSERT INTO "language" (language_short,language_name,language_name_de)
+                               VALUES (%s,NULL,NULL);                                
+                               '''
+                        self.dbCursor.execute(insert_sql,(missingLanguage,))
+                        self.submitLbsnRecord(record,type_name)
+                    else:
+                        print(record)
+                        sys.exit()
+                except ValueError as e:
+                    self.log.warning(f'{e}')
+                    self.log.warning(f'{record}')
+                    input("Press Enter to continue... (entry will be skipped)")
+                    self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_record")
+                    #continue
+                else:
+                    self.dbCursor.execute("RELEASE SAVEPOINT submit_record")
                 self.count_glob +=  1 #self.dbCursor.rowcount
                 self.count_entries_commit +=  1 #self.dbCursor.rowcount
                 if self.count_glob == 100 or self.count_entries_commit > self.commit_volume:
