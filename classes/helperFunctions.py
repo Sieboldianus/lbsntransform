@@ -106,7 +106,7 @@ class helperFunctions():
             return None
         else:
             # This function will also remove Null bytes from string, which aren't supported by Postgres
-            if isinstance(recordAttr, basestring):
+            if isinstance(recordAttr, str):
                 recordAttr = helperFunctions.clean_null_bytes_from_str(recordAttr)
             return recordAttr
 
@@ -140,7 +140,7 @@ class helperFunctions():
                 raise
             yield obj
             
-    def clean_null_bytes_from_str(self,str):
+    def clean_null_bytes_from_str(str):
         str_without_null_byte = str.replace('\x00','') 
         return str_without_null_byte            
                  
@@ -207,7 +207,11 @@ class lbsnRecordDicts():
                 dict[pkeyID] = self.deepCompareMergeMessages(dict[pkeyID],newrecord)
                 return
         else:
+            # just count new entries
             self.CountGlob += 1
+            if self.CountGlob % 1000 == 0: #modulo
+                print(f'Record {self.CountGlob}', end='\r') 
+                sys.stdout.flush()
         self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                          
         dict[pkeyID] = newrecord
     

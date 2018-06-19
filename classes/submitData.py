@@ -335,11 +335,11 @@ class lbsnDB():
                                 print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
                                 #self.dbConnection.rollback()
                                 self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
-                                insert_sql = '''
+                                insert_language_sql = '''
                                        INSERT INTO "language" (language_short,language_name,language_name_de)
                                        VALUES (%s,NULL,NULL);                                
                                        '''
-                                self.dbCursor.execute(insert_sql,(missingLanguage,))
+                                self.dbCursor.execute(insert_language_sql,(missingLanguage,))
                                 #self.prepareLbsnRecord(record,type_name)
             except ValueError as e:
                 self.log.warning(f'{e}')

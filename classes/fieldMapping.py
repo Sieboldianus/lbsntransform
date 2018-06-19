@@ -164,7 +164,8 @@ class fieldMappingTwitter():
         if userRecord:
             self.lbsnRecords.AddRecordsToDict(userRecord)  
         else:
-            self.log.warning(f'Record {self.lbsnRecords.CountGlob}: No User record found for post: {post_guid} (post saved without userid)..')    
+            self.log.warning(f'Record {self.lbsnRecords.CountGlob}: No User record found for post: {post_guid} (post saved without userid)..')   
+            print(f'Record {self.lbsnRecords.CountGlob}', end='\r') 
             #self.log.warning(f'{originalString}') 
             #input("Press Enter to continue... (post will be saved without userid)")
             
