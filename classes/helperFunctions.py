@@ -105,6 +105,9 @@ class helperFunctions():
         if not recordAttr:
             return None
         else:
+            # This function will also remove Null bytes from string, which aren't supported by Postgres
+            if isinstance(recordAttr, basestring):
+                recordAttr = helperFunctions.clean_null_bytes_from_str(recordAttr)
             return recordAttr
 
     def null_check_datetime(recordAttr):
@@ -136,6 +139,10 @@ class helperFunctions():
                 # do something sensible if there's some error
                 raise
             yield obj
+            
+    def clean_null_bytes_from_str(self,str):
+        str_without_null_byte = str.replace('\x00','') 
+        return str_without_null_byte            
                  
 class lbsnRecordDicts():
     def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
@@ -199,9 +206,11 @@ class lbsnRecordDicts():
                 # Do a deep compare
                 dict[pkeyID] = self.deepCompareMergeMessages(dict[pkeyID],newrecord)
                 return
+        else:
+            self.CountGlob += 1
         self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                          
         dict[pkeyID] = newrecord
-
+    
     def deepCompareMergeMessages(self,oldRecord,newRecord):
         # this is a basic routine that will make a full compare of all fields of two lbsnRecords
         # None Values will be filled, repeated fields will be updated with new values
@@ -245,11 +254,9 @@ class lbsnRecordDicts():
         if isinstance(records,(list,)):
             for record in records:
                 self.AddRecordToDict(record)
-                self.CountGlob += 1
         else:
             record = records
             self.AddRecordToDict(record)
-            self.CountGlob += 1
             
     def dictSelector(self, record):
         dictSwitcher = {

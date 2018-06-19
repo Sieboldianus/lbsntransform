@@ -25,7 +25,14 @@ class lbsnDB():
         self.country_already_inserted = set()
         self.city_already_inserted = set()
         self.disableReactionPostReferencing = disableReactionPostReferencing
-        self.log = logging.getLogger('__main__')#logging.getLogger()
+        self.log = logging.getLogger('__main__')
+        self.batchedCountries = []
+        self.batchedCities = []
+        self.batchedPlaces = []
+        self.batchedUsers = []
+        self.batchedPosts = []
+        self.batchedPostReactions = []
+        self.batchVolume = 100 # Records are batched and submitted in one insert with x number of records
     
     def commitChanges(self):
         self.dbConnection.commit() # commit changes to db
@@ -39,64 +46,59 @@ class lbsnDB():
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
                 x += 1
-                print(f'Transferring {x} of {recordsDict.CountGlob} records to output db ({type_name})..', end='\r')
-                ## Needs testing: is using Savepoint for each insert slower than rolling back entire commit?
-                ## for performance, see https://stackoverflow.com/questions/12206600/how-to-speed-up-insertion-performance-in-postgresql
-                ## or this: https://stackoverflow.com/questions/8134602/psycopg2-insert-multiple-rows-with-one-query
-                self.dbCursor.execute("SAVEPOINT submit_record")
-                try:
-                    self.submitLbsnRecord(record,type_name)
-                except psycopg2.IntegrityError as e:
-                    if '(post_language)' in e.diag.message_detail:
-                        # If language does not exist, we'll trust Twitter and add this to our language list
-                        missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
-                        print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
-                        #self.dbConnection.rollback()
-                        self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_record")
-                        insert_sql = '''
-                               INSERT INTO "language" (language_short,language_name,language_name_de)
-                               VALUES (%s,NULL,NULL);                                
-                               '''
-                        self.dbCursor.execute(insert_sql,(missingLanguage,))
-                        self.submitLbsnRecord(record,type_name)
-                    else:
-                        print(record)
-                        sys.exit()
-                except ValueError as e:
-                    self.log.warning(f'{e}')
-                    self.log.warning(f'{record}')
-                    input("Press Enter to continue... (entry will be skipped)")
-                    self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_record")
-                    #continue
-                else:
-                    self.dbCursor.execute("RELEASE SAVEPOINT submit_record")
+                print(f'Transferring {x} of {recordsDicts.CountGlob} records to output db ({type_name})..', end='\r')
+                self.prepareLbsnRecord(record,type_name)
                 self.count_glob +=  1 #self.dbCursor.rowcount
                 self.count_entries_commit +=  1 #self.dbCursor.rowcount
                 if self.count_glob == 100 or self.count_entries_commit > self.commit_volume:
                     self.commitChanges()
+        # submit remaining rest
+        self.submitAllBatches()
                 
-    def submitLbsnRecord(self, record, record_type):
+    def prepareLbsnRecord(self, record, record_type):
         #record_type = record.DESCRIPTOR.name
         if record_type == lbsnPost().DESCRIPTOR.name:
-            self.submitLbsnPost(record)
+            self.batchedPosts.append(self.prepareLbsnPost(record))
         elif record_type == lbsnCountry().DESCRIPTOR.name:
-            self.submitLbsnCountry(record)
+            self.batchedCountries.append(self.prepareLbsnCountry(record))
         elif record_type == lbsnCity().DESCRIPTOR.name:
-            self.submitLbsnCity(record)
+            self.batchedCities.append(self.prepareLbsnCity(record))
         elif record_type == lbsnPlace().DESCRIPTOR.name:
-            self.submitLbsnPlace(record)
+            self.batchedPlaces.append(self.prepareLbsnPlace(record))
         elif record_type == lbsnPostReaction().DESCRIPTOR.name:
-            self.submitLbsnPostReaction(record)
+            self.batchedPostReactions.append(self.prepareLbsnPostReaction(record))
         elif record_type == lbsnUser().DESCRIPTOR.name:
-            self.submitLbsnUser(record)
-    
-    def submitLbsnCountry(self, record):
-        # Get common attributes for place types Place, City and Country
-        placeRecord = placeAttrShared(record)
-        if not placeRecord.Guid in self.country_already_inserted:
-            insert_sql = '''
+            self.batchedUsers.append(self.prepareLbsnUser(record))
+        
+        if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers)]) >= self.batchVolume:
+            self.submitAllBatches()
+                              
+    def submitAllBatches(self):
+        if self.batchedCountries:
+            self.submitLbsnCountries()
+            self.batchedCountries = []
+        if self.batchedCities:
+            self.submitLbsnCities()
+            self.batchedCities = []
+        if self.batchedPlaces:
+            self.submitLbsnPlaces()
+            self.batchedPlaces = []
+        if self.batchedUsers:
+            self.submitLbsnUsers()
+            self.batchedUsers = []
+        if self.batchedPosts:
+            self.submitLbsnPosts()
+            self.batchedPosts = []
+        if self.batchedPostReactions:
+            self.submitLbsnPostReactions()
+            self.batchedPostReactions = []   
+            
+            
+    def submitLbsnCountries(self):
+        args_str = ','.join(self.batchedCountries)
+        insert_sql = f'''
                         INSERT INTO "country" (origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url)
-                        VALUES (%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s)
+                        VALUES {args_str}
                         ON CONFLICT (origin_id,country_guid)
                         DO UPDATE SET
                             name = COALESCE(EXCLUDED.name, "country".name),
@@ -105,21 +107,28 @@ class lbsnDB():
                             geom_area = COALESCE(EXCLUDED.geom_area, "country".geom_area),
                             url = COALESCE(EXCLUDED.url, "country".url);
                         '''
-            # Array merge of alternatives:
-            # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
-            # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
-            # Finally, merge New Entries with existing ones mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
-            self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url))
-            self.country_already_inserted.add(placeRecord.Guid)
-          
-    def submitLbsnCity(self, record):
+                        # Array merge of alternatives:
+                        # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
+                        # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
+                        # Finally, merge New Entries with existing ones mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
+        self.submitBatch(insert_sql)
+        
+    def prepareLbsnCountry(self, record):
+        # Get common attributes for place types Place, City and Country
         placeRecord = placeAttrShared(record)
-        countryGuid = helperFunctions.null_check(record.country_pkey.id)
-        subType = helperFunctions.null_check(record.sub_type)
-        if not placeRecord.Guid in self.city_already_inserted:
-            insert_sql = '''
+        if not placeRecord.Guid in self.country_already_inserted:
+            record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s)'''
+            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url))
+            #self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url))
+            self.country_already_inserted.add(placeRecord.Guid)
+            #mogrify returns a byte object, we decode it so it can be used as a string again
+            return preparedRecord.decode()
+    
+    def submitLbsnCities(self):
+        args_str = ','.join(self.batchedCities)
+        insert_sql = f'''
                         INSERT INTO "city" (origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type)
-                        VALUES (%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s,%s,%s)
+                        VALUES {args_str}
                         ON CONFLICT (origin_id,city_guid)
                         DO UPDATE SET
                             name = COALESCE(EXCLUDED.name, "city".name),
@@ -130,17 +139,24 @@ class lbsnDB():
                             country_guid = COALESCE(EXCLUDED.country_guid, "city".country_guid),
                             sub_type = COALESCE(EXCLUDED.sub_type, "city".sub_type);
                         '''
-            self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,countryGuid,subType))
-            self.country_already_inserted.add(placeRecord.Guid)
-               
-    def submitLbsnPlace(self, record):
+        self.submitBatch(insert_sql)
+                  
+    def prepareLbsnCity(self, record):
         placeRecord = placeAttrShared(record)
-        cityGuid = helperFunctions.null_check(record.city_pkey.id)
-        postCount = helperFunctions.null_check(record.post_count)
+        countryGuid = helperFunctions.null_check(record.country_pkey.id)
+        subType = helperFunctions.null_check(record.sub_type)
         if not placeRecord.Guid in self.city_already_inserted:
-            insert_sql = '''
+            record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s,%s,%s)'''
+            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,countryGuid,subType))
+            #self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,countryGuid,subType))
+            self.country_already_inserted.add(placeRecord.Guid)
+            return preparedRecord.decode()
+            
+    def submitLbsnPlaces(self):
+        args_str = ','.join(self.batchedPlaces)
+        insert_sql = f'''
                         INSERT INTO "place" (origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count)
-                        VALUES (%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s,%s,%s)
+                        VALUES {args_str}
                         ON CONFLICT (origin_id,place_guid)
                         DO UPDATE SET
                             name = COALESCE(EXCLUDED.name, "place".name),
@@ -151,74 +167,95 @@ class lbsnDB():
                             city_guid = COALESCE(EXCLUDED.city_guid, "place".city_guid),
                             post_count = GREATEST(COALESCE(EXCLUDED.post_count, "place".post_count), COALESCE("place".post_count,EXCLUDED.post_count));
                         '''
-            self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,cityGuid,postCount))
-            #self.place_already_inserted.add(placeRecord.Guid) 
+        self.submitBatch(insert_sql)
+                           
+    def prepareLbsnPlace(self, record):
+        placeRecord = placeAttrShared(record)
+        cityGuid = helperFunctions.null_check(record.city_pkey.id)
+        postCount = helperFunctions.null_check(record.post_count)
+        if not placeRecord.Guid in self.city_already_inserted:
+            record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s,%s,%s)'''
+            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,cityGuid,postCount))         
+            #self.dbCursor.execute(insert_sql,(placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,cityGuid,postCount))
+            #self.place_already_inserted.add(placeRecord.Guid)
+            return preparedRecord.decode() 
             
-    def submitLbsnUser(self, record):
+    def submitLbsnUsers(self):
+        args_str = ','.join(self.batchedUsers)
+        insert_sql = f'''
+                        INSERT INTO "user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
+                        VALUES {args_str}
+                        ON CONFLICT (origin_id, user_guid)
+                        DO UPDATE SET
+                        (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
+                        = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url, EXCLUDED.user_timezone, EXCLUDED.user_utc_offset);
+                        '''
+                        # No coalesce for user: in case user changes or removes information, this should also be removed from the record
+        self.submitBatch(insert_sql)
+                        
+    def prepareLbsnUser(self, record):
         userRecord = userAttrShared(record)
-        insert_sql = '''
-                   INSERT INTO "user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s)
-                   ON CONFLICT (origin_id, user_guid)
-                   DO UPDATE SET
-                   (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
-                   = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url, EXCLUDED.user_timezone, EXCLUDED.user_utc_offset);
-                   '''
-        # No coalesce for user: in case user changes or removes information, this should also be removed from the record
-        self.dbCursor.execute(insert_sql,(userRecord.OriginID,
-                                          userRecord.Guid,
-                                          userRecord.user_name,
-                                          userRecord.user_fullname,
-                                          userRecord.follows,
-                                          userRecord.followed,
-                                          userRecord.group_count,
-                                          userRecord.biography,
-                                          userRecord.post_count,
-                                          userRecord.is_private,                                          
-                                          userRecord.url,
-                                          userRecord.is_available,
-                                          userRecord.user_language,
-                                          userRecord.user_location,
-                                          userRecord.user_location_geom,
-                                          userRecord.liked_count,
-                                          userRecord.active_since,
-                                          userRecord.profile_image_url,
-                                          userRecord.user_timezone,
-                                          userRecord.user_utc_offset))
+        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s)'''
+        preparedRecord = self.dbCursor.mogrify(record_sql, (userRecord.OriginID,          
+                                         userRecord.Guid,              
+                                         userRecord.user_name,         
+                                         userRecord.user_fullname,     
+                                         userRecord.follows,           
+                                         userRecord.followed,          
+                                         userRecord.group_count,       
+                                         userRecord.biography,         
+                                         userRecord.post_count,        
+                                         userRecord.is_private,        
+                                         userRecord.url,               
+                                         userRecord.is_available,      
+                                         userRecord.user_language,     
+                                         userRecord.user_location,     
+                                         userRecord.user_location_geom,
+                                         userRecord.liked_count,       
+                                         userRecord.active_since,      
+                                         userRecord.profile_image_url, 
+                                         userRecord.user_timezone,     
+                                         userRecord.user_utc_offset))
+        return preparedRecord.decode()    
         
-    def submitLbsnPost(self, record):
+    def submitLbsnPosts(self):
+        args_str = ','.join(self.batchedPosts)
+        insert_sql = f'''
+                        INSERT INTO "post" (origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source)
+                        VALUES {args_str}
+                        ON CONFLICT (origin_id, post_guid)
+                        DO UPDATE SET                                                                                           
+                            post_latlng = COALESCE(EXCLUDED.post_latlng, "post".post_latlng),                                   
+                            place_guid = COALESCE(EXCLUDED.place_guid, "post".place_guid),                                      
+                            city_guid = COALESCE(EXCLUDED.city_guid, "post".city_guid),                                         
+                            country_guid = COALESCE(EXCLUDED.country_guid, "post".country_guid),                                
+                            post_geoaccuracy = COALESCE(EXCLUDED.post_geoaccuracy, "post".post_geoaccuracy),                    
+                            user_guid = COALESCE(EXCLUDED.user_guid, "post".user_guid),                                         
+                            post_create_date = COALESCE(EXCLUDED.post_create_date, "post".post_create_date),                    
+                            post_publish_date = COALESCE(EXCLUDED.post_publish_date, "post".post_publish_date),                 
+                            post_body = COALESCE(EXCLUDED.post_body, "post".post_body),                                         
+                            post_language = COALESCE(EXCLUDED.post_language, "post".post_language),                             
+                            user_mentions = COALESCE(EXCLUDED.user_mentions, "post".user_mentions),                             
+                            hashtags = COALESCE(EXCLUDED.hashtags, "post".hashtags),                                            
+                            emoji = COALESCE(EXCLUDED.emoji, "post".emoji),                                                     
+                            post_like_count = COALESCE(EXCLUDED.post_like_count, "post".post_like_count),                       
+                            post_comment_count = COALESCE(EXCLUDED.post_comment_count, "post".post_comment_count),                    
+                            post_views_count = COALESCE(EXCLUDED.post_views_count, "post".post_views_count),                    
+                            post_title = COALESCE(EXCLUDED.post_title, "post".post_title),                                      
+                            post_thumbnail_url = COALESCE(EXCLUDED.post_thumbnail_url, "post".post_thumbnail_url),              
+                            post_url = COALESCE(EXCLUDED.post_url, "post".post_url),                                            
+                            post_type = COALESCE(EXCLUDED.post_type, "post".post_type),                                         
+                            post_filter = COALESCE(EXCLUDED.post_filter, "post".post_filter),                                   
+                            post_quote_count = COALESCE(EXCLUDED.post_quote_count, "post".post_quote_count),                    
+                            post_share_count = COALESCE(EXCLUDED.post_share_count, "post".post_share_count),                    
+                            input_source = COALESCE(EXCLUDED.input_source, "post".input_source);
+                        '''
+        self.submitBatch(insert_sql)
+                        
+    def prepareLbsnPost(self, record):
         postRecord = postAttrShared(record)
-        insert_sql = '''
-                   INSERT INTO "post" (origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source)
-                   VALUES (%s,%s,''' + postRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT (origin_id, post_guid)
-                   DO UPDATE SET                                                                                           
-                       post_latlng = COALESCE(EXCLUDED.post_latlng, "post".post_latlng),                                   
-                       place_guid = COALESCE(EXCLUDED.place_guid, "post".place_guid),                                      
-                       city_guid = COALESCE(EXCLUDED.city_guid, "post".city_guid),                                         
-                       country_guid = COALESCE(EXCLUDED.country_guid, "post".country_guid),                                
-                       post_geoaccuracy = COALESCE(EXCLUDED.post_geoaccuracy, "post".post_geoaccuracy),                    
-                       user_guid = COALESCE(EXCLUDED.user_guid, "post".user_guid),                                         
-                       post_create_date = COALESCE(EXCLUDED.post_create_date, "post".post_create_date),                    
-                       post_publish_date = COALESCE(EXCLUDED.post_publish_date, "post".post_publish_date),                 
-                       post_body = COALESCE(EXCLUDED.post_body, "post".post_body),                                         
-                       post_language = COALESCE(EXCLUDED.post_language, "post".post_language),                             
-                       user_mentions = COALESCE(EXCLUDED.user_mentions, "post".user_mentions),                             
-                       hashtags = COALESCE(EXCLUDED.hashtags, "post".hashtags),                                            
-                       emoji = COALESCE(EXCLUDED.emoji, "post".emoji),                                                     
-                       post_like_count = COALESCE(EXCLUDED.post_like_count, "post".post_like_count),                       
-                       post_comment_count = COALESCE(EXCLUDED.post_comment_count, "post".post_comment_count),                    
-                       post_views_count = COALESCE(EXCLUDED.post_views_count, "post".post_views_count),                    
-                       post_title = COALESCE(EXCLUDED.post_title, "post".post_title),                                      
-                       post_thumbnail_url = COALESCE(EXCLUDED.post_thumbnail_url, "post".post_thumbnail_url),              
-                       post_url = COALESCE(EXCLUDED.post_url, "post".post_url),                                            
-                       post_type = COALESCE(EXCLUDED.post_type, "post".post_type),                                         
-                       post_filter = COALESCE(EXCLUDED.post_filter, "post".post_filter),                                   
-                       post_quote_count = COALESCE(EXCLUDED.post_quote_count, "post".post_quote_count),                    
-                       post_share_count = COALESCE(EXCLUDED.post_share_count, "post".post_share_count),                    
-                       input_source = COALESCE(EXCLUDED.input_source, "post".input_source);                                
-                   '''                                                                                                     
-        self.dbCursor.execute(insert_sql,(postRecord.OriginID,                                                              
+        record_sql = '''(%s,%s,''' + postRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+        preparedRecord = self.dbCursor.mogrify(record_sql, (postRecord.OriginID,                                                              
                                          postRecord.Guid,
                                          postRecord.post_latlng,
                                          postRecord.place_guid,
@@ -243,26 +280,32 @@ class lbsnDB():
                                          postRecord.post_filter,
                                          postRecord.post_quote_count,
                                          postRecord.post_share_count,
-                                         postRecord.input_source))
-                           
-    def submitLbsnPostReaction(self, record):
+                                         postRecord.input_source))         
+        return preparedRecord.decode()                                                                                                  
+        
+    def submitLbsnPostReactions(self):
+        args_str = ','.join(self.batchedPostReactions)
+        insert_sql = f'''
+                        INSERT INTO "post_reaction" (origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions)
+                        VALUES {args_str}
+                        ON CONFLICT (origin_id, reaction_guid)
+                        DO UPDATE SET                                                                                           
+                            reaction_latlng = COALESCE(EXCLUDED.reaction_latlng, "post_reaction".reaction_latlng),                                   
+                            user_guid = COALESCE(EXCLUDED.user_guid, "post_reaction".user_guid),                                      
+                            referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid, "post_reaction".referencedPost_guid),                                         
+                            referencedPostreaction_guid = COALESCE(EXCLUDED.referencedPostreaction_guid, "post_reaction".referencedPostreaction_guid),                                
+                            reaction_type = COALESCE(EXCLUDED.reaction_type, "post_reaction".reaction_type),                    
+                            reaction_date = COALESCE(EXCLUDED.reaction_date, "post_reaction".reaction_date),                                         
+                            reaction_content = COALESCE(EXCLUDED.reaction_content, "post_reaction".reaction_content),                    
+                            reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, "post_reaction".reaction_like_count),
+                            user_mentions = COALESCE(EXCLUDED.user_mentions, "post_reaction".user_mentions);
+                        '''
+        self.submitBatch(insert_sql)
+                                           
+    def prepareLbsnPostReaction(self, record):
         postReactionRecord = postReactionAttrShared(record)
-        insert_sql = '''
-                   INSERT INTO "post_reaction" (origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions)
-                   VALUES (%s,%s,''' + postReactionRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s)
-                   ON CONFLICT (origin_id, reaction_guid)
-                   DO UPDATE SET                                                                                           
-                       reaction_latlng = COALESCE(EXCLUDED.reaction_latlng, "post_reaction".reaction_latlng),                                   
-                       user_guid = COALESCE(EXCLUDED.user_guid, "post_reaction".user_guid),                                      
-                       referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid, "post_reaction".referencedPost_guid),                                         
-                       referencedPostreaction_guid = COALESCE(EXCLUDED.referencedPostreaction_guid, "post_reaction".referencedPostreaction_guid),                                
-                       reaction_type = COALESCE(EXCLUDED.reaction_type, "post_reaction".reaction_type),                    
-                       reaction_date = COALESCE(EXCLUDED.reaction_date, "post_reaction".reaction_date),                                         
-                       reaction_content = COALESCE(EXCLUDED.reaction_content, "post_reaction".reaction_content),                    
-                       reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, "post_reaction".reaction_like_count),
-                       user_mentions = COALESCE(EXCLUDED.user_mentions, "post_reaction".user_mentions);                                
-                   '''                                                                                                     
-        self.dbCursor.execute(insert_sql,(postReactionRecord.OriginID,                                                              
+        record_sql = '''(%s,%s,''' + postReactionRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s)'''   
+        preparedRecord = self.dbCursor.mogrify(record_sql, (postReactionRecord.OriginID,                                                              
                                          postReactionRecord.Guid,
                                          postReactionRecord.reaction_latlng,
                                          postReactionRecord.user_guid,
@@ -272,9 +315,44 @@ class lbsnDB():
                                          postReactionRecord.reaction_date,
                                          postReactionRecord.reaction_content,
                                          postReactionRecord.reaction_like_count,
-                                         postReactionRecord.user_mentions))
+                                         postReactionRecord.user_mentions)) 
+        return preparedRecord.decode()
  
-        
+    def submitBatch(self,insert_sql):
+        ## Needs testing: is using Savepoint for each insert slower than rolling back entire commit?
+        ## for performance, see https://stackoverflow.com/questions/12206600/how-to-speed-up-insertion-performance-in-postgresql
+        ## or this: https://stackoverflow.com/questions/8134602/psycopg2-insert-multiple-rows-with-one-query
+        self.dbCursor.execute("SAVEPOINT submit_recordBatch")
+        tsuccessful = False
+        #issuesCount = 0
+        while not tsuccessful:
+            try:
+                self.dbCursor.execute(insert_sql)
+            except psycopg2.IntegrityError as e:
+                            if '(post_language)' in e.diag.message_detail:
+                                # If language does not exist, we'll trust Twitter and add this to our language list
+                                missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
+                                print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
+                                #self.dbConnection.rollback()
+                                self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
+                                insert_sql = '''
+                                       INSERT INTO "language" (language_short,language_name,language_name_de)
+                                       VALUES (%s,NULL,NULL);                                
+                                       '''
+                                self.dbCursor.execute(insert_sql,(missingLanguage,))
+                                #self.prepareLbsnRecord(record,type_name)
+            except ValueError as e:
+                self.log.warning(f'{e}')
+                input("Press Enter to continue... (entry will be skipped)")
+                self.log.warning(f'{insert_sql}')
+                input("args:... ")
+                self.log.warning(f'{args_str}')
+                self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
+                #continue
+            else:
+                self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
+                tsuccessful = True
+                   
 class placeAttrShared():   
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id # = 3

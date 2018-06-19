@@ -109,7 +109,6 @@ def main():
         sys.stdout.flush()
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not startNumber or processedRecords >= config.transferCount or finished:
-            print(f'Transferring {processedRecords} records to output db..', end='\r')
             sys.stdout.flush()
             # Async Submit needs further work:
             #asyncTransfer = pool.apply_async(submitAsync, (outputDB,twitterRecords.lbsnRecords))
@@ -124,7 +123,7 @@ def main():
             outputDB.commitChanges()
             # create a new empty dict of records
             twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
-            print(f'Transferring {processedRecords} records to output db..Done (up to DB Row {continueNumber}).')
+            #print(f'\nTransferred {processedRecords} records to output db..Done (up to DB Row {continueNumber}).')
             processedRecords = 0
         # remember the first processed DBRow ID
         if not startNumber:
