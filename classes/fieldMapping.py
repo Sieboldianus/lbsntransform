@@ -142,6 +142,9 @@ class fieldMappingTwitter():
         userUTCOffset = user.get('utc_offset')
         if userUTCOffset:
             userRecord.user_utc_offset = userUTCOffset
+        # the following cannot be extracted from twitter post data
+        userRecord.user_groups_member = []
+        userRecord.user_groups_follows = []
         return userRecord
           
     def extractPost(self,jsonStringDict, userPkey = None):

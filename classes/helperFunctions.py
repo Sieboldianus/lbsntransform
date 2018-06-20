@@ -146,10 +146,11 @@ class helperFunctions():
                  
 class lbsnRecordDicts():
     def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
-                 lbsnPlaceDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
+                 lbsnPlaceDict=dict(),lbsnUserGroupDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
         self.lbsnCountryDict = lbsnCountryDict
         self.lbsnCityDict = lbsnCityDict
         self.lbsnPlaceDict = lbsnPlaceDict
+        self.lbsnUserGroupDict = lbsnUserGroupDict
         self.lbsnUserDict = lbsnUserDict
         self.lbsnPostDict = lbsnPostDict
         self.lbsnPostReactionDict = lbsnPostReactionDict
@@ -157,6 +158,7 @@ class lbsnRecordDicts():
                          lbsnCountry.DESCRIPTOR.name: set(),
                          lbsnCity.DESCRIPTOR.name: set(),
                          lbsnPlace.DESCRIPTOR.name: set(),
+                         lbsnUserGroup.DESCRIPTOR.name: set(),
                          lbsnUser.DESCRIPTOR.name: set(),
                          lbsnPostReaction.DESCRIPTOR.name: set()}
         self.CountGlob = 0
@@ -165,6 +167,7 @@ class lbsnRecordDicts():
             (self.lbsnCountryDict,lbsnCountry().DESCRIPTOR.name),
             (self.lbsnCityDict,lbsnCity().DESCRIPTOR.name),
             (self.lbsnPlaceDict,lbsnPlace().DESCRIPTOR.name),
+            (self.lbsnUserGroupDict,lbsnUserGroup().DESCRIPTOR.name),
             (self.lbsnUserDict,lbsnUser().DESCRIPTOR.name),
             (self.lbsnPostDict,lbsnPost().DESCRIPTOR.name),
             (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name)
@@ -270,6 +273,7 @@ class lbsnRecordDicts():
             lbsnPlace().DESCRIPTOR.name: self.lbsnPlaceDict,
             lbsnPostReaction().DESCRIPTOR.name: self.lbsnPostReactionDict,
             lbsnUser().DESCRIPTOR.name: self.lbsnUserDict,
+            lbsnUserGroup().DESCRIPTOR.name: self.lbsnUserGroupDict,
         }
         return dictSwitcher.get(record.DESCRIPTOR.name)
             

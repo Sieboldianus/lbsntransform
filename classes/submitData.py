@@ -30,6 +30,7 @@ class lbsnDB():
         self.batchedCities = []
         self.batchedPlaces = []
         self.batchedUsers = []
+        self.batchedUserGroups = []
         self.batchedPosts = []
         self.batchedPostReactions = []
         self.batchVolume = 100 # Records are batched and submitted in one insert with x number of records
@@ -67,10 +68,12 @@ class lbsnDB():
             self.batchedPlaces.append(self.prepareLbsnPlace(record))
         elif record_type == lbsnPostReaction().DESCRIPTOR.name:
             self.batchedPostReactions.append(self.prepareLbsnPostReaction(record))
+        elif record_type == lbsnUserGroup().DESCRIPTOR.name:
+            self.batchedUserGroups.append(self.prepareLbsnUserGroup(record))            
         elif record_type == lbsnUser().DESCRIPTOR.name:
             self.batchedUsers.append(self.prepareLbsnUser(record))
         
-        if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers)]) >= self.batchVolume:
+        if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers),len(self.batchedUserGroups)]) >= self.batchVolume:
             self.submitAllBatches()
                               
     def submitAllBatches(self):
@@ -86,6 +89,9 @@ class lbsnDB():
         if self.batchedUsers:
             self.submitLbsnUsers()
             self.batchedUsers = []
+        if self.batchedUserGroups:
+            self.submitLbsnUserGroups()
+            self.batchedUserGroups = []            
         if self.batchedPosts:
             self.submitLbsnPosts()
             self.batchedPosts = []
@@ -217,7 +223,33 @@ class lbsnDB():
                                          userRecord.user_timezone,     
                                          userRecord.user_utc_offset))
         return preparedRecord.decode()    
-        
+
+    def submitLbsnUserGroups(self):
+        args_str = ','.join(self.batchedUserGroups)
+        insert_sql = f'''
+                        INSERT INTO "user_groups" (origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate)
+                        VALUES {args_str}
+                        ON CONFLICT (origin_id, usergroup_guid)
+                        DO UPDATE SET
+                            usergroup_name = COALESCE(EXCLUDED.usergroup_name, "user_groups".usergroup_name),                                   
+                            usergroup_description = COALESCE(EXCLUDED.usergroup_description, "user_groups".usergroup_description),                                      
+                            member_count = GREATEST(COALESCE(EXCLUDED.member_count, "user_groups".member_count)),                                                         
+                            usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, "user_groups".usergroup_createdate);
+                        '''
+                        # No coalesce for user: in case user changes or removes information, this should also be removed from the record
+        self.submitBatch(insert_sql)
+                        
+    def prepareLbsnUserGroup(self, record):
+        userGroupRecord = userGroupAttrShared(record)
+        record_sql = '''(%s,%s,%s,%s,%s,%s)'''
+        preparedRecord = self.dbCursor.mogrify(record_sql, (userGroupRecord.OriginID,          
+                                         userGroupRecord.Guid,              
+                                         userGroupRecord.usergroup_name,         
+                                         userGroupRecord.usergroup_description,     
+                                         userGroupRecord.member_count,           
+                                         userGroupRecord.usergroup_createdate))
+        return preparedRecord.decode() 
+            
     def submitLbsnPosts(self):
         args_str = ','.join(self.batchedPosts)
         insert_sql = f'''
@@ -389,8 +421,17 @@ class userAttrShared():
         self.active_since = helperFunctions.null_check_datetime(record.active_since)
         self.profile_image_url = helperFunctions.null_check(record.profile_image_url)
         self.user_timezone = helperFunctions.null_check(record.user_timezone)
-        self.user_utc_offset = helperFunctions.null_check(record.user_utc_offset)        
-
+        self.user_utc_offset = helperFunctions.null_check(record.user_utc_offset)    
+            
+class userGroupAttrShared():   
+    def __init__(self, record):
+        self.OriginID = record.pkey.origin.origin_id
+        self.Guid = record.pkey.id
+        self.usergroup_name = helperFunctions.null_check(record.usergroup_name)
+        self.usergroup_description = helperFunctions.null_check(record.usergroup_description)
+        self.member_count = helperFunctions.null_check(record.member_count)
+        self.usergroup_createdate = helperFunctions.null_check_datetime(record.usergroup_createdate)
+        
 class postAttrShared():
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id
