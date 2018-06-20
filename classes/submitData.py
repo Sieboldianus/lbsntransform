@@ -7,7 +7,8 @@ from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import logging 
 from sys import exit
-
+# for debugging only:
+from google.protobuf import text_format
 
 class lbsnDB():
     def __init__(self, dbCursor = None, 
@@ -189,19 +190,21 @@ class lbsnDB():
     def submitLbsnUsers(self):
         args_str = ','.join(self.batchedUsers)
         insert_sql = f'''
-                        INSERT INTO "user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
+                        INSERT INTO "user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows)
                         VALUES {args_str}
                         ON CONFLICT (origin_id, user_guid)
                         DO UPDATE SET
-                        (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset)
-                        = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url, EXCLUDED.user_timezone, EXCLUDED.user_utc_offset);
+                        (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows)
+                        = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url, EXCLUDED.user_timezone, EXCLUDED.user_utc_offset, EXCLUDED.user_groups_member, EXCLUDED.user_groups_follows);
                         '''
                         # No coalesce for user: in case user changes or removes information, this should also be removed from the record
         self.submitBatch(insert_sql)
                         
     def prepareLbsnUser(self, record):
         userRecord = userAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s)'''
+        #if record.pkey.id == '984048002967982080':
+        #    sys.exit(f'User record: {text_format.MessageToString(record,as_utf8=True)}')
+        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s)'''
         preparedRecord = self.dbCursor.mogrify(record_sql, (userRecord.OriginID,          
                                          userRecord.Guid,              
                                          userRecord.user_name,         
@@ -221,33 +224,37 @@ class lbsnDB():
                                          userRecord.active_since,      
                                          userRecord.profile_image_url, 
                                          userRecord.user_timezone,     
-                                         userRecord.user_utc_offset))
+                                         userRecord.user_utc_offset,
+                                         userRecord.user_groups_member,
+                                         userRecord.user_groups_follows))
         return preparedRecord.decode()    
 
     def submitLbsnUserGroups(self):
         args_str = ','.join(self.batchedUserGroups)
         insert_sql = f'''
-                        INSERT INTO "user_groups" (origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate)
+                        INSERT INTO "user_groups" (origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate, user_owner)
                         VALUES {args_str}
                         ON CONFLICT (origin_id, usergroup_guid)
                         DO UPDATE SET
                             usergroup_name = COALESCE(EXCLUDED.usergroup_name, "user_groups".usergroup_name),                                   
                             usergroup_description = COALESCE(EXCLUDED.usergroup_description, "user_groups".usergroup_description),                                      
                             member_count = GREATEST(COALESCE(EXCLUDED.member_count, "user_groups".member_count)),                                                         
-                            usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, "user_groups".usergroup_createdate);
+                            usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, "user_groups".usergroup_createdate),
+                            user_owner = COALESCE(EXCLUDED.user_owner, "user_groups".user_owner);
                         '''
                         # No coalesce for user: in case user changes or removes information, this should also be removed from the record
         self.submitBatch(insert_sql)
                         
     def prepareLbsnUserGroup(self, record):
         userGroupRecord = userGroupAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s)'''
+        record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
         preparedRecord = self.dbCursor.mogrify(record_sql, (userGroupRecord.OriginID,          
                                          userGroupRecord.Guid,              
                                          userGroupRecord.usergroup_name,         
                                          userGroupRecord.usergroup_description,     
                                          userGroupRecord.member_count,           
-                                         userGroupRecord.usergroup_createdate))
+                                         userGroupRecord.usergroup_createdate,
+                                         userGroupRecord.user_owner))
         return preparedRecord.decode() 
             
     def submitLbsnPosts(self):
@@ -422,7 +429,9 @@ class userAttrShared():
         self.profile_image_url = helperFunctions.null_check(record.profile_image_url)
         self.user_timezone = helperFunctions.null_check(record.user_timezone)
         self.user_utc_offset = helperFunctions.null_check(record.user_utc_offset)    
-            
+        self.user_groups_member = list(record.user_groups_member)
+        self.user_groups_follows = list(record.user_groups_follows)
+                    
 class userGroupAttrShared():   
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id
@@ -431,6 +440,7 @@ class userGroupAttrShared():
         self.usergroup_description = helperFunctions.null_check(record.usergroup_description)
         self.member_count = helperFunctions.null_check(record.member_count)
         self.usergroup_createdate = helperFunctions.null_check_datetime(record.usergroup_createdate)
+        self.user_owner = helperFunctions.null_check(record.user_owner_pkey.id)
         
 class postAttrShared():
     def __init__(self, record):

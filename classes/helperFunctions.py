@@ -10,6 +10,8 @@ import datetime
 import logging
 from collections import Counter
 from json import JSONDecoder, JSONDecodeError
+# for debugging only:
+from google.protobuf import text_format
 
 class helperFunctions():  
     
@@ -207,7 +209,7 @@ class lbsnRecordDicts():
                 return
             else:
                 # Do a deep compare
-                dict[pkeyID] = self.deepCompareMergeMessages(dict[pkeyID],newrecord)
+                dict[pkeyID] = self.deepCompareMergeMessages(dict[pkeyID],newrecord)                   
                 return
         else:
             # just count new entries
@@ -215,46 +217,74 @@ class lbsnRecordDicts():
             if self.CountGlob % 1000 == 0: #modulo
                 print(f'Record {self.CountGlob}', end='\r') 
                 sys.stdout.flush()
-        self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                          
+        self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                                 
         dict[pkeyID] = newrecord
     
     def deepCompareMergeMessages(self,oldRecord,newRecord):
+        # needs testing for posts!
+        #found = False
+        #if oldRecord.pkey.id == '984048002967982080':
+        #if oldRecord.DESCRIPTOR.name == lbsnPost().DESCRIPTOR.name:
+        #    print('###################################################################')
+        #    print(f'Old Record: {text_format.MessageToString(oldRecord,as_utf8=True)}')
+        #    print('#######')
+        #    print(f'New Record: {text_format.MessageToString(newRecord,as_utf8=True)}')
+        #    print('#######')
+        #    #found = True
+
         # this is a basic routine that will make a full compare of all fields of two lbsnRecords
         # None Values will be filled, repeated fields will be updated with new values
         # similar values remain, changed values will overwrite older values
-        for descriptor in newRecord.DESCRIPTOR.fields:
-            value_old = getattr(oldRecord, descriptor.name)
-            value_new = getattr(newRecord, descriptor.name)
-            # only compare if not Empty or None
-            if value_new:
-                if descriptor.label == descriptor.LABEL_REPEATED:
-                    if value_old == value_new:
-                        return oldRecord
-                    elif not value_old:
-                        newEntries = value_new
-                    else:
-                        # only add difference (e.g. = new values)
-                        newEntries = list(set(value_new) - set(value_old))   
-                    if descriptor.name == "name_alternatives":
-                        # necessary because sometimes Twitter submits English names that are not marked as English
-                        # these get moved to name_alternatives, although they exist already as the main name
-                        mainName = getattr(oldRecord, "name")
-                        if mainName and mainName in newEntries:
-                            newEntries.remove(mainName)
-                    x = getattr(oldRecord, descriptor.name)
-                    x.extend(newEntries)
-                # todo?
-                #elif descriptor.label == descriptor.TYPE_ENUM:
-                elif descriptor.type == descriptor.TYPE_MESSAGE:
-                   x = getattr(oldRecord, descriptor.name)
-                   x.CopyFrom(value_new)
-                else:
-                    if not value_old:
-                        setattr(oldRecord, descriptor.name, value_new)
-                    else:
-                        if not value_old == value_new:
-                            # overwrite old value with new value
-                            setattr(oldRecord,descriptor.name,value_new)
+        oldRecord.MergeFrom(newRecord)
+        #for descriptor in newRecord.DESCRIPTOR.fields:
+        #
+        #    value_old = getattr(oldRecord, descriptor.name)
+        #    value_new = getattr(newRecord, descriptor.name)
+        #    if found and descriptor.name == 'active_since':
+        #        print(f'Old: {value_old}')
+        #        print(f'New: {value_new}')
+        #        print(f'Old byte: {value_old.ByteSize()}')   
+        #        print(f'New byte: {value_new.ByteSize()}')   
+        #                   
+        #    # only compare if not Empty or None
+        #    # we can use ByteSize to see if message/field is set to default (will return 0 byte size)
+        #    if value_new and value_new.ByteSize():
+        #        if descriptor.label == descriptor.LABEL_REPEATED:
+        #            if value_old == value_new:
+        #                return oldRecord
+        #            elif not value_old:
+        #                newEntries = value_new
+        #            else:
+        #                # only add difference (e.g. = new values)
+        #                newEntries = list(set(value_new) - set(value_old))   
+        #            if descriptor.name == "name_alternatives":
+        #                # necessary because sometimes Twitter submits English names that are not marked as English
+        #                # these get moved to name_alternatives, although they exist already as the main name
+        #                mainName = getattr(oldRecord, "name")
+        #                if mainName and mainName in newEntries:
+        #                    newEntries.remove(mainName)
+        #            x = getattr(oldRecord, descriptor.name)
+        #            x.extend(newEntries)
+        #        # todo?
+        #        #elif descriptor.label == descriptor.TYPE_ENUM:
+        #        # .type gives constants according to: https://developers.google.com/protocol-buffers/docs/reference/python/google.protobuf.descriptor.FieldDescriptor-class
+        #        # TYPE_MESSAGE = 11
+        #        elif descriptor.type == 11:
+        #            
+        #            #value_old.CopyFrom(value_new)
+        #            #setattr(oldRecord, descriptor.name, value_old)
+        #            if found and descriptor.name == 'active_since':
+        #                print(f'New X: ')
+        #        else:
+        #            if not value_old:
+        #                setattr(oldRecord, descriptor.name, value_new)
+        #            else:
+        #                if not value_old == value_new:
+        #                    # overwrite old value with new value
+        #                    setattr(oldRecord,descriptor.name,value_new)
+        #if oldRecord.pkey.id == '984048002967982080':
+        #if oldRecord.DESCRIPTOR.name == lbsnPost().DESCRIPTOR.name:
+        #    input(f'Record after: {text_format.MessageToString(oldRecord,as_utf8=True)}')
         return oldRecord
            
     def AddRecordsToDict(self,records):

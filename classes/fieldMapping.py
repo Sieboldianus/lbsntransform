@@ -8,6 +8,8 @@ import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 import logging
 import re
+# for debugging only:
+from google.protobuf import text_format
 
 class fieldMappingTwitter():
     def __init__(self, disableReactionPostReferencing = False):
@@ -26,6 +28,7 @@ class fieldMappingTwitter():
             # user
             userRecord = self.extractUser(jsonStringDict)
             self.lbsnRecords.AddRecordsToDict(userRecord)
+            #sys.exit(f'Post record: {text_format.MessageToString(userRecord,as_utf8=True)}')
             if not userRecord.is_private:
                 # if user profile is private, we cannot access posts
                 userStatus = None
@@ -143,8 +146,9 @@ class fieldMappingTwitter():
         if userUTCOffset:
             userRecord.user_utc_offset = userUTCOffset
         # the following cannot be extracted from twitter post data
-        userRecord.user_groups_member = []
-        userRecord.user_groups_follows = []
+        deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
+        userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
+        #userRecord.user_groups_follows = []
         return userRecord
           
     def extractPost(self,jsonStringDict, userPkey = None):
@@ -156,14 +160,13 @@ class fieldMappingTwitter():
         postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin) 
         postGeoaccuracy = None  
         userRecord = None
-        if userPkey:
+        userInfo = jsonStringDict.get('user')
+        if userInfo :
+            # Get Post/Reaction Details of User
+            userRecord = self.extractUser(jsonStringDict.get('user'))               
+        elif userPkey:
             # userPkey is already available for posts that are statuses
-            userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userPkey.id,self.origin) 
-        else:
-            userInfo = jsonStringDict.get('user')
-            if userInfo:
-                # Get Post/Reaction Details of User
-                userRecord = self.extractUser(jsonStringDict.get('user'))                
+            userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userPkey.id,self.origin)              
         if userRecord:
             self.lbsnRecords.AddRecordsToDict(userRecord)  
         else:

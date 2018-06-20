@@ -83,9 +83,21 @@ def main():
     startNumber = 0   
     continueNumber = config.startWithDBRowNumber # Start Value, Modify to continue from last processing  
     endNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing    
-    
+
     finished = False
     twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
+    
+    # Manually add entries that need submission prior to parsing data
+    # Example: A Group that applies to all entries
+    deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",twitterRecords.origin)
+    DBG_owner = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),"243586130",twitterRecords.origin)
+    DBG_owner.user_name = 'wahl_beobachter'
+    DBG_owner.user_fullname = 'Martin Fuchs'
+    deutscherBundestagGroup.user_owner_pkey.CopyFrom(DBG_owner.pkey)
+    deutscherBundestagGroup.usergroup_description = 'Alle twitternden Abgeordneten aus dem Deutschen Bundestag #bundestag'
+    twitterRecords.lbsnRecords.AddRecordToDict(DBG_owner)
+    twitterRecords.lbsnRecords.AddRecordToDict(deutscherBundestagGroup)
+    
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
         if config.LocalInput:
