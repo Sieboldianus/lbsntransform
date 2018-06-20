@@ -310,3 +310,15 @@ class lbsnRecordDicts():
     def AddRecordToDict(self,record):
         dict = self.dictSelector(record)
         self.MergeExistingRecords(record,dict)
+
+#class geocodeLocation():
+#    def __init__(self,file):
+#        self.geocodeDict = load_geocodelist(file)
+#            
+#    def load_geocodelist(self,file):
+#        with open(file, newline='', encoding='utf8') as f: #read each unsorted file and sort lines based on datetime (as string)
+#        next(f) #Skip Headerrow
+#        logfile_list = csv.reader(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+#        for logfile_entry in logfile_list:
+#            logfile_size_dict[logfile_entry[0].replace('\\','/')] = (float(logfile_entry[1]),logfile_entry[2])
+#            #print(repr(logfile_entry[0].replace('\\','/')))

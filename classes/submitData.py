@@ -7,6 +7,7 @@ from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import logging 
 from sys import exit
+import traceback
 # for debugging only:
 from google.protobuf import text_format
 
@@ -368,9 +369,9 @@ class lbsnDB():
             try:
                 self.dbCursor.execute(insert_sql)
             except psycopg2.IntegrityError as e:
-                            if '(post_language)' in e.diag.message_detail:
+                            if '(post_language)' in e.diag.message_detail or '(user_language)' in e.diag.message_detail:
                                 # If language does not exist, we'll trust Twitter and add this to our language list
-                                missingLanguage = e.diag.message_detail.partition("(post_language)=(")[2].partition(") is not present")[0]
+                                missingLanguage = e.diag.message_detail.partition("language)=(")[2].partition(") is not present")[0]
                                 print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
                                 #self.dbConnection.rollback()
                                 self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
@@ -388,6 +389,9 @@ class lbsnDB():
                 self.log.warning(f'{args_str}')
                 self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
                 #continue
+            #except Exception as e:
+            #    self.log.error(traceback.format_exc())
+            #    sys.exit()
             else:
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
