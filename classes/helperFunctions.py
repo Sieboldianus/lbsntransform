@@ -2,6 +2,7 @@
 
 from datetime import timezone
 import re
+import csv
 import emoji
 import numpy as np
 from lbsnstructure.Structure_pb2 import *
@@ -311,14 +312,14 @@ class lbsnRecordDicts():
         dict = self.dictSelector(record)
         self.MergeExistingRecords(record,dict)
 
-#class geocodeLocation():
-#    def __init__(self,file):
-#        self.geocodeDict = load_geocodelist(file)
-#            
-#    def load_geocodelist(self,file):
-#        with open(file, newline='', encoding='utf8') as f: #read each unsorted file and sort lines based on datetime (as string)
-#        next(f) #Skip Headerrow
-#        logfile_list = csv.reader(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-#        for logfile_entry in logfile_list:
-#            logfile_size_dict[logfile_entry[0].replace('\\','/')] = (float(logfile_entry[1]),logfile_entry[2])
-#            #print(repr(logfile_entry[0].replace('\\','/')))
+class geocodeLocations():
+    def __init__(self):
+        self.geocodeDict = dict()
+            
+    def load_geocodelist(self,file):
+        with open(file, newline='', encoding='utf8') as f: #read each unsorted file and sort lines based on datetime (as string)
+            #next(f) #Skip Headerrow
+            locationfile_list = csv.reader(f, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
+            for location_geocode in locationfile_list:
+                self.geocodeDict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]),location_geocode[1]) # lat/lng
+        print(f'Loaded {len(self.geocodeDict)} geocodes.')

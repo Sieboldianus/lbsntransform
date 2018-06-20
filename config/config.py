@@ -27,7 +27,8 @@ class baseconfig():
         self.startWithDBRowNumber = 0
         self.endWithDBRowNumber = None
         self.debugMode = 'INFO' #needs to be implemented
-
+        self.geocodeLocations = False # provide path to CSV file with location geocodes (CSV Structure: lat, lng, name)
+        
     def parseArgs(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-lI', "--LocalInput", default=self.LocalInput)
@@ -51,6 +52,7 @@ class baseconfig():
         parser.add_argument('-rS', "--startWithDBRowNumber", default=self.startWithDBRowNumber) 
         parser.add_argument('-rE', "--endWithDBRowNumber", default=self.endWithDBRowNumber) 
         parser.add_argument('-d', "--debugMode", default=self.debugMode) 
+        parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations) 
          
         args = parser.parse_args()
         if args.LocalInput and int(args.LocalInput) == 1:
@@ -71,6 +73,8 @@ class baseconfig():
             self.dbPassword_Input = args.dbPassword_Input
             self.dbServeradressInput = args.dbServeradressInput
             self.dbNameInput = args.dbNameInput
+        if args.geocodeLocations:
+            self.geocodeLocations = f'{os.getcwd()}\\{args.geocodeLocations}'
         self.dbUser_Output = args.dbUser_Output
         self.dbPassword_Output = args.dbPassword_Output
         self.dbServeradressOutput = args.dbServeradressOutput

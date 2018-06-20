@@ -9,6 +9,7 @@ import logging
 from classes.dbConnection import dbConnection
 from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
+from classes.helperFunctions import geocodeLocations as geocodeLocations
 from classes.fieldMapping import fieldMappingTwitter as fieldMappingTwitter
 from classes.submitData import lbsnDB as lbsnDB
 from config.config import baseconfig as baseconfig
@@ -82,21 +83,27 @@ def main():
     processedTotal = 0
     startNumber = 0   
     continueNumber = config.startWithDBRowNumber # Start Value, Modify to continue from last processing  
-    endNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing    
-
+    endNumber = config.endWithDBRowNumber # End Value, Modify to continue from last processing   
+     
+    # Optional Geocoding
+    locatiosGeocodeDict = False
+    if config.geocodeLocations:
+        locatiosGeocodeDict = geocodeLocations()
+        locatiosGeocodeDict.load_geocodelist(config.geocodeLocations)
+        
     finished = False
-    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
+    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, locatiosGeocodeDict.geocodeDict)
     
     # Manually add entries that need submission prior to parsing data
     # Example: A Group that applies to all entries
-    deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",twitterRecords.origin)
-    DBG_owner = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),"243586130",twitterRecords.origin)
-    DBG_owner.user_name = 'wahl_beobachter'
-    DBG_owner.user_fullname = 'Martin Fuchs'
-    deutscherBundestagGroup.user_owner_pkey.CopyFrom(DBG_owner.pkey)
-    deutscherBundestagGroup.usergroup_description = 'Alle twitternden Abgeordneten aus dem Deutschen Bundestag #bundestag'
-    twitterRecords.lbsnRecords.AddRecordToDict(DBG_owner)
-    twitterRecords.lbsnRecords.AddRecordToDict(deutscherBundestagGroup)
+    #deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",twitterRecords.origin)
+    #DBG_owner = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),"243586130",twitterRecords.origin)
+    #DBG_owner.user_name = 'wahl_beobachter'
+    #DBG_owner.user_fullname = 'Martin Fuchs'
+    #deutscherBundestagGroup.user_owner_pkey.CopyFrom(DBG_owner.pkey)
+    #deutscherBundestagGroup.usergroup_description = 'Alle twitternden Abgeordneten aus dem Deutschen Bundestag #bundestag'
+    #twitterRecords.lbsnRecords.AddRecordToDict(DBG_owner)
+    #twitterRecords.lbsnRecords.AddRecordToDict(deutscherBundestagGroup)
     
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
@@ -192,21 +199,21 @@ def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfR
 def fetchJsonData_from_File(loc_filelist, startFileID = 0, isStackedJson = False):
     x = 0
     records = []
-    for locFile in loc_filelist:
-        if x == startFileID:
-            with open(locFile, 'r', encoding="utf-8", errors='replace') as file:
-                # Stacked JSON is a simple file with many concatenated jsons, e.g. {json1}{json2} etc.
-                if isStackedJson:
-                    try:
-                        for obj in helperFunctions.decode_stacked(file.read()):
-                            records.append(obj)
-                        #print(f'Object: {obj[-1]}')
-                    except json.decoder.JSONDecodeError:
-                        pass
-                else:
-                    # normal json nesting, e.g. {{record1},{record2}}
-                    records = json.loads(file.read())
-        x += 1
+    if startFileID > len(loc_filelist)-1:
+        return None
+    locFile = loc_filelist[startFileID]
+    with open(locFile, 'r', encoding="utf-8", errors='replace') as file:
+        # Stacked JSON is a simple file with many concatenated jsons, e.g. {json1}{json2} etc.
+        if isStackedJson:
+            try:
+                for obj in helperFunctions.decode_stacked(file.read()):
+                    records.append(obj)
+                #print(f'Object: {obj[-1]}')
+            except json.decoder.JSONDecodeError:
+                pass
+        else:
+            # normal json nesting, e.g. {{record1},{record2}}
+            records = json.loads(file.read())
     if records:
         return records
     else:

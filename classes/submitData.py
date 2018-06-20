@@ -369,18 +369,18 @@ class lbsnDB():
             try:
                 self.dbCursor.execute(insert_sql)
             except psycopg2.IntegrityError as e:
-                            if '(post_language)' in e.diag.message_detail or '(user_language)' in e.diag.message_detail:
-                                # If language does not exist, we'll trust Twitter and add this to our language list
-                                missingLanguage = e.diag.message_detail.partition("language)=(")[2].partition(") is not present")[0]
-                                print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
-                                #self.dbConnection.rollback()
-                                self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
-                                insert_language_sql = '''
-                                       INSERT INTO "language" (language_short,language_name,language_name_de)
-                                       VALUES (%s,NULL,NULL);                                
-                                       '''
-                                self.dbCursor.execute(insert_language_sql,(missingLanguage,))
-                                #self.prepareLbsnRecord(record,type_name)
+                if '(post_language)' in e.diag.message_detail or '(user_language)' in e.diag.message_detail:
+                    # If language does not exist, we'll trust Twitter and add this to our language list
+                    missingLanguage = e.diag.message_detail.partition("language)=(")[2].partition(") is not present")[0]
+                    print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
+                    #self.dbConnection.rollback()
+                    self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
+                    insert_language_sql = '''
+                           INSERT INTO "language" (language_short,language_name,language_name_de)
+                           VALUES (%s,NULL,NULL);                                
+                           '''
+                    self.dbCursor.execute(insert_language_sql,(missingLanguage,))
+                    #self.prepareLbsnRecord(record,type_name)
             except ValueError as e:
                 self.log.warning(f'{e}')
                 input("Press Enter to continue... (entry will be skipped)")

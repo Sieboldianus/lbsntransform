@@ -12,7 +12,7 @@ import re
 from google.protobuf import text_format
 
 class fieldMappingTwitter():
-    def __init__(self, disableReactionPostReferencing = False):
+    def __init__(self, disableReactionPostReferencing = False, geocodes = False):
         # We're dealing with Twitter in this class, lets create the OriginID globally
         # this OriginID is required for all CompositeKeys
         origin = lbsnOrigin()
@@ -21,7 +21,8 @@ class fieldMappingTwitter():
         self.lbsnRecords = lbsnRecordDicts() #this is where all the data will be stored
         self.log = logging.getLogger('__main__')#logging.getLogger()
         self.disableReactionPostReferencing = disableReactionPostReferencing
-
+        self.geocodes = geocodes
+        
     def parseJsonRecord(self, jsonStringDict): 
         # decide if main object is post or user json
         if 'screen_name' in jsonStringDict:
@@ -133,6 +134,10 @@ class fieldMappingTwitter():
         userLocation = user.get('location')
         if userLocation:
             userRecord.user_location = userLocation
+            if self.geocodes and userRecord.user_location in self.geocodes:
+                l_lat = self.geocodes[userRecord.user_location][0]
+                l_lng = self.geocodes[userRecord.user_location][1]
+                userRecord.user_location_geom = "POINT(%s %s)" % (l_lng,l_lat)
         #userGeoLocation = user.get('profile_location') # todo!
         userRecord.liked_count = user.get('favourites_count')
         userRecord.active_since.CopyFrom(helperFunctions.parseJSONDateStringToProtoBuf(user.get('created_at'))) 
