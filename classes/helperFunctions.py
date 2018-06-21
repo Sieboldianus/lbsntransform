@@ -9,6 +9,7 @@ from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import datetime
 import logging
+import time
 from collections import Counter
 from json import JSONDecoder, JSONDecodeError
 # for debugging only:
@@ -215,8 +216,9 @@ class lbsnRecordDicts():
         else:
             # just count new entries
             self.CountGlob += 1
-            if self.CountGlob % 1000 == 0: #modulo
-                print(f'Record {self.CountGlob}', end='\r') 
+            if self.CountGlob % 1000 == 0:
+                # progress report (modulo)
+                print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
                 sys.stdout.flush()
         self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                                 
         dict[pkeyID] = newrecord
@@ -323,3 +325,15 @@ class geocodeLocations():
             for location_geocode in locationfile_list:
                 self.geocodeDict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]),location_geocode[1]) # lat/lng
         print(f'Loaded {len(self.geocodeDict)} geocodes.')
+
+class timeMonitor():
+    def __init__(self):
+        self.now = time.time()
+        
+    def stop_time(self):
+        later = time.time()
+        hours, rem = divmod(later-self.now, 3600)
+        minutes, seconds = divmod(rem, 60)
+        difference = int(later - self.now)
+        reportMsg = f'{int(hours):0>2} Hours {int(minutes):0>2} Minutes and {seconds:05.2f} Seconds passed.'
+        return reportMsg

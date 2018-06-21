@@ -19,7 +19,7 @@ class baseconfig():
         self.dbServeradressOutput = '111.11.11.11'
         self.dbNameOutput = 'test_db'
         self.transferlimit = None
-        self.transferCount = 200000 # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Pyhton and not in Postgres Coalesce; larger values are heavier on memory.
+        self.transferCount = 100000 # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
         self.numberOfRecordsToFetch = 10000
         self.transferReactions = 1
         self.disableReactionPostReferencing = None # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"

@@ -55,49 +55,68 @@ class lbsnDB():
                 self.count_entries_commit +=  1 #self.dbCursor.rowcount
                 if self.count_glob == 100 or self.count_entries_commit > self.commit_volume:
                     self.commitChanges()
+        # print out once to remove last '\r'
+        #print('')
         # submit remaining rest
         self.submitAllBatches()
                 
     def prepareLbsnRecord(self, record, record_type):
+        # this can be done better
         #record_type = record.DESCRIPTOR.name
         if record_type == lbsnPost().DESCRIPTOR.name:
-            self.batchedPosts.append(self.prepareLbsnPost(record))
+            preparedRecord = self.prepareLbsnPost(record)
+            if preparedRecord:
+                self.batchedPosts.append(preparedRecord)
         elif record_type == lbsnCountry().DESCRIPTOR.name:
-            self.batchedCountries.append(self.prepareLbsnCountry(record))
+            preparedRecord = self.prepareLbsnCountry(record)
+            if preparedRecord:
+                self.batchedCountries.append(preparedRecord)
         elif record_type == lbsnCity().DESCRIPTOR.name:
-            self.batchedCities.append(self.prepareLbsnCity(record))
+            preparedRecord = self.prepareLbsnCity(record)
+            if preparedRecord:
+                self.batchedCities.append(preparedRecord)
         elif record_type == lbsnPlace().DESCRIPTOR.name:
-            self.batchedPlaces.append(self.prepareLbsnPlace(record))
+            preparedRecord = self.prepareLbsnPlace(record)
+            if preparedRecord:
+                self.batchedPlaces.append(preparedRecord)
         elif record_type == lbsnPostReaction().DESCRIPTOR.name:
-            self.batchedPostReactions.append(self.prepareLbsnPostReaction(record))
+            preparedRecord = self.prepareLbsnPostReaction(record)
+            if preparedRecord:
+                self.batchedPostReactions.append(preparedRecord)
         elif record_type == lbsnUserGroup().DESCRIPTOR.name:
-            self.batchedUserGroups.append(self.prepareLbsnUserGroup(record))            
+            preparedRecord = self.prepareLbsnUserGroup(record)
+            if preparedRecord:
+                self.batchedUserGroups.append(preparedRecord)            
         elif record_type == lbsnUser().DESCRIPTOR.name:
-            self.batchedUsers.append(self.prepareLbsnUser(record))
+            preparedRecord = self.prepareLbsnUser(record)
+            if preparedRecord:
+                self.batchedUsers.append(preparedRecord)
         
         if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers),len(self.batchedUserGroups)]) >= self.batchVolume:
             self.submitAllBatches()
                               
     def submitAllBatches(self):
-        if self.batchedCountries:
+        # this can be done better
+        if self.batchedCountries:# and len(self.batchedCountries) > 0:
+            #print(f'Count: {len(self.batchedCountries)}')
             self.submitLbsnCountries()
             self.batchedCountries = []
-        if self.batchedCities:
+        if self.batchedCities:# and len(self.batchedCities) > 0:
             self.submitLbsnCities()
             self.batchedCities = []
-        if self.batchedPlaces:
+        if self.batchedPlaces:#  and len(self.batchedPlaces) > 0:
             self.submitLbsnPlaces()
             self.batchedPlaces = []
-        if self.batchedUsers:
+        if self.batchedUsers:#  and len(self.batchedUsers) > 0:
             self.submitLbsnUsers()
             self.batchedUsers = []
-        if self.batchedUserGroups:
+        if self.batchedUserGroups:#  and len(self.batchedUserGroups) > 0:
             self.submitLbsnUserGroups()
             self.batchedUserGroups = []            
-        if self.batchedPosts:
+        if self.batchedPosts:#  and len(self.batchedPosts) > 0:
             self.submitLbsnPosts()
             self.batchedPosts = []
-        if self.batchedPostReactions:
+        if self.batchedPostReactions:#  and len(self.batchedPostReactions) > 0:
             self.submitLbsnPostReactions()
             self.batchedPostReactions = []   
             
@@ -119,7 +138,8 @@ class lbsnDB():
                         # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
                         # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
                         # Finally, merge New Entries with existing ones mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
-        self.submitBatch(insert_sql)
+
+        self.submitBatch(insert_sql) 
         
     def prepareLbsnCountry(self, record):
         # Get common attributes for place types Place, City and Country

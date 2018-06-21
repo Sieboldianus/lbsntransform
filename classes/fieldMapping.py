@@ -151,8 +151,8 @@ class fieldMappingTwitter():
         if userUTCOffset:
             userRecord.user_utc_offset = userUTCOffset
         # the following cannot be extracted from twitter post data
-        deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
-        userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
+        # deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
+        #userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
         #userRecord.user_groups_follows = []
         return userRecord
           
@@ -242,7 +242,10 @@ class fieldMappingTwitter():
             #    input("Press Enter to continue... (entry will be skipped)")
             #    return None  
         else:
-            postRecord.post_body = jsonStringDict.get('text')
+            if 'full_text' in jsonStringDict:
+                postRecord.post_body = jsonStringDict.get('full_text')
+            else:
+                postRecord.post_body = jsonStringDict.get('text')
         #if 'RT @' in postRecord.post_body:
         #    sys.exit(jsonStringDict)
         if 'extended_entities' in jsonStringDict:
@@ -298,9 +301,15 @@ class fieldMappingTwitter():
         if place_type == "country":
             # country_guid
             # in case of country, we do not need to save the GUID from Twitter - country_code is already unique
-            placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),self.origin)
-            if not postGeoaccuracy:
-                postGeoaccuracy = lbsnPost.COUNTRY      
+            countryCode = place.get('country_code')
+            if countryCode:
+                placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),self.origin)
+                if not postGeoaccuracy:
+                    postGeoaccuracy = lbsnPost.COUNTRY  
+            #else:
+            #    log.warning(f'No country_code\n\n{postPlace_json}')
+            #    input("Press Enter to continue... (entry will be skipped)")
+            #    return None,postGeoaccuracy,None
         elif place_type in ("city","neighborhood","admin"):
             # city_guid
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCity(),place.get('id'),self.origin)
