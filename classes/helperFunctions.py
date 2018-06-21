@@ -200,18 +200,24 @@ class lbsnRecordDicts():
     def MergeExistingRecords(self, newrecord, dict):
         # Basic Compare function for GUIDS
         # Compare Length of ProtoBuf Messages, keep longer ones
-        # This should be updated to compare the complete structure, including taking into account the timestamp of data, if two values exist
+        # This should be updated to compare the complete structure, including taking into account the timestamp of data, if two values exist  
         pkeyID = newrecord.pkey.id
         if pkeyID in dict:
             # First check if length of both ProtoBuf Messages are the same
+            oldrecord = dict[pkeyID]
             oldRecordString = dict[pkeyID].SerializeToString()
             newRecordString = newrecord.SerializeToString()
             if len(oldRecordString) == len(newRecordString):
                 # no need to do anything
-                return
+                # if we don't return oldrecord, it ceases to exist and is therefore also set to none in dict
+                return oldrecord
             else:
                 # Do a deep compare
-                dict[pkeyID] = self.deepCompareMergeMessages(dict[pkeyID],newrecord)                   
+                # ProtoBuf MergeFrom does a fine job
+                # only problem is it concatenates repeate strings, which may result in duplicate entries
+                # we take care of this prior to submission
+                updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)   
+                dict[pkeyID] = updatedrecord              
                 return
         else:
             # just count new entries
@@ -220,8 +226,9 @@ class lbsnRecordDicts():
                 # progress report (modulo)
                 print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
                 sys.stdout.flush()
-        self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                                 
-        dict[pkeyID] = newrecord
+            self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                                 
+            dict[pkeyID] = newrecord
+        
     
     def deepCompareMergeMessages(self,oldRecord,newRecord):
         # needs testing for posts!

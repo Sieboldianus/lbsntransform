@@ -132,6 +132,8 @@ def main():
             sys.stdout.flush()
             outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
             outputDB.commitChanges()
+            # clear batch
+            del twitterRecords
             # create a new empty dict of records
             twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
             processedRecords = 0

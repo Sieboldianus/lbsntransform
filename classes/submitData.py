@@ -137,7 +137,7 @@ class lbsnDB():
                         # Array merge of alternatives:
                         # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
                         # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
-                        # Finally, merge New Entries with existing ones mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
+                        # Finally, merge New Entries with existing ones (distinct): mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
 
         self.submitBatch(insert_sql) 
         
@@ -341,7 +341,7 @@ class lbsnDB():
                                          postRecord.post_quote_count,
                                          postRecord.post_share_count,
                                          postRecord.input_source))         
-        return preparedRecord.decode()                                                                                                  
+        return preparedRecord.decode()                                                                                              
         
     def submitLbsnPostReactions(self):
         args_str = ','.join(self.batchedPostReactions)
@@ -421,7 +421,8 @@ class placeAttrShared():
         self.OriginID = record.pkey.origin.origin_id # = 3
         self.Guid = record.pkey.id
         self.name = helperFunctions.null_check(record.name)
-        self.name_alternatives = list(record.name_alternatives)
+        # because ProtoBuf Repeated Field does not support distinct rule, we remove any duplicates in list fields prior to submission here
+        self.name_alternatives = list(set(record.name_alternatives))
         if self.name and self.name in self.name_alternatives:
             self.name_alternatives.remove(self.name)
         self.url = helperFunctions.null_check(record.url)
@@ -453,8 +454,8 @@ class userAttrShared():
         self.profile_image_url = helperFunctions.null_check(record.profile_image_url)
         self.user_timezone = helperFunctions.null_check(record.user_timezone)
         self.user_utc_offset = helperFunctions.null_check(record.user_utc_offset)    
-        self.user_groups_member = list(record.user_groups_member)
-        self.user_groups_follows = list(record.user_groups_follows)
+        self.user_groups_member = list(set(record.user_groups_member))
+        self.user_groups_follows = list(set(record.user_groups_follows))
                     
 class userGroupAttrShared():   
     def __init__(self, record):
@@ -481,9 +482,9 @@ class postAttrShared():
         self.post_publish_date = helperFunctions.null_check_datetime(record.post_publish_date)
         self.post_body = helperFunctions.null_check(record.post_body)
         self.post_language = helperFunctions.null_check(record.post_language.language_short)
-        self.user_mentions = [pkey.id for pkey in record.user_mentions_pkey]
-        self.hashtags = list(record.hashtags)
-        self.emoji = list(record.emoji)
+        self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
+        self.hashtags = list(set(record.hashtags))
+        self.emoji = list(set(record.emoji))
         self.post_like_count = helperFunctions.null_check(record.post_like_count)
         self.post_comment_count = helperFunctions.null_check(record.post_comment_count)
         self.post_views_count = helperFunctions.null_check(record.post_views_count)
@@ -509,4 +510,4 @@ class postReactionAttrShared():
         self.reaction_date = helperFunctions.null_check_datetime(record.reaction_date)
         self.reaction_content = helperFunctions.null_check(record.reaction_content)
         self.reaction_like_count = helperFunctions.null_check(record.reaction_like_count)
-        self.user_mentions = [pkey.id for pkey in record.user_mentions_pkey]
+        self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
