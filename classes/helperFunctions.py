@@ -149,15 +149,14 @@ class helperFunctions():
         return str_without_null_byte            
                  
 class lbsnRecordDicts():
-    def __init__(self, lbsnCountryDict=dict(), lbsnCityDict=dict(),
-                 lbsnPlaceDict=dict(),lbsnUserGroupDict=dict(),lbsnUserDict=dict(),lbsnPostDict=dict(), lbsnPostReactionDict=dict()):
-        self.lbsnCountryDict = lbsnCountryDict
-        self.lbsnCityDict = lbsnCityDict
-        self.lbsnPlaceDict = lbsnPlaceDict
-        self.lbsnUserGroupDict = lbsnUserGroupDict
-        self.lbsnUserDict = lbsnUserDict
-        self.lbsnPostDict = lbsnPostDict
-        self.lbsnPostReactionDict = lbsnPostReactionDict
+    def __init__(self):
+        self.lbsnCountryDict = dict()
+        self.lbsnCityDict = dict()
+        self.lbsnPlaceDict = dict()
+        self.lbsnUserGroupDict = dict()
+        self.lbsnUserDict = dict()
+        self.lbsnPostDict = dict()
+        self.lbsnPostReactionDict = dict()
         self.KeyHashes = {lbsnPost.DESCRIPTOR.name: set(), 
                          lbsnCountry.DESCRIPTOR.name: set(),
                          lbsnCity.DESCRIPTOR.name: set(),
@@ -176,14 +175,6 @@ class lbsnRecordDicts():
             (self.lbsnPostDict,lbsnPost().DESCRIPTOR.name),
             (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name)
             ]
-
-    #def allDicts(self):
-    #    # returns all recordsDicts
-    #    recordsDictsMembers = []
-    #    for attr, value in self.__dict__.items():
-    #        if not attr == "KeyHashes":
-    #            recordsDictsMembers.append(value)
-    #    return recordsDictsMembers
                     
     def getTypeCounts(self):
         countList = []
@@ -197,68 +188,23 @@ class lbsnRecordDicts():
         # in this case we assume that origin_id remains the same in each program iteration!
         self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
         
-    def MergeExistingRecords(self, newrecord, dict):
+    def MergeExistingRecords(self, oldrecord, newrecord):
         # Basic Compare function for GUIDS
-        # Compare Length of ProtoBuf Messages, keep longer ones
-        # This should be updated to compare the complete structure, including taking into account the timestamp of data, if two values exist  
-        pkeyID = newrecord.pkey.id
-        if pkeyID in dict:
-            # First check if length of both ProtoBuf Messages are the same
-            oldrecord = dict[pkeyID]
-            oldRecordString = dict[pkeyID].SerializeToString()
-            newRecordString = newrecord.SerializeToString()
-            if len(oldRecordString) == len(newRecordString):
-                # no need to do anything
-                # if we don't return oldrecord, it ceases to exist and is therefore also set to none in dict
-                return oldrecord
-            else:
-                # Do a deep compare
-                # ProtoBuf MergeFrom does a fine job
-                # only problem is it concatenates repeate strings, which may result in duplicate entries
-                # we take care of this prior to submission
-                updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)   
-                dict[pkeyID] = updatedrecord              
-                return
-        else:
-            # just count new entries
-            self.CountGlob += 1
-            if self.CountGlob % 1000 == 0:
-                # progress report (modulo)
-                print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
-                sys.stdout.flush()
-            self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                                 
-            dict[pkeyID] = newrecord
-        
+        # First check if length of both ProtoBuf Messages are the same
+        oldRecordString = oldrecord.SerializeToString()
+        newRecordString = newrecord.SerializeToString()
+        if not len(oldRecordString) == len(newRecordString):
+            # no need to do anything if same lengt
+            oldrecord.MergeFrom(newrecord)
+            #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)   
     
     def deepCompareMergeMessages(self,oldRecord,newRecord):
-        # needs testing for posts!
-        #found = False
-        #if oldRecord.pkey.id == '984048002967982080':
-        #if oldRecord.DESCRIPTOR.name == lbsnPost().DESCRIPTOR.name:
-        #    print('###################################################################')
-        #    print(f'Old Record: {text_format.MessageToString(oldRecord,as_utf8=True)}')
-        #    print('#######')
-        #    print(f'New Record: {text_format.MessageToString(newRecord,as_utf8=True)}')
-        #    print('#######')
-        #    #found = True
-
-        # this is a basic routine that will make a full compare of all fields of two lbsnRecords
-        # None Values will be filled, repeated fields will be updated with new values
-        # similar values remain, changed values will overwrite older values
+        # Do a deep compare
+        # ProtoBuf MergeFrom does a fine job
+        # only problem is it concatenates repeate strings, which may result in duplicate entries
+        # we take care of this prior to submission (see submitData classes)
         oldRecord.MergeFrom(newRecord)
-        #for descriptor in newRecord.DESCRIPTOR.fields:
-        #
-        #    value_old = getattr(oldRecord, descriptor.name)
-        #    value_new = getattr(newRecord, descriptor.name)
-        #    if found and descriptor.name == 'active_since':
-        #        print(f'Old: {value_old}')
-        #        print(f'New: {value_new}')
-        #        print(f'Old byte: {value_old.ByteSize()}')   
-        #        print(f'New byte: {value_new.ByteSize()}')   
-        #                   
-        #    # only compare if not Empty or None
-        #    # we can use ByteSize to see if message/field is set to default (will return 0 byte size)
-        #    if value_new and value_new.ByteSize():
+        #for descriptor in oldRecord.DESCRIPTOR.fields:
         #        if descriptor.label == descriptor.LABEL_REPEATED:
         #            if value_old == value_new:
         #                return oldRecord
@@ -266,35 +212,9 @@ class lbsnRecordDicts():
         #                newEntries = value_new
         #            else:
         #                # only add difference (e.g. = new values)
-        #                newEntries = list(set(value_new) - set(value_old))   
-        #            if descriptor.name == "name_alternatives":
-        #                # necessary because sometimes Twitter submits English names that are not marked as English
-        #                # these get moved to name_alternatives, although they exist already as the main name
-        #                mainName = getattr(oldRecord, "name")
-        #                if mainName and mainName in newEntries:
-        #                    newEntries.remove(mainName)
+        #                newEntries = list(set(value_new) - set(value_old))  
         #            x = getattr(oldRecord, descriptor.name)
         #            x.extend(newEntries)
-        #        # todo?
-        #        #elif descriptor.label == descriptor.TYPE_ENUM:
-        #        # .type gives constants according to: https://developers.google.com/protocol-buffers/docs/reference/python/google.protobuf.descriptor.FieldDescriptor-class
-        #        # TYPE_MESSAGE = 11
-        #        elif descriptor.type == 11:
-        #            
-        #            #value_old.CopyFrom(value_new)
-        #            #setattr(oldRecord, descriptor.name, value_old)
-        #            if found and descriptor.name == 'active_since':
-        #                print(f'New X: ')
-        #        else:
-        #            if not value_old:
-        #                setattr(oldRecord, descriptor.name, value_new)
-        #            else:
-        #                if not value_old == value_new:
-        #                    # overwrite old value with new value
-        #                    setattr(oldRecord,descriptor.name,value_new)
-        #if oldRecord.pkey.id == '984048002967982080':
-        #if oldRecord.DESCRIPTOR.name == lbsnPost().DESCRIPTOR.name:
-        #    input(f'Record after: {text_format.MessageToString(oldRecord,as_utf8=True)}')
         return oldRecord
            
     def AddRecordsToDict(self,records):
@@ -317,9 +237,21 @@ class lbsnRecordDicts():
         }
         return dictSwitcher.get(record.DESCRIPTOR.name)
             
-    def AddRecordToDict(self,record):
-        dict = self.dictSelector(record)
-        self.MergeExistingRecords(record,dict)
+    def AddRecordToDict(self,newrecord):
+        dict = self.dictSelector(newrecord)
+        pkeyID = newrecord.pkey.id
+        if newrecord.pkey.id in dict:
+            oldrecord = dict[pkeyID]
+            self.MergeExistingRecords(oldrecord,newrecord)
+        else:
+            # just count new entries
+            self.CountGlob += 1
+            if self.CountGlob % 1000 == 0:
+                # progress report (modulo)
+                print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
+                sys.stdout.flush()
+            self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                            
+            dict[pkeyID] = newrecord          
 
 class geocodeLocations():
     def __init__(self):
@@ -344,3 +276,42 @@ class timeMonitor():
         difference = int(later - self.now)
         reportMsg = f'{int(hours):0>2} Hours {int(minutes):0>2} Minutes and {seconds:05.2f} Seconds passed.'
         return reportMsg
+    
+class memoryLeakDetec():
+    # use this class to identify memory leaks
+    # execute .before() and .after() to see the difference in new objects being added
+    # execute report to list
+    # if there are high numbers of specific types of objects, use printType to print these, e.g. .printType(list)
+    # see also http://tech.labs.oliverwyman.com/blog/2008/11/14/tracing-python-memory-leaks/
+    os = __import__('os')
+    def __init__(self):
+        global defaultdict
+        global get_objects
+        from collections import defaultdict
+        from gc import get_objects
+        self._before = defaultdict(int)
+        self._after = defaultdict(int)
+        
+    def before(self):
+        for i in get_objects():
+            self._before[type(i)] += 1
+            
+    def after(self):
+        for i in get_objects():
+            self._after[type(i)] += 1
+            
+    def report(self):
+        reportStat = ""
+        if self._before and self._after:
+            reportStat = [(k, self._after[k] -  self._before[k]) for k in self._after if self._after[k] -  self._before[k]]
+        return reportStat  
+            
+    def printType(self, type, max = 100):
+        x = 0
+        toplist = []
+        for obj in get_objects():
+            if isinstance(obj, type):
+                x += 1
+                if x < max:
+                    toplist.append(obj)
+        print(f'Count all of Type {type}: {x}. Top {max}: {toplist}')

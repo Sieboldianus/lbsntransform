@@ -41,22 +41,21 @@ class lbsnDB():
         self.dbConnection.commit() # commit changes to db
         self.count_entries_commit = 0
         
-    def submitLbsnRecordDicts(self, recordsDicts):
+    def submitLbsnRecordDicts(self, fieldMappingTwitter):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
         # therefore, records are processed starting from lowest granularity, which is stored in allDicts()
+        recordDicts = fieldMappingTwitter.lbsnRecords
         x = 0
-        for recordsDict in recordsDicts.allDicts:
+        for recordsDict in recordDicts.allDicts:
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
                 x += 1
-                print(f'Transferring {x} of {recordsDicts.CountGlob} records to output db ({type_name})..', end='\r')
+                print(f'Transferring {x} of {recordDicts.CountGlob} records to output db ({type_name})..', end='\r')
                 self.prepareLbsnRecord(record,type_name)
                 self.count_glob +=  1 #self.dbCursor.rowcount
                 self.count_entries_commit +=  1 #self.dbCursor.rowcount
                 if self.count_glob == 100 or self.count_entries_commit > self.commit_volume:
                     self.commitChanges()
-        # print out once to remove last '\r'
-        #print('')
         # submit remaining rest
         self.submitAllBatches()
                 
@@ -119,7 +118,6 @@ class lbsnDB():
         if self.batchedPostReactions:#  and len(self.batchedPostReactions) > 0:
             self.submitLbsnPostReactions()
             self.batchedPostReactions = []   
-            
             
     def submitLbsnCountries(self):
         args_str = ','.join(self.batchedCountries)

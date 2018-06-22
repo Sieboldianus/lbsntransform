@@ -11,7 +11,7 @@ import re
 # for debugging only:
 from google.protobuf import text_format
 
-class fieldMappingTwitter():
+class fieldMappingTwitter(object):
     def __init__(self, disableReactionPostReferencing = False, geocodes = False):
         # We're dealing with Twitter in this class, lets create the OriginID globally
         # this OriginID is required for all CompositeKeys
@@ -285,7 +285,7 @@ class fieldMappingTwitter():
         postReactionRecord.user_mentions_pkey.extend([userRefPkey for userRefPkey in postRecord.user_mentions_pkey])
         return postReactionRecord
      
-    def extractPlace(self,postPlace_json, postGeoaccuracy, userLanguage = None):
+    def extractPlace(self, postPlace_json, postGeoaccuracy, userLanguage = None):
         place = postPlace_json
         placeID = place.get('id')
         if not placeID:

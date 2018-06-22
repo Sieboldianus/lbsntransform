@@ -11,6 +11,7 @@ from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from classes.helperFunctions import geocodeLocations as geocodeLocations
 from classes.helperFunctions import timeMonitor as timeMonitor
+from classes.helperFunctions import memoryLeakDetec as memoryLeakDetec
 from classes.fieldMapping import fieldMappingTwitter as fieldMappingTwitter
 from classes.submitData import lbsnDB as lbsnDB
 from config.config import baseconfig as baseconfig
@@ -55,8 +56,7 @@ def main():
                                    config.dbPassword_Output
                                    )
     conn_output, cursor_output = outputConnection.connect()
-    outputDB = lbsnDB(dbCursor = cursor_output, 
-                      dbConnection = conn_output)
+    
     # load from local json/csv or from PostgresDB
     if config.LocalInput:
         loc_filelist = glob(f'{config.InputPath}{config.LocalFileType}')
@@ -90,7 +90,6 @@ def main():
         geocodeDict = locationsGeocodeDict.geocodeDict
         
     finished = False
-    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
     
     # Manually add entries that need submission prior to parsing data
     # Example: A Group that applies to all entries
@@ -103,6 +102,9 @@ def main():
     #twitterRecords.lbsnRecords.AddRecordToDict(DBG_owner)
     #twitterRecords.lbsnRecords.AddRecordToDict(deutscherBundestagGroup)
     howLong = timeMonitor()
+    outputDB = lbsnDB(dbCursor = cursor_output, 
+                      dbConnection = conn_output)
+    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
         if config.LocalInput:
@@ -121,8 +123,7 @@ def main():
             continueNumber += 1
         else:
             continueNumber = records[-1][0] #last returned DBRowNumber
-        twitterRecords, processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput)
-            
+        processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput)  
         processedRecords += processedCount
         processedTotal += processedCount        
         print(f'{processedTotal} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
@@ -130,19 +131,18 @@ def main():
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not startNumber or processedRecords >= config.transferCount or finished:
             sys.stdout.flush()
-            outputDB.submitLbsnRecordDicts(twitterRecords.lbsnRecords)
+            print(f'Transferring {twitterRecords.lbsnRecords.CountGlob} to db..')
+            outputDB.submitLbsnRecordDicts(twitterRecords)
             outputDB.commitChanges()
-            # clear batch
-            del twitterRecords
-            # create a new empty dict of records
-            twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing)
             processedRecords = 0
+            ## create a new empty dict of records
+            twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
         # remember the first processed DBRow ID
         if not startNumber:
             if config.LocalInput:
                 startNumber = 1
             else:
-                startNumber = records[0][0] #first returned DBRowNumber       
+                startNumber = records[0][0] #first returned DBRowNumber
     # Close connections to DBs       
     if not config.LocalInput: 
         cursor_input.close()
@@ -168,7 +168,7 @@ def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNum
         if (transferlimit and processedRecords >= transferlimit) or (not isLocalInput and endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
             break
-    return twitterRecords, processedRecords, finished
+    return processedRecords, finished
 
 ## edit the following procedures to your structure
 
