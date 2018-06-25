@@ -50,6 +50,20 @@ class helperFunctions():
             record.pkey.CopyFrom(c_Key)                        
             return record
         
+    def createNewLBSNRelationship_with_id(lbsnRelationship,relation_to_id, relation_from_id, relation_origin):
+            # initializes new relationship with 2 composite IDs for one origin
+            c_Key_to = CompositeKey()
+            c_Key_to.origin.CopyFrom(relation_origin)
+            c_Key_to.id = relation_to_id
+            c_Key_from = CompositeKey()
+            c_Key_from.origin.CopyFrom(relation_origin)
+            c_Key_from.id = relation_from_id
+            r_Key = RelationshipKey()
+            r_Key.relation_to.CopyFrom(c_Key_to)
+            r_Key.relation_from.CopyFrom(c_Key_from)
+            lbsnRelationship.pkey.CopyFrom(r_Key)                     
+            return lbsnRelationship
+                
     def isPostReaction(jsonString):
         if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
             # The retweeted field will return true if a tweet _got_ retweeted
@@ -157,13 +171,15 @@ class lbsnRecordDicts():
         self.lbsnUserDict = dict()
         self.lbsnPostDict = dict()
         self.lbsnPostReactionDict = dict()
+        self.lbsnRelationshipDict = dict()
         self.KeyHashes = {lbsnPost.DESCRIPTOR.name: set(), 
                          lbsnCountry.DESCRIPTOR.name: set(),
                          lbsnCity.DESCRIPTOR.name: set(),
                          lbsnPlace.DESCRIPTOR.name: set(),
                          lbsnUserGroup.DESCRIPTOR.name: set(),
                          lbsnUser.DESCRIPTOR.name: set(),
-                         lbsnPostReaction.DESCRIPTOR.name: set()}
+                         lbsnPostReaction.DESCRIPTOR.name: set(),
+                         lbsnRelationship.DESCRIPTOR.name: set()}
         self.CountGlob = 0
         # returns all recordsDicts in correct order, with names as references (tuple)
         self.allDicts = [
@@ -173,7 +189,8 @@ class lbsnRecordDicts():
             (self.lbsnUserGroupDict,lbsnUserGroup().DESCRIPTOR.name),
             (self.lbsnUserDict,lbsnUser().DESCRIPTOR.name),
             (self.lbsnPostDict,lbsnPost().DESCRIPTOR.name),
-            (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name)
+            (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name),
+            (self.lbsnRelationshipDict,lbsnRelationship().DESCRIPTOR.name)
             ]
                     
     def getTypeCounts(self):
@@ -186,7 +203,12 @@ class lbsnRecordDicts():
         # Keep lists of pkeys for each type
         # this can be used to check for duplicates or to get a total count for each type of records (Number of unique Users, Countries, Places etc.)
         # in this case we assume that origin_id remains the same in each program iteration!
-        self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
+        if record.DESCRIPTOR.name == lbsnRelationship().DESCRIPTOR.name:
+            # we need the complete uuid of both entities for relationships because they can span different origin_ids
+            self.KeyHashes[record.DESCRIPTOR.name].add(f'{record.pkey.relation_to.origin.origin_id}{record.pkey.relation_to.id}{record.pkey.relation_from.origin.origin_id}{record.pkey.relation_from.id}{record.relationship_type}')
+        else:
+            # all other entities can be globally uniquely identified by their local guid
+            self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
         
     def MergeExistingRecords(self, oldrecord, newrecord):
         # Basic Compare function for GUIDS
@@ -233,7 +255,7 @@ class lbsnRecordDicts():
             lbsnPlace().DESCRIPTOR.name: self.lbsnPlaceDict,
             lbsnPostReaction().DESCRIPTOR.name: self.lbsnPostReactionDict,
             lbsnUser().DESCRIPTOR.name: self.lbsnUserDict,
-            lbsnUserGroup().DESCRIPTOR.name: self.lbsnUserGroupDict,
+            lbsnUserGroup().DESCRIPTOR.name: self.lbsnUserGroupDict
         }
         return dictSwitcher.get(record.DESCRIPTOR.name)
             
@@ -251,8 +273,14 @@ class lbsnRecordDicts():
                 print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
                 sys.stdout.flush()
             self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                            
-            dict[pkeyID] = newrecord          
-
+            dict[pkeyID] = newrecord    
+                  
+    def AddRelationshipToDict(self,newrelationship):
+        pkeyID = f'{newrelationship.pkey.relation_to.origin.origin_id}{newrelationship.pkey.relation_to.id}{newrelationship.pkey.relation_from.origin.origin_id}{newrelationship.pkey.relation_from.id}{newrelationship.relationship_type}'
+        if not pkeyID in self.lbsnRelationshipDict:
+            self.lbsnRelationshipDict[pkeyID] = newrelationship
+            self.update_keyHash(newrelationship) # update keyHash only necessary for new record
+        
 class geocodeLocations():
     def __init__(self):
         self.geocodeDict = dict()

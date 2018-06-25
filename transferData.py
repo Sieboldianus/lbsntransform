@@ -74,7 +74,9 @@ def main():
                                        True # ReadOnly Mode
                                        )
         conn_input, cursor_input = inputConnection.connect()
-        
+    
+    outputDB = lbsnDB(dbCursor = cursor_output, 
+                  dbConnection = conn_output)    
     # start settings
     processedRecords = 0
     processedTotal = 0
@@ -88,9 +90,9 @@ def main():
         locationsGeocodeDict = geocodeLocations()
         locationsGeocodeDict.load_geocodelist(config.geocodeLocations)
         geocodeDict = locationsGeocodeDict.geocodeDict
-        
+      
     finished = False
-    
+    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
     # Manually add entries that need submission prior to parsing data
     # Example: A Group that applies to all entries
     #deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",twitterRecords.origin)
@@ -101,10 +103,9 @@ def main():
     #deutscherBundestagGroup.usergroup_description = 'Alle twitternden Abgeordneten aus dem Deutschen Bundestag #bundestag'
     #twitterRecords.lbsnRecords.AddRecordToDict(DBG_owner)
     #twitterRecords.lbsnRecords.AddRecordToDict(deutscherBundestagGroup)
+    
     howLong = timeMonitor()
-    outputDB = lbsnDB(dbCursor = cursor_output, 
-                      dbConnection = conn_output)
-    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
+
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
         if config.LocalInput:
@@ -123,10 +124,10 @@ def main():
             continueNumber += 1
         else:
             continueNumber = records[-1][0] #last returned DBRowNumber
-        processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput)  
+        processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput, config.InputType)  
         processedRecords += processedCount
         processedTotal += processedCount        
-        print(f'{processedTotal} Processed. Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
+        print(f'{processedTotal} records processed (up to input {continueNumber}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not startNumber or processedRecords >= config.transferCount or finished:
@@ -150,7 +151,7 @@ def main():
     log.info(f'\n\nProcessed {processedTotal} records (Input {startNumber} to {continueNumber}).')
     print(f'Done. {howLong.stop_time()}')
        
-def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNumber, isLocalInput):
+def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNumber, isLocalInput, InputType):
     finished = False
     processedRecords = 0
     DBRowNumber = 0
@@ -164,7 +165,7 @@ def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNum
         if not singleJSONRecordDict or singleJSONRecordDict.get('limit'):
             # Skip Rate Limiting Notice or empty records
             continue
-        twitterRecords.parseJsonRecord(singleJSONRecordDict)
+        twitterRecords.parseJsonRecord(singleJSONRecordDict, InputType)
         if (transferlimit and processedRecords >= transferlimit) or (not isLocalInput and endWithDBRowNumber and DBRowNumber >= endWithDBRowNumber):
             finished = True
             break

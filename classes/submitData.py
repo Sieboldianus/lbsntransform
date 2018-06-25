@@ -35,6 +35,7 @@ class lbsnDB():
         self.batchedUserGroups = []
         self.batchedPosts = []
         self.batchedPostReactions = []
+        self.batchedRelationships = []
         self.batchVolume = 100 # Records are batched and submitted in one insert with x number of records
     
     def commitChanges(self):
@@ -90,8 +91,12 @@ class lbsnDB():
             preparedRecord = self.prepareLbsnUser(record)
             if preparedRecord:
                 self.batchedUsers.append(preparedRecord)
-        
-        if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers),len(self.batchedUserGroups)]) >= self.batchVolume:
+        elif record_type == lbsnRelationship().DESCRIPTOR.name:
+            preparedRecord = self.prepareLbsnRelationship(record)
+            if preparedRecord:
+                self.batchedRelationships.append(preparedRecord)
+                
+        if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers),len(self.batchedUserGroups),len(self.batchedRelationships)]) >= self.batchVolume:
             self.submitAllBatches()
                               
     def submitAllBatches(self):
@@ -118,6 +123,9 @@ class lbsnDB():
         if self.batchedPostReactions:#  and len(self.batchedPostReactions) > 0:
             self.submitLbsnPostReactions()
             self.batchedPostReactions = []   
+        if self.batchedRelationships:#  and len(self.batchedPostReactions) > 0:
+            self.submitLbsnRelationships()
+            self.batchedRelationships = []   
             
     def submitLbsnCountries(self):
         args_str = ','.join(self.batchedCountries)
@@ -375,7 +383,41 @@ class lbsnDB():
                                          postReactionRecord.reaction_like_count,
                                          postReactionRecord.user_mentions)) 
         return preparedRecord.decode()
- 
+
+    def submitLbsnRelationships(self):
+        # submit relationships of different types record[1] is the PostgresQL formatted list of values, record[0] is the type of relationship that determines the table selection
+        selectFriends = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "isfriend"]
+        if selectFriends:
+            args_isFriend = ','.join(selectFriends)
+            #sys.exit()
+            insert_sql = f'''
+                            INSERT INTO "_user_friend" (user_origin_id, user_guid, friend_origin_id, friend_guid)
+                            VALUES {args_isFriend}
+                            ON CONFLICT (user_origin_id, user_guid, friend_origin_id, friend_guid)
+                            DO NOTHING
+                        '''
+            self.submitBatch(insert_sql)
+        selectConnected = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "isconnected"]
+        if selectConnected:
+            args_isConnected = ','.join(selectConnected)
+            insert_sql = f'''
+                            INSERT INTO "_user_friend" (user_origin_id, user_guid, connected_origin_id, connected_guid)
+                            VALUES {args_isConnected}
+                            ON CONFLICT (user_origin_id, user_guid, connected_origin_id, connected_guid)
+                            DO NOTHING
+                        '''
+            self.submitBatch(insert_sql)
+                                
+    def prepareLbsnRelationship(self, record):
+        relationshipRecord = relationshipAttrShared(record)
+        record_sql = '''(%s,%s,%s,%s)'''
+        preparedTypeRecordTuple = (relationshipRecord.relType,
+                          self.dbCursor.mogrify(record_sql, (relationshipRecord.OriginID,          
+                          relationshipRecord.Guid,              
+                          relationshipRecord.OriginID_Rel,         
+                          relationshipRecord.Guid_Rel)).decode())
+        return preparedTypeRecordTuple 
+     
     def submitBatch(self,insert_sql):
         ## Needs testing: is using Savepoint for each insert slower than rolling back entire commit?
         ## for performance, see https://stackoverflow.com/questions/12206600/how-to-speed-up-insertion-performance-in-postgresql
@@ -390,7 +432,7 @@ class lbsnDB():
                 if '(post_language)' in e.diag.message_detail or '(user_language)' in e.diag.message_detail:
                     # If language does not exist, we'll trust Twitter and add this to our language list
                     missingLanguage = e.diag.message_detail.partition("language)=(")[2].partition(") is not present")[0]
-                    print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..')
+                    print(f'TransactionIntegrityError, inserting language "{missingLanguage}" first..               ')
                     #self.dbConnection.rollback()
                     self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
                     insert_language_sql = '''
@@ -399,6 +441,8 @@ class lbsnDB():
                            '''
                     self.dbCursor.execute(insert_language_sql,(missingLanguage,))
                     #self.prepareLbsnRecord(record,type_name)
+                else:
+                    sys.exit(f'{e}')
             except ValueError as e:
                 self.log.warning(f'{e}')
                 input("Press Enter to continue... (entry will be skipped)")
@@ -410,6 +454,7 @@ class lbsnDB():
             #except Exception as e:
             #    self.log.error(traceback.format_exc())
             #    sys.exit()
+                
             else:
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
@@ -509,3 +554,11 @@ class postReactionAttrShared():
         self.reaction_content = helperFunctions.null_check(record.reaction_content)
         self.reaction_like_count = helperFunctions.null_check(record.reaction_like_count)
         self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
+
+class relationshipAttrShared():   
+    def __init__(self, relationship):
+        self.OriginID = relationship.pkey.relation_to.origin.origin_id
+        self.Guid = relationship.pkey.relation_to.id
+        self.OriginID_Rel = relationship.pkey.relation_from.origin.origin_id
+        self.Guid_Rel = relationship.pkey.relation_from.id
+        self.relType = helperFunctions.null_check(lbsnRelationship().RelationshipType.Name(relationship.relationship_type)).lower()

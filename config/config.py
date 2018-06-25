@@ -28,6 +28,7 @@ class baseconfig():
         self.endWithDBRowNumber = None
         self.debugMode = 'INFO' #needs to be implemented
         self.geocodeLocations = False # provide path to CSV file with location geocodes (CSV Structure: lat, lng, name)
+        self.InputType = None # Input type, e.g. "post", "profile", "friendslist", "followerslist" etc.
         
     def parseArgs(self):
         parser = argparse.ArgumentParser()
@@ -53,6 +54,7 @@ class baseconfig():
         parser.add_argument('-rE', "--endWithDBRowNumber", default=self.endWithDBRowNumber) 
         parser.add_argument('-d', "--debugMode", default=self.debugMode) 
         parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations) 
+        parser.add_argument('-iT', "--inputType", default=self.InputType)
          
         args = parser.parse_args()
         if args.LocalInput and int(args.LocalInput) == 1:
@@ -96,4 +98,6 @@ class baseconfig():
             self.startWithDBRowNumber = int(args.startWithDBRowNumber)
         if args.endWithDBRowNumber:
             self.endWithDBRowNumber = int(args.endWithDBRowNumber)
-        self.debugMode = args.debugMode    
+        self.debugMode = args.debugMode
+        if args.inputType:
+            self.InputType = args.inputType

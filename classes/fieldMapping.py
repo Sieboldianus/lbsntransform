@@ -11,7 +11,7 @@ import re
 # for debugging only:
 from google.protobuf import text_format
 
-class fieldMappingTwitter(object):
+class fieldMappingTwitter():
     def __init__(self, disableReactionPostReferencing = False, geocodes = False):
         # We're dealing with Twitter in this class, lets create the OriginID globally
         # this OriginID is required for all CompositeKeys
@@ -23,9 +23,30 @@ class fieldMappingTwitter(object):
         self.disableReactionPostReferencing = disableReactionPostReferencing
         self.geocodes = geocodes
         
-    def parseJsonRecord(self, jsonStringDict): 
+    def parseJsonRecord(self, jsonStringDict, input_type = None): 
         # decide if main object is post or user json
-        if 'screen_name' in jsonStringDict:
+        if input_type and input_type in ('friendslist','followerslist'):
+            for user, relatedUserList in jsonStringDict.items():
+                userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(user),self.origin)
+                self.lbsnRecords.AddRecordsToDict(userRecord)
+                for relatedUser in relatedUserList:
+                    relatedRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
+                    self.lbsnRecords.AddRecordsToDict(relatedRecord)
+                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,relatedRecord.pkey.id, self.origin)
+                    if input_type == 'friendslist':
+                        relationshipRecord.relationship_type = lbsnRelationship.isFRIEND
+                    elif input_type == 'followerslist':
+                        relationshipRecord.relationship_type = lbsnRelationship.isFOLLOWER
+                    else:
+                        relationshipRecord.relationship_type = lbsnRelationship.UNKNOWN    
+                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
+        elif input_type and input_type == 'followerslist':
+            for user, followerslist in jsonStringDict:
+                for follower in followerlist:
+                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),user,self.origin,follower,self.origin)
+                    relationshipRecord.relationship_type = lbsnRelationship.isFOLLOWER
+                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)         
+        elif (input_type and input_type == 'profile') or 'screen_name' in jsonStringDict:
             # user
             userRecord = self.extractUser(jsonStringDict)
             self.lbsnRecords.AddRecordsToDict(userRecord)
@@ -41,7 +62,7 @@ class fieldMappingTwitter(object):
                     userStatus = jsonStringDict.get('retweeted_status')
                 # in case user status is available
                 if userStatus:
-                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)                  
+                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)           
         else:              
             self.parseJsonPost(jsonStringDict)
                
@@ -125,7 +146,9 @@ class fieldMappingTwitter(object):
         if userBio:
             userRecord.biography = userBio
         userRecord.user_name = user.get('screen_name')
-        userRecord.group_count = user.get('listed_count')
+        listedCount = user.get('listed_count')
+        if listedCount:
+            userRecord.group_count = listedCount
         userRecord.post_count = user.get('statuses_count')
         userRecord.url = f'https://twitter.com/intent/user?user_id={userRecord.pkey.id}'
         refUserLanguage = Language()
@@ -151,7 +174,7 @@ class fieldMappingTwitter(object):
         if userUTCOffset:
             userRecord.user_utc_offset = userUTCOffset
         # the following cannot be extracted from twitter post data
-        # deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
+        #deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
         #userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
         #userRecord.user_groups_follows = []
         return userRecord
