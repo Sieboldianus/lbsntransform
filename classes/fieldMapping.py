@@ -12,7 +12,7 @@ import re
 from google.protobuf import text_format
 
 class fieldMappingTwitter():
-    def __init__(self, disableReactionPostReferencing = False, geocodes = False):
+    def __init__(self, disableReactionPostReferencing = False, geocodes = False, mapFullRelations = False):
         # We're dealing with Twitter in this class, lets create the OriginID globally
         # this OriginID is required for all CompositeKeys
         origin = lbsnOrigin()
@@ -21,6 +21,7 @@ class fieldMappingTwitter():
         self.lbsnRecords = lbsnRecordDicts() #this is where all the data will be stored
         self.log = logging.getLogger('__main__')#logging.getLogger()
         self.disableReactionPostReferencing = disableReactionPostReferencing
+        self.mapFullRelations = mapFullRelations
         self.geocodes = geocodes
         
     def parseJsonRecord(self, jsonStringDict, input_type = None): 
@@ -36,7 +37,7 @@ class fieldMappingTwitter():
                     if input_type == 'friendslist':
                         relationshipRecord.relationship_type = lbsnRelationship.isFRIEND
                     elif input_type == 'followerslist':
-                        relationshipRecord.relationship_type = lbsnRelationship.isFOLLOWER
+                        relationshipRecord.relationship_type = lbsnRelationship.isCONNECTED
                     else:
                         relationshipRecord.relationship_type = lbsnRelationship.UNKNOWN    
                     self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
@@ -174,8 +175,12 @@ class fieldMappingTwitter():
         if userUTCOffset:
             userRecord.user_utc_offset = userUTCOffset
         # the following cannot be extracted from twitter post data
-        #deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
-        #userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
+        deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
+        userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
+        if self.mapFullRelations:
+                relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,deutscherBundestagGroup.pkey.id, self.origin)
+                relationshipRecord.relationship_type = lbsnRelationship.inGROUP
+                self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
         #userRecord.user_groups_follows = []
         return userRecord
           
@@ -285,7 +290,12 @@ class fieldMappingTwitter():
         if userMentionsJson:
             refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,self.origin)
             self.lbsnRecords.AddRecordsToDict(refUserRecords)
-            postRecord.user_mentions_pkey.extend([userRef.pkey for userRef in refUserRecords])         
+            #postRecord.user_mentions_pkey.extend([userRef.pkey for userRef in refUserRecords])
+            if self.mapFullRelations:
+                for mentionedUserRecord in refUserRecords:
+                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,mentionedUserRecord.pkey.id, self.origin)
+                    relationshipRecord.relationship_type = lbsnRelationship.MENTIONS_USER
+                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
         mediaJson = entitiesJson.get('media')
         if mediaJson:
             postRecord.post_type = helperFunctions.assignMediaPostType(mediaJson)

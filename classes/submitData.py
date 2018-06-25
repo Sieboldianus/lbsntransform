@@ -401,13 +401,33 @@ class lbsnDB():
         if selectConnected:
             args_isConnected = ','.join(selectConnected)
             insert_sql = f'''
-                            INSERT INTO "_user_friend" (user_origin_id, user_guid, connected_origin_id, connected_guid)
+                            INSERT INTO "_user_connected" (user_origin_id, user_guid, connected_origin_id, connected_guid)
                             VALUES {args_isConnected}
                             ON CONFLICT (user_origin_id, user_guid, connected_origin_id, connected_guid)
                             DO NOTHING
                         '''
             self.submitBatch(insert_sql)
-                                
+        selectUserGroupMember = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "ingroup"]
+        if selectUserGroupMember:
+            args_isInGroup = ','.join(selectUserGroupMember)
+            insert_sql = f'''
+                            INSERT INTO "_user_group_member" (user_origin_id, user_guid, group_origin_id, group_guid)
+                            VALUES {args_isInGroup}
+                            ON CONFLICT (user_origin_id, user_guid, group_origin_id, group_guid)
+                            DO NOTHING
+                        '''
+            self.submitBatch(insert_sql)
+        selectUserMentions = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "mentions_user"]
+        if selectUserMentions:
+            args_isInGroup = ','.join(selectUserMentions)
+            insert_sql = f'''
+                            INSERT INTO "_user_mentions" (user_origin_id, user_guid, mentioneduser_origin_id, mentioneduser_guid)
+                            VALUES {args_isInGroup}
+                            ON CONFLICT (user_origin_id, user_guid, mentioneduser_origin_id, mentioneduser_guid)
+                            DO NOTHING
+                        '''
+            self.submitBatch(insert_sql)
+                                                   
     def prepareLbsnRelationship(self, record):
         relationshipRecord = relationshipAttrShared(record)
         record_sql = '''(%s,%s,%s,%s)'''

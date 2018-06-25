@@ -267,17 +267,21 @@ class lbsnRecordDicts():
             self.MergeExistingRecords(oldrecord,newrecord)
         else:
             # just count new entries
-            self.CountGlob += 1
-            if self.CountGlob % 1000 == 0:
-                # progress report (modulo)
-                print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
-                sys.stdout.flush()
+            self.countProgressReport()
             self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                            
             dict[pkeyID] = newrecord    
-                  
+            
+    def countProgressReport(self):
+        self.CountGlob += 1
+        if self.CountGlob % 1000 == 0:
+            # progress report (modulo)
+            print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
+            sys.stdout.flush()
+                              
     def AddRelationshipToDict(self,newrelationship):
         pkeyID = f'{newrelationship.pkey.relation_to.origin.origin_id}{newrelationship.pkey.relation_to.id}{newrelationship.pkey.relation_from.origin.origin_id}{newrelationship.pkey.relation_from.id}{newrelationship.relationship_type}'
         if not pkeyID in self.lbsnRelationshipDict:
+            self.countProgressReport()
             self.lbsnRelationshipDict[pkeyID] = newrelationship
             self.update_keyHash(newrelationship) # update keyHash only necessary for new record
         

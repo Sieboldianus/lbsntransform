@@ -29,6 +29,7 @@ class baseconfig():
         self.debugMode = 'INFO' #needs to be implemented
         self.geocodeLocations = False # provide path to CSV file with location geocodes (CSV Structure: lat, lng, name)
         self.InputType = None # Input type, e.g. "post", "profile", "friendslist", "followerslist" etc.
+        self.MapRelations = False # Set to true to map full relations, e.g. many-to-many relationships such as user_follows, user_friend, user_mentions etc. are mapped in a separate table
         
     def parseArgs(self):
         parser = argparse.ArgumentParser()
@@ -55,6 +56,7 @@ class baseconfig():
         parser.add_argument('-d', "--debugMode", default=self.debugMode) 
         parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations) 
         parser.add_argument('-iT', "--inputType", default=self.InputType)
+        parser.add_argument('-mR', "--mapFullRelations", default=self.MapRelations)
          
         args = parser.parse_args()
         if args.LocalInput and int(args.LocalInput) == 1:
@@ -101,3 +103,5 @@ class baseconfig():
         self.debugMode = args.debugMode
         if args.inputType:
             self.InputType = args.inputType
+        if args.mapFullRelations:
+            self.MapRelations = True

@@ -92,7 +92,7 @@ def main():
         geocodeDict = locationsGeocodeDict.geocodeDict
       
     finished = False
-    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
+    twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict, config.MapRelations)
     # Manually add entries that need submission prior to parsing data
     # Example: A Group that applies to all entries
     #deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",twitterRecords.origin)
@@ -137,7 +137,7 @@ def main():
             outputDB.commitChanges()
             processedRecords = 0
             ## create a new empty dict of records
-            twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict)
+            twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict, config.MapRelations)
         # remember the first processed DBRow ID
         if not startNumber:
             if config.LocalInput:
