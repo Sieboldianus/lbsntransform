@@ -221,10 +221,27 @@ class lbsnDB():
                         VALUES {args_str}
                         ON CONFLICT (origin_id, user_guid)
                         DO UPDATE SET
-                        (user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows)
-                        = (EXCLUDED.user_name, EXCLUDED.user_fullname, EXCLUDED.follows, EXCLUDED.followed, EXCLUDED.group_count, EXCLUDED.biography, EXCLUDED.post_count, EXCLUDED.is_private, EXCLUDED.url, EXCLUDED.is_available, EXCLUDED.user_language, EXCLUDED.user_location, EXCLUDED.user_location_geom, EXCLUDED.liked_count, EXCLUDED.active_since, EXCLUDED.profile_image_url, EXCLUDED.user_timezone, EXCLUDED.user_utc_offset, EXCLUDED.user_groups_member, EXCLUDED.user_groups_follows);
+                            user_name = COALESCE(EXCLUDED.user_name, "user".user_name),                                   
+                            user_fullname = COALESCE(EXCLUDED.user_fullname, "user".user_fullname),                                      
+                            follows = GREATEST(COALESCE(EXCLUDED.follows, "user".follows)),                                                         
+                            followed = GREATEST(COALESCE(EXCLUDED.followed, "user".followed)),
+                            group_count = GREATEST(COALESCE(EXCLUDED.group_count, "user".group_count));
+                            biography = COALESCE(EXCLUDED.biography, "user".biography);
+                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, "user".post_count));
+                            is_private = COALESCE(EXCLUDED.is_private, "user".is_private);
+                            url = COALESCE(EXCLUDED.url, "user".url);
+                            is_available = COALESCE(EXCLUDED.is_available, "user".is_available);
+                            user_language = COALESCE(EXCLUDED.user_language, "user".user_language);
+                            user_location = COALESCE(EXCLUDED.user_location, "user".user_location);
+                            user_location_geom = COALESCE(EXCLUDED.user_location_geom, "user".user_location_geom);
+                            liked_count = GREATEST(COALESCE(EXCLUDED.liked_count, "user".liked_count));
+                            active_since = COALESCE(EXCLUDED.active_since, "user".active_since);
+                            profile_image_url = COALESCE(EXCLUDED.profile_image_url, "user".profile_image_url);
+                            user_timezone = COALESCE(EXCLUDED.user_timezone, "user".user_timezone);
+                            user_utc_offset = COALESCE(EXCLUDED.user_utc_offset, "user".user_utc_offset);
+                            user_groups_member = COALESCE(EXCLUDED.user_groups_member, "user".user_groups_member);
+                            user_groups_follows = COALESCE(EXCLUDED.user_groups_follows, "user".user_groups_follows);
                         '''
-                        # No coalesce for user: in case user changes or removes information, this should also be removed from the record
         self.submitBatch(insert_sql)
                         
     def prepareLbsnUser(self, record):

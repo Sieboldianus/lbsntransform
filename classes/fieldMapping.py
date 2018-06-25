@@ -175,12 +175,12 @@ class fieldMappingTwitter():
         if userUTCOffset:
             userRecord.user_utc_offset = userUTCOffset
         # the following cannot be extracted from twitter post data
-        deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
-        userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
-        if self.mapFullRelations:
-                relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,deutscherBundestagGroup.pkey.id, self.origin)
-                relationshipRecord.relationship_type = lbsnRelationship.inGROUP
-                self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
+        #deutscherBundestagGroup = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(),"MdB (Bundestag)",self.origin)
+        #userRecord.user_groups_member.append(deutscherBundestagGroup.pkey.id)
+        #if self.mapFullRelations:
+        #        relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,deutscherBundestagGroup.pkey.id, self.origin)
+        #        relationshipRecord.relationship_type = lbsnRelationship.inGROUP
+        #        self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
         #userRecord.user_groups_follows = []
         return userRecord
           
