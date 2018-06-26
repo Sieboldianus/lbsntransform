@@ -22,6 +22,7 @@ class lbsnDB():
             sys.exit("No DB Cursor available.")
         self.commit_volume = commit_volume
         self.count_entries_commit = 0
+        self.count_affected = 0
         self.count_glob = 0
         self.null_island_count = 0
         self.country_already_inserted = set()
@@ -47,6 +48,7 @@ class lbsnDB():
         # therefore, records are processed starting from lowest granularity, which is stored in allDicts()
         recordDicts = fieldMappingTwitter.lbsnRecords
         x = 0
+        self.count_affected = 0
         for recordsDict in recordDicts.allDicts:
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
@@ -59,6 +61,7 @@ class lbsnDB():
                     self.commitChanges()
         # submit remaining rest
         self.submitAllBatches()
+        print(f'Updated/Inserted {self.count_affected} records.')
                 
     def prepareLbsnRecord(self, record, record_type):
         # this can be done better
@@ -503,6 +506,7 @@ class lbsnDB():
                 
             else:
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
+                self.count_affected += self.dbCursor.rowcount # monitoring
                 tsuccessful = True
                    
 class placeAttrShared():   
