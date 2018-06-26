@@ -199,7 +199,7 @@ class lbsnDB():
                             geom_area = COALESCE(EXCLUDED.geom_area, "place".geom_area),
                             url = COALESCE(EXCLUDED.url, "place".url),
                             city_guid = COALESCE(EXCLUDED.city_guid, "place".city_guid),
-                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, "place".post_count), COALESCE("place".post_count,EXCLUDED.post_count));
+                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, "place".post_count), COALESCE("place".post_count, EXCLUDED.post_count));
                         '''
         self.submitBatch(insert_sql)
                            
@@ -223,24 +223,24 @@ class lbsnDB():
                         DO UPDATE SET
                             user_name = COALESCE(EXCLUDED.user_name, "user".user_name),                                   
                             user_fullname = COALESCE(EXCLUDED.user_fullname, "user".user_fullname),                                      
-                            follows = GREATEST(COALESCE(EXCLUDED.follows, "user".follows)),                                                         
-                            followed = GREATEST(COALESCE(EXCLUDED.followed, "user".followed)),
-                            group_count = GREATEST(COALESCE(EXCLUDED.group_count, "user".group_count));
-                            biography = COALESCE(EXCLUDED.biography, "user".biography);
-                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, "user".post_count));
-                            is_private = COALESCE(EXCLUDED.is_private, "user".is_private);
-                            url = COALESCE(EXCLUDED.url, "user".url);
-                            is_available = COALESCE(EXCLUDED.is_available, "user".is_available);
-                            user_language = COALESCE(EXCLUDED.user_language, "user".user_language);
-                            user_location = COALESCE(EXCLUDED.user_location, "user".user_location);
-                            user_location_geom = COALESCE(EXCLUDED.user_location_geom, "user".user_location_geom);
-                            liked_count = GREATEST(COALESCE(EXCLUDED.liked_count, "user".liked_count));
-                            active_since = COALESCE(EXCLUDED.active_since, "user".active_since);
-                            profile_image_url = COALESCE(EXCLUDED.profile_image_url, "user".profile_image_url);
-                            user_timezone = COALESCE(EXCLUDED.user_timezone, "user".user_timezone);
-                            user_utc_offset = COALESCE(EXCLUDED.user_utc_offset, "user".user_utc_offset);
-                            user_groups_member = COALESCE(EXCLUDED.user_groups_member, "user".user_groups_member);
-                            user_groups_follows = COALESCE(EXCLUDED.user_groups_follows, "user".user_groups_follows);
+                            follows = GREATEST(COALESCE(EXCLUDED.follows, "user".follows), COALESCE("user".follows, EXCLUDED.follows)),                                                         
+                            followed = GREATEST(COALESCE(EXCLUDED.followed, "user".followed), COALESCE("user".followed, EXCLUDED.followed)),
+                            group_count = GREATEST(COALESCE(EXCLUDED.group_count, "user".group_count), COALESCE("user".group_count, EXCLUDED.group_count)),
+                            biography = COALESCE(EXCLUDED.biography, "user".biography),
+                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, "user".post_count), COALESCE("user".post_count, EXCLUDED.post_count)),
+                            is_private = COALESCE(EXCLUDED.is_private, "user".is_private),
+                            url = COALESCE(EXCLUDED.url, "user".url),
+                            is_available = COALESCE(EXCLUDED.is_available, "user".is_available),
+                            user_language = COALESCE(EXCLUDED.user_language, "user".user_language),
+                            user_location = COALESCE(EXCLUDED.user_location, "user".user_location),
+                            user_location_geom = COALESCE(EXCLUDED.user_location_geom, "user".user_location_geom),
+                            liked_count = GREATEST(COALESCE(EXCLUDED.liked_count, "user".liked_count), COALESCE("user".liked_count, EXCLUDED.liked_count)),
+                            active_since = COALESCE(EXCLUDED.active_since, "user".active_since),
+                            profile_image_url = COALESCE(EXCLUDED.profile_image_url, "user".profile_image_url),
+                            user_timezone = COALESCE(EXCLUDED.user_timezone, "user".user_timezone),
+                            user_utc_offset = COALESCE(EXCLUDED.user_utc_offset, "user".user_utc_offset),
+                            user_groups_member = mergeArrays(EXCLUDED.user_groups_member, "user".user_groups_member),
+                            user_groups_follows = mergeArrays(EXCLUDED.user_groups_follows, "user".user_groups_follows);
                         '''
         self.submitBatch(insert_sql)
                         
@@ -282,7 +282,7 @@ class lbsnDB():
                         DO UPDATE SET
                             usergroup_name = COALESCE(EXCLUDED.usergroup_name, "user_groups".usergroup_name),                                   
                             usergroup_description = COALESCE(EXCLUDED.usergroup_description, "user_groups".usergroup_description),                                      
-                            member_count = GREATEST(COALESCE(EXCLUDED.member_count, "user_groups".member_count)),                                                         
+                            member_count = GREATEST(COALESCE(EXCLUDED.member_count, "user_groups".member_count), COALESCE("user_groups".member_count, EXCLUDED.member_count)),                                                         
                             usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, "user_groups".usergroup_createdate),
                             user_owner = COALESCE(EXCLUDED.user_owner, "user_groups".user_owner);
                         '''
@@ -319,8 +319,8 @@ class lbsnDB():
                             post_body = COALESCE(EXCLUDED.post_body, "post".post_body),                                         
                             post_language = COALESCE(EXCLUDED.post_language, "post".post_language),                             
                             user_mentions = COALESCE(EXCLUDED.user_mentions, "post".user_mentions),                             
-                            hashtags = COALESCE(EXCLUDED.hashtags, "post".hashtags),                                            
-                            emoji = COALESCE(EXCLUDED.emoji, "post".emoji),                                                     
+                            hashtags = mergeArrays(EXCLUDED.hashtags, "post".hashtags),                                            
+                            emoji = mergeArrays(EXCLUDED.emoji, "post".emoji),                                                     
                             post_like_count = COALESCE(EXCLUDED.post_like_count, "post".post_like_count),                       
                             post_comment_count = COALESCE(EXCLUDED.post_comment_count, "post".post_comment_count),                    
                             post_views_count = COALESCE(EXCLUDED.post_views_count, "post".post_views_count),                    
@@ -381,7 +381,7 @@ class lbsnDB():
                             reaction_date = COALESCE(EXCLUDED.reaction_date, "post_reaction".reaction_date),                                         
                             reaction_content = COALESCE(EXCLUDED.reaction_content, "post_reaction".reaction_content),                    
                             reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, "post_reaction".reaction_like_count),
-                            user_mentions = COALESCE(EXCLUDED.user_mentions, "post_reaction".user_mentions);
+                            user_mentions = mergeArrays(EXCLUDED.user_mentions, "post_reaction".user_mentions);
                         '''
         self.submitBatch(insert_sql)
                                            
@@ -408,9 +408,9 @@ class lbsnDB():
             args_isFriend = ','.join(selectFriends)
             #sys.exit()
             insert_sql = f'''
-                            INSERT INTO "_user_friend" (user_origin_id, user_guid, friend_origin_id, friend_guid)
+                            INSERT INTO "_user_friends_user" (origin_id, user_guid, friend_guid)
                             VALUES {args_isFriend}
-                            ON CONFLICT (user_origin_id, user_guid, friend_origin_id, friend_guid)
+                            ON CONFLICT (origin_id, user_guid, friend_guid)
                             DO NOTHING
                         '''
             self.submitBatch(insert_sql)
@@ -418,9 +418,9 @@ class lbsnDB():
         if selectConnected:
             args_isConnected = ','.join(selectConnected)
             insert_sql = f'''
-                            INSERT INTO "_user_connected" (user_origin_id, user_guid, connected_origin_id, connected_guid)
+                            INSERT INTO "_user_connectsto_user" (origin_id, user_guid, connectedto_user_guid)
                             VALUES {args_isConnected}
-                            ON CONFLICT (user_origin_id, user_guid, connected_origin_id, connected_guid)
+                            ON CONFLICT (origin_id, user_guid, connectedto_user_guid)
                             DO NOTHING
                         '''
             self.submitBatch(insert_sql)
@@ -428,30 +428,39 @@ class lbsnDB():
         if selectUserGroupMember:
             args_isInGroup = ','.join(selectUserGroupMember)
             insert_sql = f'''
-                            INSERT INTO "_user_group_member" (user_origin_id, user_guid, group_origin_id, group_guid)
+                            INSERT INTO "_user_memberof_group" (origin_id, user_guid, group_guid)
                             VALUES {args_isInGroup}
-                            ON CONFLICT (user_origin_id, user_guid, group_origin_id, group_guid)
+                            ON CONFLICT (origin_id, user_guid, group_guid)
                             DO NOTHING
                         '''
             self.submitBatch(insert_sql)
+        selectUserGroupMember = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "followsgroup"]
+        if selectUserGroupMember:
+            args_isInGroup = ','.join(selectUserGroupMember)
+            insert_sql = f'''
+                            INSERT INTO "_user_follows_group" (origin_id, user_guid, group_guid)
+                            VALUES {args_isInGroup}
+                            ON CONFLICT (origin_id, user_guid, group_guid)
+                            DO NOTHING
+                        '''
+            self.submitBatch(insert_sql)            
         selectUserMentions = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "mentions_user"]
         if selectUserMentions:
             args_isInGroup = ','.join(selectUserMentions)
             insert_sql = f'''
-                            INSERT INTO "_user_mentions" (user_origin_id, user_guid, mentioneduser_origin_id, mentioneduser_guid)
+                            INSERT INTO "_user_mentions_user" (origin_id, user_guid, mentioneduser_guid)
                             VALUES {args_isInGroup}
-                            ON CONFLICT (user_origin_id, user_guid, mentioneduser_origin_id, mentioneduser_guid)
+                            ON CONFLICT (origin_id, user_guid, mentioneduser_guid)
                             DO NOTHING
                         '''
             self.submitBatch(insert_sql)
                                                    
     def prepareLbsnRelationship(self, record):
         relationshipRecord = relationshipAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s)'''
+        record_sql = '''(%s,%s,%s)'''
         preparedTypeRecordTuple = (relationshipRecord.relType,
                           self.dbCursor.mogrify(record_sql, (relationshipRecord.OriginID,          
-                          relationshipRecord.Guid,              
-                          relationshipRecord.OriginID_Rel,         
+                          relationshipRecord.Guid,                      
                           relationshipRecord.Guid_Rel)).decode())
         return preparedTypeRecordTuple 
      
@@ -596,6 +605,5 @@ class relationshipAttrShared():
     def __init__(self, relationship):
         self.OriginID = relationship.pkey.relation_to.origin.origin_id
         self.Guid = relationship.pkey.relation_to.id
-        self.OriginID_Rel = relationship.pkey.relation_from.origin.origin_id
         self.Guid_Rel = relationship.pkey.relation_from.id
         self.relType = helperFunctions.null_check(lbsnRelationship().RelationshipType.Name(relationship.relationship_type)).lower()

@@ -144,6 +144,11 @@ def main():
                 startNumber = 1
             else:
                 startNumber = records[0][0] #first returned DBRowNumber
+    # submit remaining
+    if twitterRecords.lbsnRecords.CountGlob > 0:
+        print(f'Transferring remaining {twitterRecords.lbsnRecords.CountGlob} to db..')
+        outputDB.submitLbsnRecordDicts(twitterRecords)
+        outputDB.commitChanges()
     # Close connections to DBs       
     if not config.LocalInput: 
         cursor_input.close()

@@ -33,20 +33,15 @@ class fieldMappingTwitter():
                 for relatedUser in relatedUserList:
                     relatedRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
                     self.lbsnRecords.AddRecordsToDict(relatedRecord)
-                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,relatedRecord.pkey.id, self.origin)
+                    # note the switch of order here, direction is important for 'isConnected', and the list gives us who is connected to *this* user
+                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),relatedRecord.pkey.id, userRecord.pkey.id, self.origin)
                     if input_type == 'friendslist':
                         relationshipRecord.relationship_type = lbsnRelationship.isFRIEND
                     elif input_type == 'followerslist':
                         relationshipRecord.relationship_type = lbsnRelationship.isCONNECTED
                     else:
                         relationshipRecord.relationship_type = lbsnRelationship.UNKNOWN    
-                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
-        elif input_type and input_type == 'followerslist':
-            for user, followerslist in jsonStringDict:
-                for follower in followerlist:
-                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),user,self.origin,follower,self.origin)
-                    relationshipRecord.relationship_type = lbsnRelationship.isFOLLOWER
-                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)         
+                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)       
         elif (input_type and input_type == 'profile') or 'screen_name' in jsonStringDict:
             # user
             userRecord = self.extractUser(jsonStringDict)
@@ -290,7 +285,7 @@ class fieldMappingTwitter():
         if userMentionsJson:
             refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,self.origin)
             self.lbsnRecords.AddRecordsToDict(refUserRecords)
-            #postRecord.user_mentions_pkey.extend([userRef.pkey for userRef in refUserRecords])
+            postRecord.user_mentions_pkey.extend([userRef.pkey for userRef in refUserRecords])
             if self.mapFullRelations:
                 for mentionedUserRecord in refUserRecords:
                     relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),userRecord.pkey.id,mentionedUserRecord.pkey.id, self.origin)
