@@ -85,7 +85,7 @@ class baseconfig():
         self.dbNameOutput = args.dbNameOutput
         if args.transferlimit:
             self.transferlimit = int(args.transferlimit)
-            if self.transferlimit = 0:
+            if self.transferlimit == 0:
                 self.transferlimit = None
         if args.transferCount:
             self.transferCount = int(args.transferCount)
