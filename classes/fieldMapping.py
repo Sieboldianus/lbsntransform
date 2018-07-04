@@ -33,15 +33,13 @@ class fieldMappingTwitter():
                 for relatedUser in relatedUserList:
                     relatedRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
                     self.lbsnRecords.AddRecordsToDict(relatedRecord)
-                    # note the switch of order here, direction is important for 'isConnected', and the list gives us who is connected to *this* user
-                    relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(),relatedRecord.pkey.id, userRecord.pkey.id, self.origin)
-                    if input_type == 'friendslist':
-                        relationshipRecord.relationship_type = lbsnRelationship.isFRIEND
+                    # note the switch of order here, direction is important for 'isConnected', and the different list each give us a different view on this relationship
+                    if input_type == 'friendslist':                  
+                        relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), userRecord.pkey.id, relatedRecord.pkey.id, self.origin)
                     elif input_type == 'followerslist':
-                        relationshipRecord.relationship_type = lbsnRelationship.isCONNECTED
-                    else:
-                        relationshipRecord.relationship_type = lbsnRelationship.UNKNOWN    
-                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)       
+                        relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), relatedRecord.pkey.id, userRecord.pkey.id, self.origin)
+                    relationshipRecord.relationship_type = lbsnRelationship.isCONNECTED
+                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
         elif (input_type and input_type == 'profile') or 'screen_name' in jsonStringDict:
             # user
             userRecord = self.extractUser(jsonStringDict)

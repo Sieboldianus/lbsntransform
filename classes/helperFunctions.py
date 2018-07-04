@@ -139,7 +139,7 @@ class helperFunctions():
             
     def geoconvertOrNone(geom):
         if geom:
-            return "ST_GeomFromText(%s,4326)"
+            return "extensions.ST_GeomFromText(%s,4326)"
         else:
             return "%s"
         

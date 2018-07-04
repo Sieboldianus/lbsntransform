@@ -2,7 +2,7 @@
 
 __author__      = "Alexander Dunkel"
 __license__   = "GNU GPLv3"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 import getpass
 import logging 
@@ -11,7 +11,7 @@ from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from classes.helperFunctions import geocodeLocations as geocodeLocations
 from classes.helperFunctions import timeMonitor as timeMonitor
-from classes.helperFunctions import memoryLeakDetec as memoryLeakDetec
+#from classes.helperFunctions import memoryLeakDetec as memoryLeakDetec
 from classes.fieldMapping import fieldMappingTwitter as fieldMappingTwitter
 from classes.submitData import lbsnDB as lbsnDB
 from config.config import baseconfig as baseconfig
@@ -60,8 +60,8 @@ def main():
     # load from local json/csv or from PostgresDB
     if config.LocalInput:
         loc_filelist = glob(f'{config.InputPath}{config.LocalFileType}')
-        fileCount = (len(loc_filelist))
-        if fileCount == 0:
+        inputCount = (len(loc_filelist))
+        if inputCount == 0:
             sys.exit("No location files found.")
         #if not config.transferlimit:
         #    config.transferlimit = fileCount
@@ -74,6 +74,7 @@ def main():
                                        True # ReadOnly Mode
                                        )
         conn_input, cursor_input = inputConnection.connect()
+        inputCount = '∞'
     
     outputDB = lbsnDB(dbCursor = cursor_output, 
                   dbConnection = conn_output)    
@@ -127,7 +128,7 @@ def main():
         processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput, config.InputType)  
         processedRecords += processedCount
         processedTotal += processedCount        
-        print(f'{processedTotal} records processed (up to input {continueNumber}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
+        print(f'{processedTotal} records processed ({continueNumber} of {inputCount}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not startNumber or processedRecords >= config.transferCount or finished:
