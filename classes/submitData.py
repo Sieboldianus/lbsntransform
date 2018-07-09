@@ -8,14 +8,17 @@ from lbsnstructure.external.timestamp_pb2 import Timestamp
 import logging 
 from sys import exit
 import traceback
+import os
 # for debugging only:
 from google.protobuf import text_format
+import re
+
 
 class lbsnDB():
     def __init__(self, dbCursor = None, 
                  dbConnection = None,
                  commit_volume = 10000,
-                 disableReactionPostReferencing = 0):
+                 disableReactionPostReferencing = 0, storeCSV = None):
         self.dbCursor = dbCursor
         self.dbConnection = dbConnection
         if not self.dbCursor:
@@ -36,8 +39,26 @@ class lbsnDB():
         self.batchedUserGroups = []
         self.batchedPosts = []
         self.batchedPostReactions = []
-        self.batchedRelationships = []
+        self.batchedRelationships = []       
         self.batchVolume = 100 # Records are batched and submitted in one insert with x number of records
+        self.storeCSV = storeCSV
+        self.typeNamesHeaderDict = {'city': 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
+                                    'country': 'origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url',
+                                    'place': 'origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count',
+                                    'post': 'origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source',
+                                    'post_reaction': 'origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions',
+                                    'user': 'origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows',
+                                    '_user_mentions_user': 'origin_id, user_guid, mentioneduser_guid',
+                                    '_user_follows_group': 'origin_id, user_guid, group_guid',
+                                    '_user_memberof_group': 'origin_id, user_guid, group_guid',
+                                    '_user_connectsto_user': 'origin_id, user_guid, connectedto_user_guid',
+                                    '_user_friends_user': 'origin_id, user_guid, friend_guid'
+                               }
+        if self.storeCSV:
+            self.OutputPathFile = f'{os.getcwd()}\\Output\\'
+            if not os.path.exists(self.OutputPathFile):
+                os.makedirs(self.OutputPathFile)
+            self.writeCSVHeaders()
     
     def commitChanges(self):
         self.dbConnection.commit() # commit changes to db
@@ -131,9 +152,11 @@ class lbsnDB():
             self.batchedRelationships = []   
             
     def submitLbsnCountries(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedCountries, 'country')
         args_str = ','.join(self.batchedCountries)
         insert_sql = f'''
-                        INSERT INTO data."country" (origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url)
+                        INSERT INTO data."country" ({self.typeNamesHeaderDict["country"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id,country_guid)
                         DO UPDATE SET
@@ -153,17 +176,22 @@ class lbsnDB():
     def prepareLbsnCountry(self, record):
         # Get common attributes for place types Place, City and Country
         placeRecord = placeAttrShared(record)
+        preparedCSVRecord = None
         if not placeRecord.Guid in self.country_already_inserted:
-            record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s)'''
-            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url))
+            ## EWKB Conversion now in-code, not server-side
+            #record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s)'''
+            record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
+            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),placeRecord.url))
             self.country_already_inserted.add(placeRecord.Guid)
             #mogrify returns a byte object, we decode it so it can be used as a string again
             return preparedRecord.decode()
     
     def submitLbsnCities(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedCities, 'city')           
         args_str = ','.join(self.batchedCities)
         insert_sql = f'''
-                        INSERT INTO data."city" (origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type)
+                        INSERT INTO data."city" ({self.typeNamesHeaderDict["city"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id,city_guid)
                         DO UPDATE SET
@@ -182,15 +210,17 @@ class lbsnDB():
         countryGuid = helperFunctions.null_check(record.country_pkey.id)
         subType = helperFunctions.null_check(record.sub_type)
         if not placeRecord.Guid in self.city_already_inserted:
-            record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s,%s,%s)'''
-            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,countryGuid,subType))
+            record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),placeRecord.url,countryGuid,subType))
             self.country_already_inserted.add(placeRecord.Guid)
             return preparedRecord.decode()
             
     def submitLbsnPlaces(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedPlaces, 'place')           
         args_str = ','.join(self.batchedPlaces)
         insert_sql = f'''
-                        INSERT INTO data."place" (origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count)
+                        INSERT INTO data."place" ({self.typeNamesHeaderDict["place"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id,place_guid)
                         DO UPDATE SET
@@ -209,14 +239,16 @@ class lbsnDB():
         cityGuid = helperFunctions.null_check(record.city_pkey.id)
         postCount = helperFunctions.null_check(record.post_count)
         if not placeRecord.Guid in self.city_already_inserted:
-            record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s,%s,%s)'''
-            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,placeRecord.geom_center,placeRecord.geom_area,placeRecord.url,cityGuid,postCount))         
+            record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),placeRecord.url,cityGuid,postCount))         
             return preparedRecord.decode() 
             
     def submitLbsnUsers(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedUsers, 'user')          
         args_str = ','.join(self.batchedUsers)
         insert_sql = f'''
-                        INSERT INTO data."user" (origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows)
+                        INSERT INTO data."user" ({self.typeNamesHeaderDict["user"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id, user_guid)
                         DO UPDATE SET
@@ -245,7 +277,7 @@ class lbsnDB():
                         
     def prepareLbsnUser(self, record):
         userRecord = userAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,''' + userRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s)'''
+        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
         preparedRecord = self.dbCursor.mogrify(record_sql, (userRecord.OriginID,          
                                          userRecord.Guid,              
                                          userRecord.user_name,         
@@ -260,7 +292,7 @@ class lbsnDB():
                                          userRecord.is_available,      
                                          userRecord.user_language,     
                                          userRecord.user_location,     
-                                         userRecord.user_location_geom,
+                                         helperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
                                          userRecord.liked_count,       
                                          userRecord.active_since,      
                                          userRecord.profile_image_url, 
@@ -271,9 +303,11 @@ class lbsnDB():
         return preparedRecord.decode()    
 
     def submitLbsnUserGroups(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedUserGroups, 'user_groups')             
         args_str = ','.join(self.batchedUserGroups)
         insert_sql = f'''
-                        INSERT INTO data."user_groups" (origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate, user_owner)
+                        INSERT INTO data."user_groups" ({self.typeNamesHeaderDict["user_groups"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id, usergroup_guid)
                         DO UPDATE SET
@@ -299,9 +333,11 @@ class lbsnDB():
         return preparedRecord.decode() 
             
     def submitLbsnPosts(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedPosts, 'post')          
         args_str = ','.join(self.batchedPosts)
         insert_sql = f'''
-                        INSERT INTO data."post" (origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source)
+                        INSERT INTO data."post" ({self.typeNamesHeaderDict["post"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id, post_guid)
                         DO UPDATE SET                                                                                           
@@ -334,10 +370,10 @@ class lbsnDB():
                         
     def prepareLbsnPost(self, record):
         postRecord = postAttrShared(record)
-        record_sql = '''(%s,%s,''' + postRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
         preparedRecord = self.dbCursor.mogrify(record_sql, (postRecord.OriginID,                                                              
                                          postRecord.Guid,
-                                         postRecord.post_latlng,
+                                         helperFunctions.returnEWKBFromGeoTEXT(postRecord.post_latlng),
                                          postRecord.place_guid,
                                          postRecord.city_guid,
                                          postRecord.country_guid,
@@ -364,9 +400,11 @@ class lbsnDB():
         return preparedRecord.decode()                                                                                              
         
     def submitLbsnPostReactions(self):
+        if self.storeCSV:
+            self.storeAppendCSV(self.batchedPostReactions, 'post_reaction')         
         args_str = ','.join(self.batchedPostReactions)
         insert_sql = f'''
-                        INSERT INTO data."post_reaction" (origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions)
+                        INSERT INTO data."post_reaction" ({self.typeNamesHeaderDict["post_reaction"]})
                         VALUES {args_str}
                         ON CONFLICT (origin_id, reaction_guid)
                         DO UPDATE SET                                                                                           
@@ -384,10 +422,10 @@ class lbsnDB():
                                            
     def prepareLbsnPostReaction(self, record):
         postReactionRecord = postReactionAttrShared(record)
-        record_sql = '''(%s,%s,''' + postReactionRecord.geoconvertOrNoneCenter + ''',%s,%s,%s,%s,%s,%s,%s,%s)'''   
+        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''   
         preparedRecord = self.dbCursor.mogrify(record_sql, (postReactionRecord.OriginID,                                                              
                                          postReactionRecord.Guid,
-                                         postReactionRecord.reaction_latlng,
+                                         helperFunctions.returnEWKBFromGeoTEXT(postReactionRecord.reaction_latlng),
                                          postReactionRecord.user_guid,
                                          postReactionRecord.referencedPost,
                                          postReactionRecord.referencedPostreaction,
@@ -402,9 +440,11 @@ class lbsnDB():
         # submit relationships of different types record[1] is the PostgresQL formatted list of values, record[0] is the type of relationship that determines the table selection
         selectFriends = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "isfriend"]
         if selectFriends:
+            if self.storeCSV:
+                self.storeAppendCSV(selectFriends, '_user_friends_user')   
             args_isFriend = ','.join(selectFriends)
             insert_sql = f'''
-                            INSERT INTO relations."_user_friends_user" (origin_id, user_guid, friend_guid)
+                            INSERT INTO relations."_user_friends_user" ({self.typeNamesHeaderDict["_user_friends_user"]})
                             VALUES {args_isFriend}
                             ON CONFLICT (origin_id, user_guid, friend_guid)
                             DO NOTHING
@@ -412,9 +452,11 @@ class lbsnDB():
             self.submitBatch(insert_sql)
         selectConnected = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "isconnected"]
         if selectConnected:
+            if self.storeCSV:
+                self.storeAppendCSV(selectConnected, '_user_connectsto_user')  
             args_isConnected = ','.join(selectConnected)
             insert_sql = f'''
-                            INSERT INTO relations."_user_connectsto_user" (origin_id, user_guid, connectedto_user_guid)
+                            INSERT INTO relations."_user_connectsto_user" ({self.typeNamesHeaderDict["_user_connectsto_user"]})
                             VALUES {args_isConnected}
                             ON CONFLICT (origin_id, user_guid, connectedto_user_guid)
                             DO NOTHING
@@ -422,9 +464,11 @@ class lbsnDB():
             self.submitBatch(insert_sql)
         selectUserGroupMember = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "ingroup"]
         if selectUserGroupMember:
+            if self.storeCSV:
+                self.storeAppendCSV(selectUserGroupMember, '_user_memberof_group')  
             args_isInGroup = ','.join(selectUserGroupMember)
             insert_sql = f'''
-                            INSERT INTO relations."_user_memberof_group" (origin_id, user_guid, group_guid)
+                            INSERT INTO relations."_user_memberof_group" ({self.typeNamesHeaderDict["_user_memberof_group"]})
                             VALUES {args_isInGroup}
                             ON CONFLICT (origin_id, user_guid, group_guid)
                             DO NOTHING
@@ -432,9 +476,11 @@ class lbsnDB():
             self.submitBatch(insert_sql)
         selectUserGroupMember = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "followsgroup"]
         if selectUserGroupMember:
+            if self.storeCSV:
+                self.storeAppendCSV(selectUserGroupMember, '_user_follows_group')  
             args_isInGroup = ','.join(selectUserGroupMember)
             insert_sql = f'''
-                            INSERT INTO relations."_user_follows_group" (origin_id, user_guid, group_guid)
+                            INSERT INTO relations."_user_follows_group" ({self.typeNamesHeaderDict["_user_follows_group"]})
                             VALUES {args_isInGroup}
                             ON CONFLICT (origin_id, user_guid, group_guid)
                             DO NOTHING
@@ -442,9 +488,11 @@ class lbsnDB():
             self.submitBatch(insert_sql)            
         selectUserMentions = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "mentions_user"]
         if selectUserMentions:
+            if self.storeCSV:
+                self.storeAppendCSV(selectUserMentions, '_user_mentions_user') 
             args_isInGroup = ','.join(selectUserMentions)
             insert_sql = f'''
-                            INSERT INTO relations."_user_mentions_user" (origin_id, user_guid, mentioneduser_guid)
+                            INSERT INTO relations."_user_mentions_user" ({self.typeNamesHeaderDict["_user_mentions_user"]})
                             VALUES {args_isInGroup}
                             ON CONFLICT (origin_id, user_guid, mentioneduser_guid)
                             DO NOTHING
@@ -494,7 +542,27 @@ class lbsnDB():
                 self.count_affected += self.dbCursor.rowcount # monitoring
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
-                   
+    
+    def storeAppendCSV(self, values, typeName):
+        csvOutput = open(f'{self.OutputPathFile}{typeName}.csv', 'a', encoding='utf8')
+        for record in values:
+            # this is ugly, see https://stackoverflow.com/questions/39025420/postgres-wont-allow-array-syntax-in-copy for a better way of doing this
+            pg_formatted_record = re.sub(r',ARRAY\[(.*?)\],',self.csvModArrayQuote, record, flags=re.DOTALL)
+            pg_formatted_record = pg_formatted_record.strip('()')
+            #pg_formatted_record = pg_formatted_record.replace('NULL',"'NULL'")
+            csvOutput.write("%s\n" % pg_formatted_record)
+            
+    def csvModArrayQuote(self, match):
+        match = match.group(1)
+        match = match.replace("'",'"')
+        match = ",'{%s}'," % match
+        return match
+    
+    def writeCSVHeaders(self):
+        for typename, header in self.typeNamesHeaderDict.items():
+            csvOutput = open(f'{self.OutputPathFile}{typename}.csv', 'w', encoding='utf8')
+            csvOutput.write("%s\n" % header)
+            
 class placeAttrShared():   
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id # = 3
@@ -507,8 +575,6 @@ class placeAttrShared():
         self.url = helperFunctions.null_check(record.url)
         self.geom_center = helperFunctions.null_check(record.geom_center)
         self.geom_area = helperFunctions.null_check(record.geom_area)
-        self.geoconvertOrNoneCenter  = helperFunctions.geoconvertOrNone(self.geom_center)
-        self.geoconvertOrNoneGeom  = helperFunctions.geoconvertOrNone(self.geom_area)
 
 class userAttrShared():   
     def __init__(self, record):
@@ -527,7 +593,6 @@ class userAttrShared():
         self.user_language = helperFunctions.null_check(record.user_language.language_short)
         self.user_location = helperFunctions.null_check(record.user_location)
         self.user_location_geom = helperFunctions.null_check(record.user_location_geom)
-        self.geoconvertOrNoneCenter = helperFunctions.geoconvertOrNone(self.user_location_geom)
         self.liked_count = helperFunctions.null_check(record.liked_count)
         self.active_since = helperFunctions.null_check_datetime(record.active_since)
         self.profile_image_url = helperFunctions.null_check(record.profile_image_url)
@@ -551,7 +616,6 @@ class postAttrShared():
         self.OriginID = record.pkey.origin.origin_id
         self.Guid = record.pkey.id
         self.post_latlng = helperFunctions.null_check(record.post_latlng)
-        self.geoconvertOrNoneCenter = helperFunctions.geoconvertOrNone(self.post_latlng)
         self.place_guid = helperFunctions.null_check(record.place_pkey.id)
         self.city_guid = helperFunctions.null_check(record.city_pkey.id)
         self.country_guid = helperFunctions.null_check(record.country_pkey.id)
@@ -581,7 +645,6 @@ class postReactionAttrShared():
         self.OriginID = record.pkey.origin.origin_id
         self.Guid = record.pkey.id
         self.reaction_latlng = helperFunctions.null_check(record.reaction_latlng)
-        self.geoconvertOrNoneCenter = helperFunctions.geoconvertOrNone(self.reaction_latlng)
         self.user_guid = helperFunctions.null_check(record.user_pkey.id)
         self.referencedPost = helperFunctions.null_check(record.referencedPost_pkey.id)
         self.referencedPostreaction = helperFunctions.null_check(record.referencedPostreaction_pkey.id)

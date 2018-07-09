@@ -14,6 +14,9 @@ from collections import Counter
 from json import JSONDecoder, JSONDecodeError
 # for debugging only:
 from google.protobuf import text_format
+from shapely import geos, wkb, wkt
+# https://gis.stackexchange.com/questions/225196/conversion-of-a-geojson-into-ewkb-format
+geos.WKBWriter.defaults['include_srid'] = True
 
 class helperFunctions():  
     
@@ -136,13 +139,22 @@ class helperFunctions():
                 return None
             else:
                 return recordAttr.ToDatetime()
-            
-    def geoconvertOrNone(geom):
-        if geom:
-            return "extensions.ST_GeomFromText(%s,4326)"
-        else:
-            return "%s"
+    
+    ## EWKB Conversion now in-code, not server-side
+    #def geoconvertOrNone(geom):
+    #    if geom:
+    #        return "extensions.ST_GeomFromText(%s,4326)"
+    #    else:
+    #        return "%s"
         
+    def returnEWKBFromGeoTEXT(text):
+        if not text:
+            return None
+        geom = wkt.loads(text)
+        geos.lgeos.GEOSSetSRID(geom._geom, 4326)
+        geom = geom.wkb_hex
+        return geom
+
     def decode_stacked(document, pos=0, decoder=JSONDecoder()):
         NOT_WHITESPACE = re.compile(r'[^\s]')
         while True:
@@ -160,7 +172,7 @@ class helperFunctions():
             
     def clean_null_bytes_from_str(str):
         str_without_null_byte = str.replace('\x00','') 
-        return str_without_null_byte            
+        return str_without_null_byte
                  
 class lbsnRecordDicts():
     def __init__(self):

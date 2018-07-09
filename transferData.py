@@ -27,6 +27,7 @@ import psycopg2
 # Only necessary for local import:
 from glob import glob
 import json
+import ppygis3
 
 
 def main():
@@ -77,7 +78,8 @@ def main():
         inputCount = '∞'
     
     outputDB = lbsnDB(dbCursor = cursor_output, 
-                  dbConnection = conn_output)    
+                  dbConnection = conn_output,
+                  storeCSV = config.CSVOutput)    
     # start settings
     processedRecords = 0
     processedTotal = 0
