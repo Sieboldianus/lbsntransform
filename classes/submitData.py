@@ -12,7 +12,8 @@ import os
 # for debugging only:
 from google.protobuf import text_format
 import re
-
+from psycopg2 import sql
+import csv
 
 class lbsnDB():
     def __init__(self, dbCursor = None, 
@@ -22,24 +23,22 @@ class lbsnDB():
         self.dbCursor = dbCursor
         self.dbConnection = dbConnection
         if not self.dbCursor:
-            sys.exit("No DB Cursor available.")
+            print("CSV Output Mode.")
         self.commit_volume = commit_volume
         self.count_entries_commit = 0
         self.count_affected = 0
         self.count_glob = 0
         self.null_island_count = 0
-        self.country_already_inserted = set()
-        self.city_already_inserted = set()
         self.disableReactionPostReferencing = disableReactionPostReferencing
         self.log = logging.getLogger('__main__')
-        self.batchedCountries = []
-        self.batchedCities = []
-        self.batchedPlaces = []
-        self.batchedUsers = []
-        self.batchedUserGroups = []
-        self.batchedPosts = []
-        self.batchedPostReactions = []
-        self.batchedRelationships = []       
+        self.batchedRecords = {lbsnCountry.DESCRIPTOR.name: list(),
+                         lbsnCity.DESCRIPTOR.name: list(),
+                         lbsnPlace.DESCRIPTOR.name: list(),
+                         lbsnUser.DESCRIPTOR.name: list(),
+                         lbsnUserGroup.DESCRIPTOR.name: list(),
+                         lbsnPost.DESCRIPTOR.name: list(),
+                         lbsnPostReaction.DESCRIPTOR.name: list(),
+                         lbsnRelationship.DESCRIPTOR.name: list()}    
         self.batchVolume = 100 # Records are batched and submitted in one insert with x number of records
         self.storeCSV = storeCSV
         self.typeNamesHeaderDict = {'city': 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
@@ -61,8 +60,9 @@ class lbsnDB():
             self.writeCSVHeaders()
     
     def commitChanges(self):
-        self.dbConnection.commit() # commit changes to db
-        self.count_entries_commit = 0
+        if self.dbCursor:
+            self.dbConnection.commit() # commit changes to db
+            self.count_entries_commit = 0
         
     def submitLbsnRecordDicts(self, fieldMappingTwitter):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
@@ -87,425 +87,431 @@ class lbsnDB():
     def prepareLbsnRecord(self, record, record_type):
         # this can be done better
         #record_type = record.DESCRIPTOR.name
-        if record_type == lbsnPost().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnPost(record)
-            if preparedRecord:
-                self.batchedPosts.append(preparedRecord)
-        elif record_type == lbsnCountry().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnCountry(record)
-            if preparedRecord:
-                self.batchedCountries.append(preparedRecord)
-        elif record_type == lbsnCity().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnCity(record)
-            if preparedRecord:
-                self.batchedCities.append(preparedRecord)
-        elif record_type == lbsnPlace().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnPlace(record)
-            if preparedRecord:
-                self.batchedPlaces.append(preparedRecord)
-        elif record_type == lbsnPostReaction().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnPostReaction(record)
-            if preparedRecord:
-                self.batchedPostReactions.append(preparedRecord)
-        elif record_type == lbsnUserGroup().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnUserGroup(record)
-            if preparedRecord:
-                self.batchedUserGroups.append(preparedRecord)            
-        elif record_type == lbsnUser().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnUser(record)
-            if preparedRecord:
-                self.batchedUsers.append(preparedRecord)
-        elif record_type == lbsnRelationship().DESCRIPTOR.name:
-            preparedRecord = self.prepareLbsnRelationship(record)
-            if preparedRecord:
-                self.batchedRelationships.append(preparedRecord)
-                
-        if max([len(self.batchedPosts),len(self.batchedCountries),len(self.batchedCities),len(self.batchedPlaces),len(self.batchedPostReactions),len(self.batchedUsers),len(self.batchedUserGroups),len(self.batchedRelationships)]) >= self.batchVolume:
-            self.submitAllBatches()
-                              
-    def submitAllBatches(self):
-        # this can be done better
-        if self.batchedCountries:# and len(self.batchedCountries) > 0:
-            #print(f'Count: {len(self.batchedCountries)}')
-            self.submitLbsnCountries()
-            self.batchedCountries = []
-        if self.batchedCities:# and len(self.batchedCities) > 0:
-            self.submitLbsnCities()
-            self.batchedCities = []
-        if self.batchedPlaces:#  and len(self.batchedPlaces) > 0:
-            self.submitLbsnPlaces()
-            self.batchedPlaces = []
-        if self.batchedUsers:#  and len(self.batchedUsers) > 0:
-            self.submitLbsnUsers()
-            self.batchedUsers = []
-        if self.batchedUserGroups:#  and len(self.batchedUserGroups) > 0:
-            self.submitLbsnUserGroups()
-            self.batchedUserGroups = []            
-        if self.batchedPosts:#  and len(self.batchedPosts) > 0:
-            self.submitLbsnPosts()
-            self.batchedPosts = []
-        if self.batchedPostReactions:#  and len(self.batchedPostReactions) > 0:
-            self.submitLbsnPostReactions()
-            self.batchedPostReactions = []   
-        if self.batchedRelationships:#  and len(self.batchedPostReactions) > 0:
-            self.submitLbsnRelationships()
-            self.batchedRelationships = []   
-            
-    def submitLbsnCountries(self):
-        if self.storeCSV:
-            self.storeAppendCSV(self.batchedCountries, 'country')
-        args_str = ','.join(self.batchedCountries)
-        insert_sql = f'''
-                        INSERT INTO data."country" ({self.typeNamesHeaderDict["country"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id,country_guid)
-                        DO UPDATE SET
-                            name = COALESCE(EXCLUDED.name, data."country".name),
-                            name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,data."country".name) from extensions.mergeArrays(EXCLUDED.name_alternatives, data."country".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
-                            geom_center = COALESCE(EXCLUDED.geom_center, data."country".geom_center),
-                            geom_area = COALESCE(EXCLUDED.geom_area, data."country".geom_area),
-                            url = COALESCE(EXCLUDED.url, data."country".url);
-                        '''
-                        # Array merge of alternatives:
-                        # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
-                        # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
-                        # Finally, merge New Entries with existing ones (distinct): extensions.mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
+        self.batchedRecords[record_type].append(record)
+        for dict in self.batchedRecords:
+            # if any dict contains more values than self.batchVolume, submit/store all
+            if len(dict) >= self.batchVolume:
+                self.submitAllBatches()
 
-        self.submitBatch(insert_sql) 
+    def funcSubmitSelector(self, record_type):
+        dictSwitcher = {
+            lbsnCountry.DESCRIPTOR.name: self.submitLbsnCountries,
+            lbsnCity.DESCRIPTOR.name: self.submitLbsnCities,
+            lbsnPlace.DESCRIPTOR.name: self.submitLbsnPlaces,
+            lbsnUser.DESCRIPTOR.name: self.submitLbsnUsers,
+            lbsnUserGroup.DESCRIPTOR.name: self.submitLbsnUserGroups,
+            lbsnPost.DESCRIPTOR.name: self.submitLbsnPosts,
+            lbsnPostReaction.DESCRIPTOR.name: self.submitLbsnPostReactions,
+            lbsnRelationship.DESCRIPTOR.name: self.submitLbsnRelationships
+        }
+        return dictSwitcher.get(record_type)()
+    
+    def funcPrepareSelector(self, record):
+        dictSwitcher = {
+            lbsnCountry().DESCRIPTOR.name: self.prepareLbsnCountry,
+            lbsnCity().DESCRIPTOR.name: self.prepareLbsnCity,
+            lbsnPlace().DESCRIPTOR.name: self.prepareLbsnPlace,
+            lbsnUser().DESCRIPTOR.name: self.prepareLbsnUser,
+            lbsnUserGroup().DESCRIPTOR.name: self.prepareLbsnUserGroup,
+            lbsnPost().DESCRIPTOR.name: self.prepareLbsnPost,
+            lbsnPostReaction().DESCRIPTOR.name: self.prepareLbsnPostReaction,
+            lbsnRelationship().DESCRIPTOR.name: self.prepareLbsnRelationship
+        }
+        prepareFunction = dictSwitcher.get(record.DESCRIPTOR.name)
+        return prepareFunction(record)
+                                 
+    def submitAllBatches(self):
+        for recordType, batchList in self.batchedRecords.items():
+            if batchList:
+                self.funcSubmitSelector(recordType)
+                batchList = []  
+    
+    def prepareRecords(self, recordType):
+        preparedRecords = []
+        for record in self.batchedRecords[recordType]:
+            preparedRecord = self.funcPrepareSelector(record)
+            if preparedRecord:
+                preparedRecords.append(preparedRecord)     
+        return preparedRecords
+    
+    def submitLbsnCountries(self):
+        preparedRecords = self.prepareRecords(lbsnCountry().DESCRIPTOR.name)
+        if self.storeCSV:
+            self.storeAppendCSV(preparedRecords, 'country')
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."country" ({self.typeNamesHeaderDict["country"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id,country_guid)
+                            DO UPDATE SET
+                                name = COALESCE(EXCLUDED.name, data."country".name),
+                                name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,data."country".name) from extensions.mergeArrays(EXCLUDED.name_alternatives, data."country".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
+                                geom_center = COALESCE(EXCLUDED.geom_center, data."country".geom_center),
+                                geom_area = COALESCE(EXCLUDED.geom_area, data."country".geom_area),
+                                url = COALESCE(EXCLUDED.url, data."country".url);
+                            '''
+                            # Array merge of alternatives:
+                            # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
+                            # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
+                            # Finally, merge New Entries with existing ones (distinct): extensions.mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
+            self.submitBatch(insert_sql) 
         
     def prepareLbsnCountry(self, record):
         # Get common attributes for place types Place, City and Country
         placeRecord = placeAttrShared(record)
-        preparedCSVRecord = None
-        if not placeRecord.Guid in self.country_already_inserted:
-            ## EWKB Conversion now in-code, not server-side
-            #record_sql = '''(%s,%s,%s,%s,''' + placeRecord.geoconvertOrNoneCenter + ''',''' + placeRecord.geoconvertOrNoneGeom + ''',%s)'''
-            record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
-            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),placeRecord.url))
-            self.country_already_inserted.add(placeRecord.Guid)
-            #mogrify returns a byte object, we decode it so it can be used as a string again
-            return preparedRecord.decode()
+        preparedRecord = (placeRecord.OriginID,
+                          placeRecord.Guid,
+                          placeRecord.name,
+                          placeRecord.name_alternatives,
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          placeRecord.url)
+        return preparedRecord
     
-    def submitLbsnCities(self):
+    def submitLbsnCities(self):   
+        preparedRecords = self.prepareRecords(lbsnCity().DESCRIPTOR.name)    
         if self.storeCSV:
-            self.storeAppendCSV(self.batchedCities, 'city')           
-        args_str = ','.join(self.batchedCities)
-        insert_sql = f'''
-                        INSERT INTO data."city" ({self.typeNamesHeaderDict["city"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id,city_guid)
-                        DO UPDATE SET
-                            name = COALESCE(EXCLUDED.name, data."city".name),
-                            name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,data."city".name) from extensions.mergeArrays(EXCLUDED.name_alternatives, data."city".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
-                            geom_center = COALESCE(EXCLUDED.geom_center, data."city".geom_center),
-                            geom_area = COALESCE(EXCLUDED.geom_area, data."city".geom_area),
-                            url = COALESCE(EXCLUDED.url, data."city".url),
-                            country_guid = COALESCE(EXCLUDED.country_guid, data."city".country_guid),
-                            sub_type = COALESCE(EXCLUDED.sub_type, data."city".sub_type);
-                        '''
-        self.submitBatch(insert_sql)
+            self.storeAppendCSV(preparedRecords, 'city')    
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."city" ({self.typeNamesHeaderDict["city"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id,city_guid)
+                            DO UPDATE SET
+                                name = COALESCE(EXCLUDED.name, data."city".name),
+                                name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,data."city".name) from extensions.mergeArrays(EXCLUDED.name_alternatives, data."city".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
+                                geom_center = COALESCE(EXCLUDED.geom_center, data."city".geom_center),
+                                geom_area = COALESCE(EXCLUDED.geom_area, data."city".geom_area),
+                                url = COALESCE(EXCLUDED.url, data."city".url),
+                                country_guid = COALESCE(EXCLUDED.country_guid, data."city".country_guid),
+                                sub_type = COALESCE(EXCLUDED.sub_type, data."city".sub_type);
+                            '''
+            self.submitBatch(insert_sql)
                   
     def prepareLbsnCity(self, record):
         placeRecord = placeAttrShared(record)
         countryGuid = helperFunctions.null_check(record.country_pkey.id)
         subType = helperFunctions.null_check(record.sub_type)
-        if not placeRecord.Guid in self.city_already_inserted:
-            record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),placeRecord.url,countryGuid,subType))
-            self.country_already_inserted.add(placeRecord.Guid)
-            return preparedRecord.decode()
+        preparedRecord = (placeRecord.OriginID,
+                          placeRecord.Guid,
+                          placeRecord.name,
+                          placeRecord.name_alternatives,
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          placeRecord.url,
+                          countryGuid,
+                          subType)
+        return preparedRecord
             
-    def submitLbsnPlaces(self):
+    def submitLbsnPlaces(self):  
+        preparedRecords = self.prepareRecords(lbsnPlace().DESCRIPTOR.name)
         if self.storeCSV:
-            self.storeAppendCSV(self.batchedPlaces, 'place')           
-        args_str = ','.join(self.batchedPlaces)
-        insert_sql = f'''
-                        INSERT INTO data."place" ({self.typeNamesHeaderDict["place"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id,place_guid)
-                        DO UPDATE SET
-                            name = COALESCE(EXCLUDED.name, data."place".name),
-                            name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,data."place".name) from extensions.mergeArrays(EXCLUDED.name_alternatives, data."place".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
-                            geom_center = COALESCE(EXCLUDED.geom_center, data."place".geom_center),
-                            geom_area = COALESCE(EXCLUDED.geom_area, data."place".geom_area),
-                            url = COALESCE(EXCLUDED.url, data."place".url),
-                            city_guid = COALESCE(EXCLUDED.city_guid, data."place".city_guid),
-                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, data."place".post_count), COALESCE(data."place".post_count, EXCLUDED.post_count));
-                        '''
-        self.submitBatch(insert_sql)
+            self.storeAppendCSV(preparedRecords, 'place')
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."place" ({self.typeNamesHeaderDict["place"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id,place_guid)
+                            DO UPDATE SET
+                                name = COALESCE(EXCLUDED.name, data."place".name),
+                                name_alternatives = COALESCE((SELECT array_remove(altNamesNewArray,data."place".name) from extensions.mergeArrays(EXCLUDED.name_alternatives, data."place".name_alternatives) AS altNamesNewArray), ARRAY[]::text[]),
+                                geom_center = COALESCE(EXCLUDED.geom_center, data."place".geom_center),
+                                geom_area = COALESCE(EXCLUDED.geom_area, data."place".geom_area),
+                                url = COALESCE(EXCLUDED.url, data."place".url),
+                                city_guid = COALESCE(EXCLUDED.city_guid, data."place".city_guid),
+                                post_count = GREATEST(COALESCE(EXCLUDED.post_count, data."place".post_count), COALESCE(data."place".post_count, EXCLUDED.post_count));
+                            '''
+            self.submitBatch(insert_sql)
                            
     def prepareLbsnPlace(self, record):
         placeRecord = placeAttrShared(record)
         cityGuid = helperFunctions.null_check(record.city_pkey.id)
         postCount = helperFunctions.null_check(record.post_count)
-        if not placeRecord.Guid in self.city_already_inserted:
-            record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-            preparedRecord = self.dbCursor.mogrify(record_sql, (placeRecord.OriginID,placeRecord.Guid,placeRecord.name,placeRecord.name_alternatives,helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),placeRecord.url,cityGuid,postCount))         
-            return preparedRecord.decode() 
+        preparedRecord = (placeRecord.OriginID,
+                          placeRecord.Guid,
+                          placeRecord.name,
+                          placeRecord.name_alternatives,
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          placeRecord.url,
+                          cityGuid,
+                          postCount)
+        return preparedRecord
             
     def submitLbsnUsers(self):
+        preparedRecords = self.prepareRecords(lbsnUser().DESCRIPTOR.name)
         if self.storeCSV:
-            self.storeAppendCSV(self.batchedUsers, 'user')          
-        args_str = ','.join(self.batchedUsers)
-        insert_sql = f'''
-                        INSERT INTO data."user" ({self.typeNamesHeaderDict["user"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id, user_guid)
-                        DO UPDATE SET
-                            user_name = COALESCE(EXCLUDED.user_name, data."user".user_name),                                   
-                            user_fullname = COALESCE(EXCLUDED.user_fullname, data."user".user_fullname),                                      
-                            follows = GREATEST(COALESCE(EXCLUDED.follows, data."user".follows), COALESCE(data."user".follows, EXCLUDED.follows)),                                                         
-                            followed = GREATEST(COALESCE(EXCLUDED.followed, data."user".followed), COALESCE(data."user".followed, EXCLUDED.followed)),
-                            group_count = GREATEST(COALESCE(EXCLUDED.group_count, data."user".group_count), COALESCE(data."user".group_count, EXCLUDED.group_count)),
-                            biography = COALESCE(EXCLUDED.biography, data."user".biography),
-                            post_count = GREATEST(COALESCE(EXCLUDED.post_count, "user".post_count), COALESCE(data."user".post_count, EXCLUDED.post_count)),
-                            is_private = COALESCE(EXCLUDED.is_private, data."user".is_private),
-                            url = COALESCE(EXCLUDED.url, data."user".url),
-                            is_available = COALESCE(EXCLUDED.is_available, data."user".is_available),
-                            user_language = COALESCE(EXCLUDED.user_language, data."user".user_language),
-                            user_location = COALESCE(EXCLUDED.user_location, data."user".user_location),
-                            user_location_geom = COALESCE(EXCLUDED.user_location_geom, data."user".user_location_geom),
-                            liked_count = GREATEST(COALESCE(EXCLUDED.liked_count, data."user".liked_count), COALESCE(data."user".liked_count, EXCLUDED.liked_count)),
-                            active_since = COALESCE(EXCLUDED.active_since, data."user".active_since),
-                            profile_image_url = COALESCE(EXCLUDED.profile_image_url, data."user".profile_image_url),
-                            user_timezone = COALESCE(EXCLUDED.user_timezone, data."user".user_timezone),
-                            user_utc_offset = COALESCE(EXCLUDED.user_utc_offset, data."user".user_utc_offset),
-                            user_groups_member = COALESCE(extensions.mergeArrays(EXCLUDED.user_groups_member, data."user".user_groups_member), ARRAY[]::text[]),
-                            user_groups_follows = COALESCE(extensions.mergeArrays(EXCLUDED.user_groups_follows, data."user".user_groups_follows), ARRAY[]::text[]);
-                        '''
-        self.submitBatch(insert_sql)
+            self.storeAppendCSV(preparedRecords, 'user')
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."user" ({self.typeNamesHeaderDict["user"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id, user_guid)
+                            DO UPDATE SET
+                                user_name = COALESCE(EXCLUDED.user_name, data."user".user_name),                                   
+                                user_fullname = COALESCE(EXCLUDED.user_fullname, data."user".user_fullname),                                      
+                                follows = GREATEST(COALESCE(EXCLUDED.follows, data."user".follows), COALESCE(data."user".follows, EXCLUDED.follows)),                                                         
+                                followed = GREATEST(COALESCE(EXCLUDED.followed, data."user".followed), COALESCE(data."user".followed, EXCLUDED.followed)),
+                                group_count = GREATEST(COALESCE(EXCLUDED.group_count, data."user".group_count), COALESCE(data."user".group_count, EXCLUDED.group_count)),
+                                biography = COALESCE(EXCLUDED.biography, data."user".biography),
+                                post_count = GREATEST(COALESCE(EXCLUDED.post_count, "user".post_count), COALESCE(data."user".post_count, EXCLUDED.post_count)),
+                                is_private = COALESCE(EXCLUDED.is_private, data."user".is_private),
+                                url = COALESCE(EXCLUDED.url, data."user".url),
+                                is_available = COALESCE(EXCLUDED.is_available, data."user".is_available),
+                                user_language = COALESCE(EXCLUDED.user_language, data."user".user_language),
+                                user_location = COALESCE(EXCLUDED.user_location, data."user".user_location),
+                                user_location_geom = COALESCE(EXCLUDED.user_location_geom, data."user".user_location_geom),
+                                liked_count = GREATEST(COALESCE(EXCLUDED.liked_count, data."user".liked_count), COALESCE(data."user".liked_count, EXCLUDED.liked_count)),
+                                active_since = COALESCE(EXCLUDED.active_since, data."user".active_since),
+                                profile_image_url = COALESCE(EXCLUDED.profile_image_url, data."user".profile_image_url),
+                                user_timezone = COALESCE(EXCLUDED.user_timezone, data."user".user_timezone),
+                                user_utc_offset = COALESCE(EXCLUDED.user_utc_offset, data."user".user_utc_offset),
+                                user_groups_member = COALESCE(extensions.mergeArrays(EXCLUDED.user_groups_member, data."user".user_groups_member), ARRAY[]::text[]),
+                                user_groups_follows = COALESCE(extensions.mergeArrays(EXCLUDED.user_groups_follows, data."user".user_groups_follows), ARRAY[]::text[]);
+                            '''
+            self.submitBatch(insert_sql)
                         
     def prepareLbsnUser(self, record):
         userRecord = userAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-        preparedRecord = self.dbCursor.mogrify(record_sql, (userRecord.OriginID,          
-                                         userRecord.Guid,              
-                                         userRecord.user_name,         
-                                         userRecord.user_fullname,     
-                                         userRecord.follows,           
-                                         userRecord.followed,          
-                                         userRecord.group_count,       
-                                         userRecord.biography,         
-                                         userRecord.post_count,        
-                                         userRecord.is_private,        
-                                         userRecord.url,               
-                                         userRecord.is_available,      
-                                         userRecord.user_language,     
-                                         userRecord.user_location,     
-                                         helperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
-                                         userRecord.liked_count,       
-                                         userRecord.active_since,      
-                                         userRecord.profile_image_url, 
-                                         userRecord.user_timezone,     
-                                         userRecord.user_utc_offset,
-                                         userRecord.user_groups_member,
-                                         userRecord.user_groups_follows))
-        return preparedRecord.decode()    
+        preparedRecord = (userRecord.OriginID,
+                          userRecord.Guid,              
+                          userRecord.user_name,         
+                          userRecord.user_fullname,     
+                          userRecord.follows,           
+                          userRecord.followed,          
+                          userRecord.group_count,       
+                          userRecord.biography,         
+                          userRecord.post_count,        
+                          userRecord.is_private,        
+                          userRecord.url,               
+                          userRecord.is_available,      
+                          userRecord.user_language,     
+                          userRecord.user_location,     
+                          helperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
+                          userRecord.liked_count,       
+                          userRecord.active_since,      
+                          userRecord.profile_image_url, 
+                          userRecord.user_timezone,     
+                          userRecord.user_utc_offset,
+                          userRecord.user_groups_member,
+                          userRecord.user_groups_follows)
+        return preparedRecord  
 
     def submitLbsnUserGroups(self):
+        preparedRecords = self.prepareRecords(lbsnUserGroup().DESCRIPTOR.name)       
         if self.storeCSV:
-            self.storeAppendCSV(self.batchedUserGroups, 'user_groups')             
-        args_str = ','.join(self.batchedUserGroups)
-        insert_sql = f'''
-                        INSERT INTO data."user_groups" ({self.typeNamesHeaderDict["user_groups"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id, usergroup_guid)
-                        DO UPDATE SET
-                            usergroup_name = COALESCE(EXCLUDED.usergroup_name, data."user_groups".usergroup_name),                                   
-                            usergroup_description = COALESCE(EXCLUDED.usergroup_description, data."user_groups".usergroup_description),                                      
-                            member_count = GREATEST(COALESCE(EXCLUDED.member_count, data."user_groups".member_count), COALESCE(data."user_groups".member_count, EXCLUDED.member_count)),                                                         
-                            usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, data."user_groups".usergroup_createdate),
-                            user_owner = COALESCE(EXCLUDED.user_owner, data."user_groups".user_owner);
-                        '''
-                        # No coalesce for user: in case user changes or removes information, this should also be removed from the record
-        self.submitBatch(insert_sql)
+            self.storeAppendCSV(preparedRecords, 'user_groups')
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."user_groups" ({self.typeNamesHeaderDict["user_groups"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id, usergroup_guid)
+                            DO UPDATE SET
+                                usergroup_name = COALESCE(EXCLUDED.usergroup_name, data."user_groups".usergroup_name),                                   
+                                usergroup_description = COALESCE(EXCLUDED.usergroup_description, data."user_groups".usergroup_description),                                      
+                                member_count = GREATEST(COALESCE(EXCLUDED.member_count, data."user_groups".member_count), COALESCE(data."user_groups".member_count, EXCLUDED.member_count)),                                                         
+                                usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, data."user_groups".usergroup_createdate),
+                                user_owner = COALESCE(EXCLUDED.user_owner, data."user_groups".user_owner);
+                            '''
+                            # No coalesce for user: in case user changes or removes information, this should also be removed from the record
+            self.submitBatch(insert_sql)
                         
     def prepareLbsnUserGroup(self, record):
         userGroupRecord = userGroupAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
-        preparedRecord = self.dbCursor.mogrify(record_sql, (userGroupRecord.OriginID,          
-                                         userGroupRecord.Guid,              
-                                         userGroupRecord.usergroup_name,         
-                                         userGroupRecord.usergroup_description,     
-                                         userGroupRecord.member_count,           
-                                         userGroupRecord.usergroup_createdate,
-                                         userGroupRecord.user_owner))
-        return preparedRecord.decode() 
+        preparedRecord = (userGroupRecord.OriginID,          
+                          userGroupRecord.Guid,              
+                          userGroupRecord.usergroup_name,         
+                          userGroupRecord.usergroup_description,     
+                          userGroupRecord.member_count,           
+                          userGroupRecord.usergroup_createdate,
+                          userGroupRecord.user_owner)
+        return preparedRecord
             
     def submitLbsnPosts(self):
+        preparedRecords = self.prepareRecords(lbsnPost().DESCRIPTOR.name)       
         if self.storeCSV:
-            self.storeAppendCSV(self.batchedPosts, 'post')          
-        args_str = ','.join(self.batchedPosts)
-        insert_sql = f'''
-                        INSERT INTO data."post" ({self.typeNamesHeaderDict["post"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id, post_guid)
-                        DO UPDATE SET                                                                                           
-                            post_latlng = COALESCE(EXCLUDED.post_latlng, data."post".post_latlng),                                   
-                            place_guid = COALESCE(EXCLUDED.place_guid, data."post".place_guid),                                      
-                            city_guid = COALESCE(EXCLUDED.city_guid, data."post".city_guid),                                         
-                            country_guid = COALESCE(EXCLUDED.country_guid, data."post".country_guid),                                
-                            post_geoaccuracy = COALESCE(EXCLUDED.post_geoaccuracy, data."post".post_geoaccuracy),                    
-                            user_guid = COALESCE(EXCLUDED.user_guid, data."post".user_guid),                                         
-                            post_create_date = COALESCE(EXCLUDED.post_create_date, data."post".post_create_date),                    
-                            post_publish_date = COALESCE(EXCLUDED.post_publish_date, data."post".post_publish_date),                 
-                            post_body = COALESCE(EXCLUDED.post_body, data."post".post_body),                                         
-                            post_language = COALESCE(EXCLUDED.post_language, data."post".post_language),                             
-                            user_mentions = COALESCE(EXCLUDED.user_mentions, data."post".user_mentions),                             
-                            hashtags = COALESCE(extensions.mergeArrays(EXCLUDED.hashtags, data."post".hashtags), ARRAY[]::text[]),                                            
-                            emoji = COALESCE(extensions.mergeArrays(EXCLUDED.emoji, data."post".emoji), ARRAY[]::text[]),                                                     
-                            post_like_count = COALESCE(EXCLUDED.post_like_count, data."post".post_like_count),                       
-                            post_comment_count = COALESCE(EXCLUDED.post_comment_count, data."post".post_comment_count),                    
-                            post_views_count = COALESCE(EXCLUDED.post_views_count, data."post".post_views_count),                    
-                            post_title = COALESCE(EXCLUDED.post_title, data."post".post_title),                                      
-                            post_thumbnail_url = COALESCE(EXCLUDED.post_thumbnail_url, data."post".post_thumbnail_url),              
-                            post_url = COALESCE(EXCLUDED.post_url, data."post".post_url),                                            
-                            post_type = COALESCE(EXCLUDED.post_type, data."post".post_type),                                         
-                            post_filter = COALESCE(EXCLUDED.post_filter, data."post".post_filter),                                   
-                            post_quote_count = COALESCE(EXCLUDED.post_quote_count, data."post".post_quote_count),                    
-                            post_share_count = COALESCE(EXCLUDED.post_share_count, data."post".post_share_count),                    
-                            input_source = COALESCE(EXCLUDED.input_source, data."post".input_source);
-                        '''
-        self.submitBatch(insert_sql)
+            self.storeAppendCSV(preparedRecords, 'post')
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."post" ({self.typeNamesHeaderDict["post"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id, post_guid)
+                            DO UPDATE SET                                                                                           
+                                post_latlng = COALESCE(EXCLUDED.post_latlng, data."post".post_latlng),                                   
+                                place_guid = COALESCE(EXCLUDED.place_guid, data."post".place_guid),                                      
+                                city_guid = COALESCE(EXCLUDED.city_guid, data."post".city_guid),                                         
+                                country_guid = COALESCE(EXCLUDED.country_guid, data."post".country_guid),                                
+                                post_geoaccuracy = COALESCE(EXCLUDED.post_geoaccuracy, data."post".post_geoaccuracy),                    
+                                user_guid = COALESCE(EXCLUDED.user_guid, data."post".user_guid),                                         
+                                post_create_date = COALESCE(EXCLUDED.post_create_date, data."post".post_create_date),                    
+                                post_publish_date = COALESCE(EXCLUDED.post_publish_date, data."post".post_publish_date),                 
+                                post_body = COALESCE(EXCLUDED.post_body, data."post".post_body),                                         
+                                post_language = COALESCE(EXCLUDED.post_language, data."post".post_language),                             
+                                user_mentions = COALESCE(EXCLUDED.user_mentions, data."post".user_mentions),                             
+                                hashtags = COALESCE(extensions.mergeArrays(EXCLUDED.hashtags, data."post".hashtags), ARRAY[]::text[]),                                            
+                                emoji = COALESCE(extensions.mergeArrays(EXCLUDED.emoji, data."post".emoji), ARRAY[]::text[]),                                                     
+                                post_like_count = COALESCE(EXCLUDED.post_like_count, data."post".post_like_count),                       
+                                post_comment_count = COALESCE(EXCLUDED.post_comment_count, data."post".post_comment_count),                    
+                                post_views_count = COALESCE(EXCLUDED.post_views_count, data."post".post_views_count),                    
+                                post_title = COALESCE(EXCLUDED.post_title, data."post".post_title),                                      
+                                post_thumbnail_url = COALESCE(EXCLUDED.post_thumbnail_url, data."post".post_thumbnail_url),              
+                                post_url = COALESCE(EXCLUDED.post_url, data."post".post_url),                                            
+                                post_type = COALESCE(EXCLUDED.post_type, data."post".post_type),                                         
+                                post_filter = COALESCE(EXCLUDED.post_filter, data."post".post_filter),                                   
+                                post_quote_count = COALESCE(EXCLUDED.post_quote_count, data."post".post_quote_count),                    
+                                post_share_count = COALESCE(EXCLUDED.post_share_count, data."post".post_share_count),                    
+                                input_source = COALESCE(EXCLUDED.input_source, data."post".input_source);
+                            '''
+            self.submitBatch(insert_sql)
                         
     def prepareLbsnPost(self, record):
         postRecord = postAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-        preparedRecord = self.dbCursor.mogrify(record_sql, (postRecord.OriginID,                                                              
-                                         postRecord.Guid,
-                                         helperFunctions.returnEWKBFromGeoTEXT(postRecord.post_latlng),
-                                         postRecord.place_guid,
-                                         postRecord.city_guid,
-                                         postRecord.country_guid,
-                                         postRecord.post_geoaccuracy,
-                                         postRecord.user_guid,
-                                         postRecord.post_create_date,
-                                         postRecord.post_publish_date,                                          
-                                         postRecord.post_body,
-                                         postRecord.post_language,
-                                         postRecord.user_mentions,
-                                         postRecord.hashtags,
-                                         postRecord.emoji,
-                                         postRecord.post_like_count,
-                                         postRecord.post_comment_count,
-                                         postRecord.post_views_count,
-                                         postRecord.post_title,
-                                         postRecord.post_thumbnail_url,
-                                         postRecord.post_url,
-                                         postRecord.post_type,
-                                         postRecord.post_filter,
-                                         postRecord.post_quote_count,
-                                         postRecord.post_share_count,
-                                         postRecord.input_source))         
-        return preparedRecord.decode()                                                                                              
+        preparedRecord = (postRecord.OriginID,                                                              
+                          postRecord.Guid,
+                          helperFunctions.returnEWKBFromGeoTEXT(postRecord.post_latlng),
+                          postRecord.place_guid,
+                          postRecord.city_guid,
+                          postRecord.country_guid,
+                          postRecord.post_geoaccuracy,
+                          postRecord.user_guid,
+                          postRecord.post_create_date,
+                          postRecord.post_publish_date,                                          
+                          postRecord.post_body,
+                          postRecord.post_language,
+                          postRecord.user_mentions,
+                          postRecord.hashtags,
+                          postRecord.emoji,
+                          postRecord.post_like_count,
+                          postRecord.post_comment_count,
+                          postRecord.post_views_count,
+                          postRecord.post_title,
+                          postRecord.post_thumbnail_url,
+                          postRecord.post_url,
+                          postRecord.post_type,
+                          postRecord.post_filter,
+                          postRecord.post_quote_count,
+                          postRecord.post_share_count,
+                          postRecord.input_source)
+        return preparedRecord                                                                                             
         
     def submitLbsnPostReactions(self):
+        preparedRecords = self.prepareRecords(lbsnPostReaction().DESCRIPTOR.name)       
         if self.storeCSV:
-            self.storeAppendCSV(self.batchedPostReactions, 'post_reaction')         
-        args_str = ','.join(self.batchedPostReactions)
-        insert_sql = f'''
-                        INSERT INTO data."post_reaction" ({self.typeNamesHeaderDict["post_reaction"]})
-                        VALUES {args_str}
-                        ON CONFLICT (origin_id, reaction_guid)
-                        DO UPDATE SET                                                                                           
-                            reaction_latlng = COALESCE(EXCLUDED.reaction_latlng, data."post_reaction".reaction_latlng),                                   
-                            user_guid = COALESCE(EXCLUDED.user_guid, data."post_reaction".user_guid),                                      
-                            referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid, data."post_reaction".referencedPost_guid),                                         
-                            referencedPostreaction_guid = COALESCE(EXCLUDED.referencedPostreaction_guid, data."post_reaction".referencedPostreaction_guid),                                
-                            reaction_type = COALESCE(EXCLUDED.reaction_type, data."post_reaction".reaction_type),                    
-                            reaction_date = COALESCE(EXCLUDED.reaction_date, data."post_reaction".reaction_date),                                         
-                            reaction_content = COALESCE(EXCLUDED.reaction_content, data."post_reaction".reaction_content),                    
-                            reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, data."post_reaction".reaction_like_count),
-                            user_mentions = COALESCE(extensions.mergeArrays(EXCLUDED.user_mentions, data."post_reaction".user_mentions), ARRAY[]::text[]);
-                        '''
-        self.submitBatch(insert_sql)
+            self.storeAppendCSV(preparedRecords, 'post_reaction')
+        if self.dbCursor:
+            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
+            insert_sql = f'''
+                            INSERT INTO data."post_reaction" ({self.typeNamesHeaderDict["post_reaction"]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id, reaction_guid)
+                            DO UPDATE SET                                                                                           
+                                reaction_latlng = COALESCE(EXCLUDED.reaction_latlng, data."post_reaction".reaction_latlng),                                   
+                                user_guid = COALESCE(EXCLUDED.user_guid, data."post_reaction".user_guid),                                      
+                                referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid, data."post_reaction".referencedPost_guid),                                         
+                                referencedPostreaction_guid = COALESCE(EXCLUDED.referencedPostreaction_guid, data."post_reaction".referencedPostreaction_guid),                                
+                                reaction_type = COALESCE(EXCLUDED.reaction_type, data."post_reaction".reaction_type),                    
+                                reaction_date = COALESCE(EXCLUDED.reaction_date, data."post_reaction".reaction_date),                                         
+                                reaction_content = COALESCE(EXCLUDED.reaction_content, data."post_reaction".reaction_content),                    
+                                reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, data."post_reaction".reaction_like_count),
+                                user_mentions = COALESCE(extensions.mergeArrays(EXCLUDED.user_mentions, data."post_reaction".user_mentions), ARRAY[]::text[]);
+                            '''
+            self.submitBatch(insert_sql)
                                            
     def prepareLbsnPostReaction(self, record):
         postReactionRecord = postReactionAttrShared(record)
-        record_sql = '''(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''   
-        preparedRecord = self.dbCursor.mogrify(record_sql, (postReactionRecord.OriginID,                                                              
-                                         postReactionRecord.Guid,
-                                         helperFunctions.returnEWKBFromGeoTEXT(postReactionRecord.reaction_latlng),
-                                         postReactionRecord.user_guid,
-                                         postReactionRecord.referencedPost,
-                                         postReactionRecord.referencedPostreaction,
-                                         postReactionRecord.reaction_type,
-                                         postReactionRecord.reaction_date,
-                                         postReactionRecord.reaction_content,
-                                         postReactionRecord.reaction_like_count,
-                                         postReactionRecord.user_mentions)) 
-        return preparedRecord.decode()
+        preparedRecord = (postReactionRecord.OriginID,                                                              
+                          postReactionRecord.Guid,
+                          helperFunctions.returnEWKBFromGeoTEXT(postReactionRecord.reaction_latlng),
+                          postReactionRecord.user_guid,
+                          postReactionRecord.referencedPost,
+                          postReactionRecord.referencedPostreaction,
+                          postReactionRecord.reaction_type,
+                          postReactionRecord.reaction_date,
+                          postReactionRecord.reaction_content,
+                          postReactionRecord.reaction_like_count,
+                          postReactionRecord.user_mentions) 
+        return preparedRecord
 
     def submitLbsnRelationships(self):
         # submit relationships of different types record[1] is the PostgresQL formatted list of values, record[0] is the type of relationship that determines the table selection
-        selectFriends = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "isfriend"]
+        selectFriends = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "isfriend"]
         if selectFriends:
             if self.storeCSV:
-                self.storeAppendCSV(selectFriends, '_user_friends_user')   
-            args_isFriend = ','.join(selectFriends)
-            insert_sql = f'''
-                            INSERT INTO relations."_user_friends_user" ({self.typeNamesHeaderDict["_user_friends_user"]})
-                            VALUES {args_isFriend}
-                            ON CONFLICT (origin_id, user_guid, friend_guid)
-                            DO NOTHING
-                        '''
-            self.submitBatch(insert_sql)
-        selectConnected = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "isconnected"]
+                self.storeAppendCSV(selectFriends, '_user_friends_user')
+            if self.dbCursor:   
+                args_isFriend = ','.join(selectFriends)
+                insert_sql = f'''
+                                INSERT INTO relations."_user_friends_user" ({self.typeNamesHeaderDict["_user_friends_user"]})
+                                VALUES {args_isFriend}
+                                ON CONFLICT (origin_id, user_guid, friend_guid)
+                                DO NOTHING
+                            '''
+                self.submitBatch(insert_sql)
+        selectConnected = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "isconnected"]
         if selectConnected:
             if self.storeCSV:
-                self.storeAppendCSV(selectConnected, '_user_connectsto_user')  
-            args_isConnected = ','.join(selectConnected)
-            insert_sql = f'''
-                            INSERT INTO relations."_user_connectsto_user" ({self.typeNamesHeaderDict["_user_connectsto_user"]})
-                            VALUES {args_isConnected}
-                            ON CONFLICT (origin_id, user_guid, connectedto_user_guid)
-                            DO NOTHING
-                        '''
-            self.submitBatch(insert_sql)
-        selectUserGroupMember = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "ingroup"]
+                self.storeAppendCSV(selectConnected, '_user_connectsto_user')
+            if self.dbCursor:  
+                args_isConnected = ','.join(selectConnected)
+                insert_sql = f'''
+                                INSERT INTO relations."_user_connectsto_user" ({self.typeNamesHeaderDict["_user_connectsto_user"]})
+                                VALUES {args_isConnected}
+                                ON CONFLICT (origin_id, user_guid, connectedto_user_guid)
+                                DO NOTHING
+                            '''
+                self.submitBatch(insert_sql)
+        selectUserGroupMember = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "ingroup"]
         if selectUserGroupMember:
             if self.storeCSV:
                 self.storeAppendCSV(selectUserGroupMember, '_user_memberof_group')  
-            args_isInGroup = ','.join(selectUserGroupMember)
-            insert_sql = f'''
-                            INSERT INTO relations."_user_memberof_group" ({self.typeNamesHeaderDict["_user_memberof_group"]})
-                            VALUES {args_isInGroup}
-                            ON CONFLICT (origin_id, user_guid, group_guid)
-                            DO NOTHING
-                        '''
-            self.submitBatch(insert_sql)
-        selectUserGroupMember = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "followsgroup"]
+            if self.dbCursor:
+                args_isInGroup = ','.join(selectUserGroupMember)
+                insert_sql = f'''
+                                INSERT INTO relations."_user_memberof_group" ({self.typeNamesHeaderDict["_user_memberof_group"]})
+                                VALUES {args_isInGroup}
+                                ON CONFLICT (origin_id, user_guid, group_guid)
+                                DO NOTHING
+                            '''
+                self.submitBatch(insert_sql)
+        selectUserGroupMember = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "followsgroup"]
         if selectUserGroupMember:
             if self.storeCSV:
-                self.storeAppendCSV(selectUserGroupMember, '_user_follows_group')  
-            args_isInGroup = ','.join(selectUserGroupMember)
-            insert_sql = f'''
-                            INSERT INTO relations."_user_follows_group" ({self.typeNamesHeaderDict["_user_follows_group"]})
-                            VALUES {args_isInGroup}
-                            ON CONFLICT (origin_id, user_guid, group_guid)
-                            DO NOTHING
-                        '''
-            self.submitBatch(insert_sql)            
-        selectUserMentions = [relationship[1] for relationship in self.batchedRelationships if relationship[0] == "mentions_user"]
+                self.storeAppendCSV(selectUserGroupMember, '_user_follows_group')
+            if self.dbCursor:
+                args_isInGroup = ','.join(selectUserGroupMember)
+                insert_sql = f'''
+                                INSERT INTO relations."_user_follows_group" ({self.typeNamesHeaderDict["_user_follows_group"]})
+                                VALUES {args_isInGroup}
+                                ON CONFLICT (origin_id, user_guid, group_guid)
+                                DO NOTHING
+                            '''
+                self.submitBatch(insert_sql)            
+        selectUserMentions = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "mentions_user"]
         if selectUserMentions:
             if self.storeCSV:
-                self.storeAppendCSV(selectUserMentions, '_user_mentions_user') 
-            args_isInGroup = ','.join(selectUserMentions)
-            insert_sql = f'''
-                            INSERT INTO relations."_user_mentions_user" ({self.typeNamesHeaderDict["_user_mentions_user"]})
-                            VALUES {args_isInGroup}
-                            ON CONFLICT (origin_id, user_guid, mentioneduser_guid)
-                            DO NOTHING
-                        '''
-            self.submitBatch(insert_sql)
-                                                   
+                self.storeAppendCSV(selectUserMentions, '_user_mentions_user')
+            if self.dbCursor:
+                args_isInGroup = ','.join(selectUserMentions)
+                insert_sql = f'''
+                                INSERT INTO relations."_user_mentions_user" ({self.typeNamesHeaderDict["_user_mentions_user"]})
+                                VALUES {args_isInGroup}
+                                ON CONFLICT (origin_id, user_guid, mentioneduser_guid)
+                                DO NOTHING
+                            '''
+                self.submitBatch(insert_sql)
+    #??                                               
     def prepareLbsnRelationship(self, record):
-        relationshipRecord = relationshipAttrShared(record)
-        record_sql = '''(%s,%s,%s)'''
+        relationshipRecord = relationshipAttrShared(record)  
         preparedTypeRecordTuple = (relationshipRecord.relType,
-                          self.dbCursor.mogrify(record_sql, (relationshipRecord.OriginID,          
+                          self.prepareRecordValues(relationshipRecord.OriginID,          
                           relationshipRecord.Guid,                      
-                          relationshipRecord.Guid_Rel)).decode())
+                          relationshipRecord.Guid_Rel))
         return preparedTypeRecordTuple 
      
     def submitBatch(self,insert_sql):
@@ -542,16 +548,29 @@ class lbsnDB():
                 self.count_affected += self.dbCursor.rowcount # monitoring
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
-    
+                
     def storeAppendCSV(self, values, typeName):
-        csvOutput = open(f'{self.OutputPathFile}{typeName}.csv', 'a', encoding='utf8')
-        for record in values:
-            # this is ugly, see https://stackoverflow.com/questions/39025420/postgres-wont-allow-array-syntax-in-copy for a better way of doing this
-            pg_formatted_record = re.sub(r',ARRAY\[(.*?)\],',self.csvModArrayQuote, record, flags=re.DOTALL)
-            pg_formatted_record = pg_formatted_record.strip('()')
-            #pg_formatted_record = pg_formatted_record.replace('NULL',"'NULL'")
-            csvOutput.write("%s\n" % pg_formatted_record)
-            
+        with open(f'{self.OutputPathFile}{typeName}.csv', 'a', encoding='utf8') as f:
+            csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+            for record in values:
+                # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
+                # we format some types manually (e.g. arrays)
+                formattedValueList = []
+                for value in record:
+                    if isinstance(value, list):
+                        value = '{' + ','.join(value) + '}'
+                        #sys.exit(value)
+                    elif value is None:
+                        value = "NULL"
+                    elif isinstance(value, str):
+                        value = value.replace('\n',' ').replace('\r', ' ')
+                    formattedValueList.append(value)
+                csvOutput.writerow(formattedValueList)
+
+    ############################
+    ## Helper Functions Below ##
+    ############################
+                
     def csvModArrayQuote(self, match):
         match = match.group(1)
         match = match.replace("'",'"')
@@ -563,6 +582,16 @@ class lbsnDB():
             csvOutput = open(f'{self.OutputPathFile}{typename}.csv', 'w', encoding='utf8')
             csvOutput.write("%s\n" % header)
             
+    def prepareSQLEscapedValues(self,*args):
+        # dynamically construct sql value injection
+        # e.g. record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
+        record_sql = f'''{','.join('%s' for x in range(0, len(args)))}'''
+        # inject values
+        preparedSQLRecord = self.dbCursor.mogrify(record_sql, tuple(args))
+        #mogrify returns a byte object, we decode it so it can be used as a string again
+        preparedSQLRecord = preparedSQLRecord.decode()
+        return preparedSQLRecord
+                
 class placeAttrShared():   
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id # = 3

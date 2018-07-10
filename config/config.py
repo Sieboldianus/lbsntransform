@@ -14,10 +14,10 @@ class baseconfig():
         self.dbPassword_Input = 'example-user-password'
         self.dbServeradressInput = '222.22.222.22'
         self.dbNameInput = 'test_db2'
-        self.dbUser_Output = 'example-user-name2'
-        self.dbPassword_Output = 'example-user-password2'
-        self.dbServeradressOutput = '111.11.11.11'
-        self.dbNameOutput = 'test_db'
+        self.dbUser_Output = None #'example-user-name2'
+        self.dbPassword_Output = None #'example-user-password2'
+        self.dbServeradressOutput = None #'111.11.11.11'
+        self.dbNameOutput = None #'test_db'
         self.transferlimit = None
         self.transferCount = 50000 # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
         self.numberOfRecordsToFetch = 10000
@@ -81,10 +81,11 @@ class baseconfig():
             self.dbNameInput = args.dbNameInput
         if args.geocodeLocations:
             self.geocodeLocations = f'{os.getcwd()}\\{args.geocodeLocations}'
-        self.dbUser_Output = args.dbUser_Output
-        self.dbPassword_Output = args.dbPassword_Output
-        self.dbServeradressOutput = args.dbServeradressOutput
-        self.dbNameOutput = args.dbNameOutput
+        if args.dbUser_Output:
+            self.dbUser_Output = args.dbUser_Output
+            self.dbPassword_Output = args.dbPassword_Output
+            self.dbServeradressOutput = args.dbServeradressOutput
+            self.dbNameOutput = args.dbNameOutput
         if args.transferlimit:
             self.transferlimit = int(args.transferlimit)
             if self.transferlimit == 0:

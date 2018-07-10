@@ -34,7 +34,7 @@ def main():
     # Set Output to Replace in case of encoding issues (console/windows)
     # Necessary? ProtoBuf will convert any problematic characters to Octal Escape Sequences anyway
     # see https://stackoverflow.com/questions/23173340/how-to-convert-octal-escape-sequences-with-python
-    #sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
+    sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
     # Load Config
     # will be overwritten if args are given
     config = baseconfig()
@@ -51,12 +51,16 @@ def main():
     logging.getLogger().addHandler(logging.StreamHandler())
     
     # establish output connection
-    outputConnection = dbConnection(config.dbServeradressOutput,
-                                   config.dbNameOutput,
-                                   config.dbUser_Output,
-                                   config.dbPassword_Output
-                                   )
-    conn_output, cursor_output = outputConnection.connect()
+    if config.dbUser_Output:
+        outputConnection = dbConnection(config.dbServeradressOutput,
+                                       config.dbNameOutput,
+                                       config.dbUser_Output,
+                                       config.dbPassword_Output
+                                       )
+        conn_output, cursor_output = outputConnection.connect()
+    else:
+        conn_output = None
+        cursor_output = None
     
     # load from local json/csv or from PostgresDB
     if config.LocalInput:
@@ -127,7 +131,8 @@ def main():
             continueNumber += 1
         else:
             continueNumber = records[-1][0] #last returned DBRowNumber
-        processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput, config.InputType)  
+        processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput, config.InputType)
+        config.transferlimit -= processedCount
         processedRecords += processedCount
         processedTotal += processedCount        
         print(f'{processedTotal} records processed ({continueNumber} of {inputCount}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
@@ -155,7 +160,8 @@ def main():
     # Close connections to DBs       
     if not config.LocalInput: 
         cursor_input.close()
-    cursor_output.close()
+    if config.dbUser_Output:
+        cursor_output.close()
     log.info(f'\n\nProcessed {processedTotal} records (Input {startNumber} to {continueNumber}).')
     print(f'Done. {howLong.stop_time()}')
        
