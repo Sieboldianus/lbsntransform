@@ -81,9 +81,11 @@ def main():
         conn_input, cursor_input = inputConnection.connect()
         inputCount = '∞'
     
-    outputDB = lbsnDB(dbCursor = cursor_output, 
+    output = lbsnDB(dbCursor = cursor_output, 
                   dbConnection = conn_output,
-                  storeCSV = config.CSVOutput)    
+                  storeCSV = config.CSVOutput,
+                  CSVsuppressLinebreaks = config.CSVsuppressLinebreaks)
+    
     # start settings
     processedRecords = 0
     processedTotal = 0
@@ -112,9 +114,12 @@ def main():
     #twitterRecords.lbsnRecords.AddRecordToDict(deutscherBundestagGroup)
     
     howLong = timeMonitor()
-
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
+        if config.transferlimit:
+            maxRecords = config.transferlimit - processedTotal
+        else:
+            maxRecords = None
         if config.LocalInput:
             if continueNumber > len(loc_filelist)-1:
                 break
@@ -124,25 +129,24 @@ def main():
                 continueNumber += 1
                 continue
         else:
-            records = fetchJsonData_from_LBSN(cursor_input, continueNumber, config.transferlimit, config.numberOfRecordsToFetch) 
+            records = fetchJsonData_from_LBSN(cursor_input, continueNumber, maxRecords, config.numberOfRecordsToFetch) 
             if not records:
                 break
         if config.LocalInput:
             continueNumber += 1
         else:
             continueNumber = records[-1][0] #last returned DBRowNumber
-        processedCount, finished = loopInputRecords(records, config.transferlimit, twitterRecords, endNumber, config.LocalInput, config.InputType)
-        config.transferlimit -= processedCount
+        processedCount, finished = loopInputRecords(records, maxRecords, twitterRecords, endNumber, config.LocalInput, config.InputType)
         processedRecords += processedCount
         processedTotal += processedCount        
-        print(f'{processedTotal} records processed ({continueNumber} of {inputCount}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
+        print(f'{processedTotal} input records processed ({continueNumber} to {inputCount}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not startNumber or processedRecords >= config.transferCount or finished:
             sys.stdout.flush()
-            print(f'Transferring {twitterRecords.lbsnRecords.CountGlob} to db..')
-            outputDB.submitLbsnRecordDicts(twitterRecords)
-            outputDB.commitChanges()
+            print(f'Storing {twitterRecords.lbsnRecords.CountGlob} records ..')
+            output.storeLbsnRecordDicts(twitterRecords)
+            output.commitChanges()
             processedRecords = 0
             ## create a new empty dict of records
             twitterRecords = fieldMappingTwitter(config.disableReactionPostReferencing, geocodeDict, config.MapRelations)
@@ -152,17 +156,26 @@ def main():
                 startNumber = 1
             else:
                 startNumber = records[0][0] #first returned DBRowNumber
+                
     # submit remaining
+    # ??
     if twitterRecords.lbsnRecords.CountGlob > 0:
         print(f'Transferring remaining {twitterRecords.lbsnRecords.CountGlob} to db..')
-        outputDB.submitLbsnRecordDicts(twitterRecords)
-        outputDB.commitChanges()
+        output.storeLbsnRecordDicts(twitterRecords)
+        output.commitChanges()
+        
+    if config.CSVOutput and output.countRound > 1:
+        # merge all CSVs at end and remove duplicates
+        # this is necessary because Postgres can't import Duplicates with /copy
+        # and it is impossible to keep all records in RAM while processing input data
+        output.mergeCSVBatches()
+        
     # Close connections to DBs       
     if not config.LocalInput: 
         cursor_input.close()
     if config.dbUser_Output:
         cursor_output.close()
-    log.info(f'\n\nProcessed {processedTotal} records (Input {startNumber} to {continueNumber}).')
+    log.info(f'\n\nProcessed {processedTotal} input records (Input {startNumber} to {continueNumber}).')
     print(f'Done. {howLong.stop_time()}')
        
 def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNumber, isLocalInput, InputType):
@@ -187,10 +200,10 @@ def loopInputRecords(jsonRecords, transferlimit, twitterRecords, endWithDBRowNum
 
 ## edit the following procedures to your structure
 
-def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfRecordsToFetch = 10000):
+def fetchJsonData_from_LBSN(cursor, startID = 0, getMax = None, numberOfRecordsToFetch = 10000):
     #if transferlimit is below 10000, retrieve only necessary volume of records
-    if transferlimit:
-        numberOfRecordsToFetch = min(numberOfRecordsToFetch, transferlimit)
+    if getMax:
+        numberOfRecordsToFetch = min(numberOfRecordsToFetch, getMax)
     query_sql = '''
             SELECT in_id,insert_time,data::json FROM public."input"
             WHERE in_id > %s
@@ -204,7 +217,6 @@ def fetchJsonData_from_LBSN(cursor, startID = 0, transferlimit = None, numberOfR
         return records
     
 def fetchJsonData_from_File(loc_filelist, startFileID = 0, isStackedJson = False):
-    x = 0
     records = []
     locFile = loc_filelist[startFileID]
     with open(locFile, 'r', encoding="utf-8", errors='replace') as file:
@@ -222,6 +234,6 @@ def fetchJsonData_from_File(loc_filelist, startFileID = 0, isStackedJson = False
         return records
     else:
         return None
-    
+   
 if __name__ == "__main__":
     main()

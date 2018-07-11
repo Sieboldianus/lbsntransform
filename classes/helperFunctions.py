@@ -287,7 +287,7 @@ class lbsnRecordDicts():
         self.CountGlob += 1
         if self.CountGlob % 1000 == 0:
             # progress report (modulo)
-            print(f'Processing Records {self.CountGlob}..                                                    ', end='\r') 
+            print(f'Identified Output Records {self.CountGlob}..                                                    ', end='\r') 
             sys.stdout.flush()
                               
     def AddRelationshipToDict(self,newrelationship):

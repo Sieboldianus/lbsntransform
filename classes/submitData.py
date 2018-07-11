@@ -19,7 +19,7 @@ class lbsnDB():
     def __init__(self, dbCursor = None, 
                  dbConnection = None,
                  commit_volume = 10000,
-                 disableReactionPostReferencing = 0, storeCSV = None):
+                 disableReactionPostReferencing = 0, storeCSV = None, CSVsuppressLinebreaks = True):
         self.dbCursor = dbCursor
         self.dbConnection = dbConnection
         if not self.dbCursor:
@@ -38,15 +38,18 @@ class lbsnDB():
                          lbsnUserGroup.DESCRIPTOR.name: list(),
                          lbsnPost.DESCRIPTOR.name: list(),
                          lbsnPostReaction.DESCRIPTOR.name: list(),
-                         lbsnRelationship.DESCRIPTOR.name: list()}    
-        self.batchVolume = 100 # Records are batched and submitted in one insert with x number of records
+                         lbsnRelationship.DESCRIPTOR.name: list()}
+        self.countRound = 0
+        self.batchDBVolume = 100 # Records are batched and submitted in one insert with x number of records
         self.storeCSV = storeCSV
-        self.typeNamesHeaderDict = {'city': 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
-                                    'country': 'origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url',
-                                    'place': 'origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count',
-                                    'post': 'origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source',
-                                    'post_reaction': 'origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions',
-                                    'user': 'origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows',
+        self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
+        self.typeNamesHeaderDict = {lbsnCity.DESCRIPTOR.name: 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
+                                    lbsnCountry.DESCRIPTOR.name: 'origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url',
+                                    lbsnPlace.DESCRIPTOR.name: 'origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count',
+                                    lbsnPost.DESCRIPTOR.name: 'origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source',
+                                    lbsnPostReaction.DESCRIPTOR.name: 'origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions',
+                                    lbsnUser.DESCRIPTOR.name: 'origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows',
+                                    lbsnUserGroup.DESCRIPTOR.name: 'origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate, user_owner',
                                     '_user_mentions_user': 'origin_id, user_guid, mentioneduser_guid',
                                     '_user_follows_group': 'origin_id, user_guid, group_guid',
                                     '_user_memberof_group': 'origin_id, user_guid, group_guid',
@@ -57,16 +60,16 @@ class lbsnDB():
             self.OutputPathFile = f'{os.getcwd()}\\Output\\'
             if not os.path.exists(self.OutputPathFile):
                 os.makedirs(self.OutputPathFile)
-            self.writeCSVHeaders()
     
     def commitChanges(self):
         if self.dbCursor:
             self.dbConnection.commit() # commit changes to db
             self.count_entries_commit = 0
         
-    def submitLbsnRecordDicts(self, fieldMappingTwitter):
+    def storeLbsnRecordDicts(self, fieldMappingTwitter):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
-        # therefore, records are processed starting from lowest granularity, which is stored in allDicts()
+        # therefore, records are processed starting from lowest granularity. Order is stored in allDicts()
+        self.countRound += 1
         recordDicts = fieldMappingTwitter.lbsnRecords
         x = 0
         self.count_affected = 0
@@ -74,37 +77,24 @@ class lbsnDB():
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
                 x += 1
-                print(f'Transferring {x} of {recordDicts.CountGlob} records to output db ({type_name})..', end='\r')
+                print(f'Storing {x} of {recordDicts.CountGlob} output records ({type_name})..', end='\r')
                 self.prepareLbsnRecord(record,type_name)
                 self.count_glob +=  1 #self.dbCursor.rowcount
                 self.count_entries_commit +=  1 #self.dbCursor.rowcount
-                if self.count_glob == 100 or self.count_entries_commit > self.commit_volume:
+                if self.dbCursor and (self.count_glob == 100 or self.count_entries_commit > self.commit_volume):
                     self.commitChanges()
         # submit remaining rest
         self.submitAllBatches()
-        print(f'\nUpdated/Inserted {self.count_affected} records.')
+        print(f'\nRound {self.countRound:03d}: Updated/Inserted {self.count_affected} records.')
                 
     def prepareLbsnRecord(self, record, record_type):
         # this can be done better
         #record_type = record.DESCRIPTOR.name
         self.batchedRecords[record_type].append(record)
-        for dict in self.batchedRecords:
-            # if any dict contains more values than self.batchVolume, submit/store all
-            if len(dict) >= self.batchVolume:
-                self.submitAllBatches()
-
-    def funcSubmitSelector(self, record_type):
-        dictSwitcher = {
-            lbsnCountry.DESCRIPTOR.name: self.submitLbsnCountries,
-            lbsnCity.DESCRIPTOR.name: self.submitLbsnCities,
-            lbsnPlace.DESCRIPTOR.name: self.submitLbsnPlaces,
-            lbsnUser.DESCRIPTOR.name: self.submitLbsnUsers,
-            lbsnUserGroup.DESCRIPTOR.name: self.submitLbsnUserGroups,
-            lbsnPost.DESCRIPTOR.name: self.submitLbsnPosts,
-            lbsnPostReaction.DESCRIPTOR.name: self.submitLbsnPostReactions,
-            lbsnRelationship.DESCRIPTOR.name: self.submitLbsnRelationships
-        }
-        return dictSwitcher.get(record_type)()
+        for listType, batchList in self.batchedRecords.items():
+            # if any dict contains more values than self.batchDBVolume, submit/store all
+            if len(batchList) >= self.batchDBVolume:
+                self.submitAllBatches(intermediateSubmit = True)
     
     def funcPrepareSelector(self, record):
         dictSwitcher = {
@@ -120,11 +110,14 @@ class lbsnDB():
         prepareFunction = dictSwitcher.get(record.DESCRIPTOR.name)
         return prepareFunction(record)
                                  
-    def submitAllBatches(self):
+    def submitAllBatches(self, intermediateSubmit = False):
         for recordType, batchList in self.batchedRecords.items():
             if batchList:
-                self.funcSubmitSelector(recordType)
-                batchList = []  
+                if self.storeCSV and not intermediateSubmit:
+                    self.writeCSVHeader(recordType)
+                self.submitLbsnRecords(recordType)
+                #self.funcSubmitSelector(recordType)
+                batchList.clear()
     
     def prepareRecords(self, recordType):
         preparedRecords = []
@@ -134,14 +127,15 @@ class lbsnDB():
                 preparedRecords.append(preparedRecord)     
         return preparedRecords
     
-    def submitLbsnCountries(self):
-        preparedRecords = self.prepareRecords(lbsnCountry().DESCRIPTOR.name)
+    def submitLbsnRecords(self, recordType):
+        preparedRecords = self.prepareRecords(recordType)
         if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'country')
+            self.storeAppendCSV(preparedRecords, recordType)
         if self.dbCursor:
             values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."country" ({self.typeNamesHeaderDict["country"]})
+            if recordType == lbsnCountry().DESCRIPTOR.name:
+                insert_sql = f'''
+                            INSERT INTO data."country" ({self.typeNamesHeaderDict[recordType]})
                             VALUES {values_str}
                             ON CONFLICT (origin_id,country_guid)
                             DO UPDATE SET
@@ -155,28 +149,9 @@ class lbsnDB():
                             # Arrays cannot be null, therefore COALESCE([if array not null],[otherwise create empty array])
                             # We don't want the english name to appear in alternatives, therefore: array_remove(altNamesNewArray,"country".name)
                             # Finally, merge New Entries with existing ones (distinct): extensions.mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
-            self.submitBatch(insert_sql) 
-        
-    def prepareLbsnCountry(self, record):
-        # Get common attributes for place types Place, City and Country
-        placeRecord = placeAttrShared(record)
-        preparedRecord = (placeRecord.OriginID,
-                          placeRecord.Guid,
-                          placeRecord.name,
-                          placeRecord.name_alternatives,
-                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
-                          placeRecord.url)
-        return preparedRecord
-    
-    def submitLbsnCities(self):   
-        preparedRecords = self.prepareRecords(lbsnCity().DESCRIPTOR.name)    
-        if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'city')    
-        if self.dbCursor:
-            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."city" ({self.typeNamesHeaderDict["city"]})
+            elif recordType == lbsnCity().DESCRIPTOR.name:
+                insert_sql = f'''
+                            INSERT INTO data."city" ({self.typeNamesHeaderDict[recordType]})
                             VALUES {values_str}
                             ON CONFLICT (origin_id,city_guid)
                             DO UPDATE SET
@@ -187,32 +162,10 @@ class lbsnDB():
                                 url = COALESCE(EXCLUDED.url, data."city".url),
                                 country_guid = COALESCE(EXCLUDED.country_guid, data."city".country_guid),
                                 sub_type = COALESCE(EXCLUDED.sub_type, data."city".sub_type);
-                            '''
-            self.submitBatch(insert_sql)
-                  
-    def prepareLbsnCity(self, record):
-        placeRecord = placeAttrShared(record)
-        countryGuid = helperFunctions.null_check(record.country_pkey.id)
-        subType = helperFunctions.null_check(record.sub_type)
-        preparedRecord = (placeRecord.OriginID,
-                          placeRecord.Guid,
-                          placeRecord.name,
-                          placeRecord.name_alternatives,
-                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
-                          placeRecord.url,
-                          countryGuid,
-                          subType)
-        return preparedRecord
-            
-    def submitLbsnPlaces(self):  
-        preparedRecords = self.prepareRecords(lbsnPlace().DESCRIPTOR.name)
-        if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'place')
-        if self.dbCursor:
-            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."place" ({self.typeNamesHeaderDict["place"]})
+                            '''                
+            elif recordType == lbsnPlace().DESCRIPTOR.name:
+                insert_sql = f'''
+                            INSERT INTO data."place" ({self.typeNamesHeaderDict[recordType]})
                             VALUES {values_str}
                             ON CONFLICT (origin_id,place_guid)
                             DO UPDATE SET
@@ -223,32 +176,23 @@ class lbsnDB():
                                 url = COALESCE(EXCLUDED.url, data."place".url),
                                 city_guid = COALESCE(EXCLUDED.city_guid, data."place".city_guid),
                                 post_count = GREATEST(COALESCE(EXCLUDED.post_count, data."place".post_count), COALESCE(data."place".post_count, EXCLUDED.post_count));
+                            '''                
+            elif recordType == lbsnUserGroup().DESCRIPTOR.name:
+                insert_sql = f'''
+                            INSERT INTO data."user_groups" ({self.typeNamesHeaderDict[recordType]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id, usergroup_guid)
+                            DO UPDATE SET
+                                usergroup_name = COALESCE(EXCLUDED.usergroup_name, data."user_groups".usergroup_name),                                   
+                                usergroup_description = COALESCE(EXCLUDED.usergroup_description, data."user_groups".usergroup_description),                                      
+                                member_count = GREATEST(COALESCE(EXCLUDED.member_count, data."user_groups".member_count), COALESCE(data."user_groups".member_count, EXCLUDED.member_count)),                                                         
+                                usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, data."user_groups".usergroup_createdate),
+                                user_owner = COALESCE(EXCLUDED.user_owner, data."user_groups".user_owner);
                             '''
-            self.submitBatch(insert_sql)
-                           
-    def prepareLbsnPlace(self, record):
-        placeRecord = placeAttrShared(record)
-        cityGuid = helperFunctions.null_check(record.city_pkey.id)
-        postCount = helperFunctions.null_check(record.post_count)
-        preparedRecord = (placeRecord.OriginID,
-                          placeRecord.Guid,
-                          placeRecord.name,
-                          placeRecord.name_alternatives,
-                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
-                          placeRecord.url,
-                          cityGuid,
-                          postCount)
-        return preparedRecord
-            
-    def submitLbsnUsers(self):
-        preparedRecords = self.prepareRecords(lbsnUser().DESCRIPTOR.name)
-        if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'user')
-        if self.dbCursor:
-            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."user" ({self.typeNamesHeaderDict["user"]})
+                            # No coalesce for user: in case user changes or removes information, this should also be removed from the record                
+            elif recordType == lbsnUser().DESCRIPTOR.name:
+                insert_sql = f'''
+                            INSERT INTO data."user" ({self.typeNamesHeaderDict[recordType]})
                             VALUES {values_str}
                             ON CONFLICT (origin_id, user_guid)
                             DO UPDATE SET
@@ -272,74 +216,10 @@ class lbsnDB():
                                 user_utc_offset = COALESCE(EXCLUDED.user_utc_offset, data."user".user_utc_offset),
                                 user_groups_member = COALESCE(extensions.mergeArrays(EXCLUDED.user_groups_member, data."user".user_groups_member), ARRAY[]::text[]),
                                 user_groups_follows = COALESCE(extensions.mergeArrays(EXCLUDED.user_groups_follows, data."user".user_groups_follows), ARRAY[]::text[]);
-                            '''
-            self.submitBatch(insert_sql)
-                        
-    def prepareLbsnUser(self, record):
-        userRecord = userAttrShared(record)
-        preparedRecord = (userRecord.OriginID,
-                          userRecord.Guid,              
-                          userRecord.user_name,         
-                          userRecord.user_fullname,     
-                          userRecord.follows,           
-                          userRecord.followed,          
-                          userRecord.group_count,       
-                          userRecord.biography,         
-                          userRecord.post_count,        
-                          userRecord.is_private,        
-                          userRecord.url,               
-                          userRecord.is_available,      
-                          userRecord.user_language,     
-                          userRecord.user_location,     
-                          helperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
-                          userRecord.liked_count,       
-                          userRecord.active_since,      
-                          userRecord.profile_image_url, 
-                          userRecord.user_timezone,     
-                          userRecord.user_utc_offset,
-                          userRecord.user_groups_member,
-                          userRecord.user_groups_follows)
-        return preparedRecord  
-
-    def submitLbsnUserGroups(self):
-        preparedRecords = self.prepareRecords(lbsnUserGroup().DESCRIPTOR.name)       
-        if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'user_groups')
-        if self.dbCursor:
-            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."user_groups" ({self.typeNamesHeaderDict["user_groups"]})
-                            VALUES {values_str}
-                            ON CONFLICT (origin_id, usergroup_guid)
-                            DO UPDATE SET
-                                usergroup_name = COALESCE(EXCLUDED.usergroup_name, data."user_groups".usergroup_name),                                   
-                                usergroup_description = COALESCE(EXCLUDED.usergroup_description, data."user_groups".usergroup_description),                                      
-                                member_count = GREATEST(COALESCE(EXCLUDED.member_count, data."user_groups".member_count), COALESCE(data."user_groups".member_count, EXCLUDED.member_count)),                                                         
-                                usergroup_createdate = COALESCE(EXCLUDED.usergroup_createdate, data."user_groups".usergroup_createdate),
-                                user_owner = COALESCE(EXCLUDED.user_owner, data."user_groups".user_owner);
-                            '''
-                            # No coalesce for user: in case user changes or removes information, this should also be removed from the record
-            self.submitBatch(insert_sql)
-                        
-    def prepareLbsnUserGroup(self, record):
-        userGroupRecord = userGroupAttrShared(record)
-        preparedRecord = (userGroupRecord.OriginID,          
-                          userGroupRecord.Guid,              
-                          userGroupRecord.usergroup_name,         
-                          userGroupRecord.usergroup_description,     
-                          userGroupRecord.member_count,           
-                          userGroupRecord.usergroup_createdate,
-                          userGroupRecord.user_owner)
-        return preparedRecord
-            
-    def submitLbsnPosts(self):
-        preparedRecords = self.prepareRecords(lbsnPost().DESCRIPTOR.name)       
-        if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'post')
-        if self.dbCursor:
-            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."post" ({self.typeNamesHeaderDict["post"]})
+                            '''                
+            elif recordType == lbsnPost().DESCRIPTOR.name:
+                insert_sql = f'''
+                            INSERT INTO data."post" ({self.typeNamesHeaderDict[recordType]})
                             VALUES {values_str}
                             ON CONFLICT (origin_id, post_guid)
                             DO UPDATE SET                                                                                           
@@ -367,8 +247,103 @@ class lbsnDB():
                                 post_quote_count = COALESCE(EXCLUDED.post_quote_count, data."post".post_quote_count),                    
                                 post_share_count = COALESCE(EXCLUDED.post_share_count, data."post".post_share_count),                    
                                 input_source = COALESCE(EXCLUDED.input_source, data."post".input_source);
-                            '''
-            self.submitBatch(insert_sql)
+                            '''                
+            elif recordType == lbsnPostReaction().DESCRIPTOR.name:   
+                insert_sql = f'''
+                            INSERT INTO data."post_reaction" ({self.typeNamesHeaderDict[recordType]})
+                            VALUES {values_str}
+                            ON CONFLICT (origin_id, reaction_guid)
+                            DO UPDATE SET                                                                                           
+                                reaction_latlng = COALESCE(EXCLUDED.reaction_latlng, data."post_reaction".reaction_latlng),                                   
+                                user_guid = COALESCE(EXCLUDED.user_guid, data."post_reaction".user_guid),                                      
+                                referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid, data."post_reaction".referencedPost_guid),                                         
+                                referencedPostreaction_guid = COALESCE(EXCLUDED.referencedPostreaction_guid, data."post_reaction".referencedPostreaction_guid),                                
+                                reaction_type = COALESCE(EXCLUDED.reaction_type, data."post_reaction".reaction_type),                    
+                                reaction_date = COALESCE(EXCLUDED.reaction_date, data."post_reaction".reaction_date),                                         
+                                reaction_content = COALESCE(EXCLUDED.reaction_content, data."post_reaction".reaction_content),                    
+                                reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, data."post_reaction".reaction_like_count),
+                                user_mentions = COALESCE(extensions.mergeArrays(EXCLUDED.user_mentions, data."post_reaction".user_mentions), ARRAY[]::text[]);
+                            '''                                               
+            self.submitBatch(insert_sql) 
+        
+    def prepareLbsnCountry(self, record):
+        # Get common attributes for place types Place, City and Country
+        placeRecord = placeAttrShared(record)
+        preparedRecord = (placeRecord.OriginID,
+                          placeRecord.Guid,
+                          placeRecord.name,
+                          placeRecord.name_alternatives,
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          placeRecord.url)
+        return preparedRecord
+                  
+    def prepareLbsnCity(self, record):
+        placeRecord = placeAttrShared(record)
+        countryGuid = helperFunctions.null_check(record.country_pkey.id)
+        subType = helperFunctions.null_check(record.sub_type)
+        preparedRecord = (placeRecord.OriginID,
+                          placeRecord.Guid,
+                          placeRecord.name,
+                          placeRecord.name_alternatives,
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          placeRecord.url,
+                          countryGuid,
+                          subType)
+        return preparedRecord
+                           
+    def prepareLbsnPlace(self, record):
+        placeRecord = placeAttrShared(record)
+        cityGuid = helperFunctions.null_check(record.city_pkey.id)
+        postCount = helperFunctions.null_check(record.post_count)
+        preparedRecord = (placeRecord.OriginID,
+                          placeRecord.Guid,
+                          placeRecord.name,
+                          placeRecord.name_alternatives,
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          helperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          placeRecord.url,
+                          cityGuid,
+                          postCount)
+        return preparedRecord
+                        
+    def prepareLbsnUser(self, record):
+        userRecord = userAttrShared(record)
+        preparedRecord = (userRecord.OriginID,
+                          userRecord.Guid,              
+                          userRecord.user_name,         
+                          userRecord.user_fullname,     
+                          userRecord.follows,           
+                          userRecord.followed,          
+                          userRecord.group_count,       
+                          userRecord.biography,         
+                          userRecord.post_count,        
+                          userRecord.is_private,        
+                          userRecord.url,               
+                          userRecord.is_available,      
+                          userRecord.user_language,     
+                          userRecord.user_location,     
+                          helperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
+                          userRecord.liked_count,       
+                          userRecord.active_since,      
+                          userRecord.profile_image_url, 
+                          userRecord.user_timezone,     
+                          userRecord.user_utc_offset,
+                          userRecord.user_groups_member,
+                          userRecord.user_groups_follows)
+        return preparedRecord  
+                        
+    def prepareLbsnUserGroup(self, record):
+        userGroupRecord = userGroupAttrShared(record)
+        preparedRecord = (userGroupRecord.OriginID,          
+                          userGroupRecord.Guid,              
+                          userGroupRecord.usergroup_name,         
+                          userGroupRecord.usergroup_description,     
+                          userGroupRecord.member_count,           
+                          userGroupRecord.usergroup_createdate,
+                          userGroupRecord.user_owner)
+        return preparedRecord
                         
     def prepareLbsnPost(self, record):
         postRecord = postAttrShared(record)
@@ -399,29 +374,6 @@ class lbsnDB():
                           postRecord.post_share_count,
                           postRecord.input_source)
         return preparedRecord                                                                                             
-        
-    def submitLbsnPostReactions(self):
-        preparedRecords = self.prepareRecords(lbsnPostReaction().DESCRIPTOR.name)       
-        if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, 'post_reaction')
-        if self.dbCursor:
-            values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
-            insert_sql = f'''
-                            INSERT INTO data."post_reaction" ({self.typeNamesHeaderDict["post_reaction"]})
-                            VALUES {values_str}
-                            ON CONFLICT (origin_id, reaction_guid)
-                            DO UPDATE SET                                                                                           
-                                reaction_latlng = COALESCE(EXCLUDED.reaction_latlng, data."post_reaction".reaction_latlng),                                   
-                                user_guid = COALESCE(EXCLUDED.user_guid, data."post_reaction".user_guid),                                      
-                                referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid, data."post_reaction".referencedPost_guid),                                         
-                                referencedPostreaction_guid = COALESCE(EXCLUDED.referencedPostreaction_guid, data."post_reaction".referencedPostreaction_guid),                                
-                                reaction_type = COALESCE(EXCLUDED.reaction_type, data."post_reaction".reaction_type),                    
-                                reaction_date = COALESCE(EXCLUDED.reaction_date, data."post_reaction".reaction_date),                                         
-                                reaction_content = COALESCE(EXCLUDED.reaction_content, data."post_reaction".reaction_content),                    
-                                reaction_like_count = COALESCE(EXCLUDED.reaction_like_count, data."post_reaction".reaction_like_count),
-                                user_mentions = COALESCE(extensions.mergeArrays(EXCLUDED.user_mentions, data."post_reaction".user_mentions), ARRAY[]::text[]);
-                            '''
-            self.submitBatch(insert_sql)
                                            
     def prepareLbsnPostReaction(self, record):
         postReactionRecord = postReactionAttrShared(record)
@@ -544,17 +496,21 @@ class lbsnDB():
                 self.log.warning(f'{args_str}')
                 self.dbCursor.execute("ROLLBACK TO SAVEPOINT submit_recordBatch")
                 tsuccessful = True
+            except psycopg2.ProgrammingError as e:
+                sys.exit(insert_sql)                
             else:
                 self.count_affected += self.dbCursor.rowcount # monitoring
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
+
                 
     def storeAppendCSV(self, values, typeName):
-        with open(f'{self.OutputPathFile}{typeName}.csv', 'a', encoding='utf8') as f:
+        filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
+        with open(filePath, 'a', encoding='utf8') as f:
             csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar="'", quoting=csv.QUOTE_MINIMAL)
             for record in values:
                 # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
-                # we format some types manually (e.g. arrays)
+                # Format some types manually (e.g. arrays, null values)
                 formattedValueList = []
                 for value in record:
                     if isinstance(value, list):
@@ -562,7 +518,7 @@ class lbsnDB():
                         #sys.exit(value)
                     elif value is None:
                         value = "NULL"
-                    elif isinstance(value, str):
+                    elif self.CSVsuppressLinebreaks and isinstance(value, str):
                         value = value.replace('\n',' ').replace('\r', ' ')
                     formattedValueList.append(value)
                 csvOutput.writerow(formattedValueList)
@@ -570,19 +526,15 @@ class lbsnDB():
     ############################
     ## Helper Functions Below ##
     ############################
-                
-    def csvModArrayQuote(self, match):
-        match = match.group(1)
-        match = match.replace("'",'"')
-        match = ",'{%s}'," % match
-        return match
     
-    def writeCSVHeaders(self):
-        for typename, header in self.typeNamesHeaderDict.items():
-            csvOutput = open(f'{self.OutputPathFile}{typename}.csv', 'w', encoding='utf8')
-            csvOutput.write("%s\n" % header)
+    def writeCSVHeader(self,typeName):
+        # create files and write headers
+        #for typename, header in self.typeNamesHeaderDict.items():
+        header = self.typeNamesHeaderDict[typeName]
+        csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
+        csvOutput.write("%s\n" % header)
             
-    def prepareSQLEscapedValues(self,*args):
+    def prepareSQLEscapedValues(self, *args):
         # dynamically construct sql value injection
         # e.g. record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
         record_sql = f'''{','.join('%s' for x in range(0, len(args)))}'''
@@ -591,6 +543,10 @@ class lbsnDB():
         #mogrify returns a byte object, we decode it so it can be used as a string again
         preparedSQLRecord = preparedSQLRecord.decode()
         return preparedSQLRecord
+    
+    def mergeCSVBatches(self):
+        # function that merges all outputed CSV at end
+        pass
                 
 class placeAttrShared():   
     def __init__(self, record):
