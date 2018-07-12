@@ -14,6 +14,13 @@ from google.protobuf import text_format
 import re
 from psycopg2 import sql
 import csv
+from glob import glob
+import shutil
+
+from heapq import merge as heapqMerge
+from operator import itemgetter
+from contextlib import ExitStack
+
 
 class lbsnDB():
     def __init__(self, dbCursor = None, 
@@ -516,8 +523,8 @@ class lbsnDB():
                     if isinstance(value, list):
                         value = '{' + ','.join(value) + '}'
                         #sys.exit(value)
-                    elif value is None:
-                        value = "NULL"
+                    #elif value is None:
+                    #    value = "NULL"
                     elif self.CSVsuppressLinebreaks and isinstance(value, str):
                         value = value.replace('\n',' ').replace('\r', ' ')
                     formattedValueList.append(value)
@@ -546,8 +553,70 @@ class lbsnDB():
     
     def mergeCSVBatches(self):
         # function that merges all outputed CSV at end
-        pass
-                
+        for typeName in self.batchedRecords:
+            filelist = glob(f'{self.OutputPathFile}{typeName}_*.csv')
+            self.sortFiles(filelist,typeName)
+            self.mergeFiles(filelist,typeName)
+            
+    def sortFiles(self, filelist, typeName):
+        for f in filelist:
+            with open(f,'r+', encoding='utf8') as batchFile:
+                #skip header
+                header = batchFile.readline()
+                lines = batchFile.readlines()
+                lines.sort()
+                batchFile.seek(0)
+                # delete original records in file
+                batchFile.truncate()
+                # write sorted records
+                #batchFile.writeline(header)
+                for line in lines:
+                    batchFile.write(line)
+    
+    def mergeFiles(self, filelist, typeName):
+        with ExitStack() as stack:
+            files = [stack.enter_context(open(fname, encoding='utf8')) for fname in filelist]
+            with open(f'{self.OutputPathFile}{typeName}.csv','w', encoding='utf8') as mergedFile:
+                mergedFile.writelines(heapqMerge(*files))
+        for file in filelist:
+            os.remove(file)
+    
+    def removeMergeDuplicateRecords(self):
+        
+        def getSplitID(line):
+            return line.split(',')[1]
+        
+        def mergeRecords(duplicateRecordLines):
+            uniqueLines = set(duplicateRecordLines)
+            return uniqueLines[0]
+        
+        for typeName in self.batchedRecords:
+            with open(f'{self.OutputPathFile}{typeName}.csv','r', encoding='utf8') as mergedFile:
+                with open(f'{self.OutputPathFile}{typeName}_cleaned.csv','w', encoding='utf8') as cleanedMergedFile:
+                    header = self.typeNamesHeaderDict[typeName]
+                    cleanedMergedFile.write("%s\n" % header)
+                    # start readlines/compare
+                    previousLine = next(mergedFile)
+                    previousRecordID = getSplitID(previousLine)
+                    duplicateRecordLines = [previousLine]
+                    for line in mergedFile:
+                        recordID = getSplitID(line)
+                        if previousRecordID == recordID:
+                            # if duplicate, add to list to merge later
+                            duplicateRecordLines.append(line)
+                        else:
+                            # if different id, do merge [if necessary], then continue processing
+                            if len(duplicateRecordLines) > 1:
+                                mergedRecordLine = mergeRecords(duplicateRecordLines)    
+                            else:
+                                # if only one entry
+                                mergedRecordLine = duplicateRecordLines[0]                     
+                            cleanedMergedFile.write(mergedRecordLine)
+                            duplicateRecordLines = [line]
+                        previousRecordID = getSplitID(line)
+                    
+    
+                      
 class placeAttrShared():   
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id # = 3
