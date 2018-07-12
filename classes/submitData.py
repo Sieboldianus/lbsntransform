@@ -49,6 +49,7 @@ class lbsnDB():
         self.countRound = 0
         self.batchDBVolume = 100 # Records are batched and submitted in one insert with x number of records
         self.storeCSV = storeCSV
+        self.headersWritten = set()
         self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
         self.typeNamesHeaderDict = {lbsnCity.DESCRIPTOR.name: 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
                                     lbsnCountry.DESCRIPTOR.name: 'origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url',
@@ -77,6 +78,7 @@ class lbsnDB():
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
         # therefore, records are processed starting from lowest granularity. Order is stored in allDicts()
         self.countRound += 1
+        self.headersWritten.clear()
         recordDicts = fieldMappingTwitter.lbsnRecords
         x = 0
         self.count_affected = 0
@@ -101,7 +103,7 @@ class lbsnDB():
         for listType, batchList in self.batchedRecords.items():
             # if any dict contains more values than self.batchDBVolume, submit/store all
             if len(batchList) >= self.batchDBVolume:
-                self.submitAllBatches(intermediateSubmit = True)
+                self.submitAllBatches()
     
     def funcPrepareSelector(self, record):
         dictSwitcher = {
@@ -117,15 +119,16 @@ class lbsnDB():
         prepareFunction = dictSwitcher.get(record.DESCRIPTOR.name)
         return prepareFunction(record)
                                  
-    def submitAllBatches(self, intermediateSubmit = False):
+    def submitAllBatches(self):
         for recordType, batchList in self.batchedRecords.items():
             if batchList:
-                if self.storeCSV and not intermediateSubmit:
+                if self.storeCSV and not recordType in self.headersWritten:
                     self.writeCSVHeader(recordType)
+                    self.headersWritten.add(recordType)
                 self.submitLbsnRecords(recordType)
                 #self.funcSubmitSelector(recordType)
                 batchList.clear()
-    
+        
     def prepareRecords(self, recordType):
         preparedRecords = []
         for record in self.batchedRecords[recordType]:
@@ -510,37 +513,6 @@ class lbsnDB():
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
 
-                
-    def storeAppendCSV(self, values, typeName):
-        filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
-        with open(filePath, 'a', encoding='utf8') as f:
-            csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar="'", quoting=csv.QUOTE_MINIMAL)
-            for record in values:
-                # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
-                # Format some types manually (e.g. arrays, null values)
-                formattedValueList = []
-                for value in record:
-                    if isinstance(value, list):
-                        value = '{' + ','.join(value) + '}'
-                        #sys.exit(value)
-                    #elif value is None:
-                    #    value = "NULL"
-                    elif self.CSVsuppressLinebreaks and isinstance(value, str):
-                        value = value.replace('\n',' ').replace('\r', ' ')
-                    formattedValueList.append(value)
-                csvOutput.writerow(formattedValueList)
-
-    ############################
-    ## Helper Functions Below ##
-    ############################
-    
-    def writeCSVHeader(self,typeName):
-        # create files and write headers
-        #for typename, header in self.typeNamesHeaderDict.items():
-        header = self.typeNamesHeaderDict[typeName]
-        csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
-        csvOutput.write("%s\n" % header)
-            
     def prepareSQLEscapedValues(self, *args):
         # dynamically construct sql value injection
         # e.g. record_sql = '''(%s,%s,%s,%s,%s,%s,%s)'''
@@ -550,6 +522,36 @@ class lbsnDB():
         #mogrify returns a byte object, we decode it so it can be used as a string again
         preparedSQLRecord = preparedSQLRecord.decode()
         return preparedSQLRecord
+    
+    ############################
+    ## CSV Functions Below ##
+    ############################ 
+                   
+    def storeAppendCSV(self, values, typeName, pgCopyFormat = False):
+        filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
+        with open(filePath, 'a', encoding='utf8') as f:
+            csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for record in values:
+                formattedValueList = []
+                for value in record:
+                    # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
+                    # Format some types manually (e.g. arrays, null values)
+                    #if isinstance(value, list):
+                    #    sys.exit(str(value))                 
+                    if pgCopyFormat and isinstance(value, list):
+                        value = '{' + ','.join(value) + '}'
+                    elif self.CSVsuppressLinebreaks and isinstance(value, str):
+                        # replace linebreaks by actual string so we can use heapqMerge to merge line by line
+                        value = value.replace('\n','\\n').replace('\r', '\\r')
+                    formattedValueList.append(value)
+                csvOutput.writerow(formattedValueList)
+    
+    def writeCSVHeader(self, typeName):
+        # create files and write headers
+        #for typename, header in self.typeNamesHeaderDict.items():
+        header = self.typeNamesHeaderDict[typeName]
+        csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
+        csvOutput.write("%s\n" % header)
     
     def mergeCSVBatches(self):
         # function that merges all outputed CSV at end
@@ -582,38 +584,48 @@ class lbsnDB():
             os.remove(file)
     
     def removeMergeDuplicateRecords(self):
-        
         def getSplitID(line):
             return line.split(',')[1]
-        
         def mergeRecords(duplicateRecordLines):
-            uniqueLines = set(duplicateRecordLines)
-            return uniqueLines[0]
-        
-        for typeName in self.batchedRecords:
-            with open(f'{self.OutputPathFile}{typeName}.csv','r', encoding='utf8') as mergedFile:
-                with open(f'{self.OutputPathFile}{typeName}_cleaned.csv','w', encoding='utf8') as cleanedMergedFile:
-                    header = self.typeNamesHeaderDict[typeName]
-                    cleanedMergedFile.write("%s\n" % header)
-                    # start readlines/compare
-                    previousLine = next(mergedFile)
-                    previousRecordID = getSplitID(previousLine)
-                    duplicateRecordLines = [previousLine]
-                    for line in mergedFile:
-                        recordID = getSplitID(line)
-                        if previousRecordID == recordID:
-                            # if duplicate, add to list to merge later
-                            duplicateRecordLines.append(line)
+            uniqueRecords = set(duplicateRecordLines)
+            if len(uniqueRecords) > 1:
+                mergedRecord = deepMerge(uniqueRecords)
+                print(type(uniqueRecords))
+                sys.exit(uniqueRecords)
+            else:
+                mergedRecord = uniqueRecords[0]
+            return mergedRecord
+        def cleanMergedFile(mergedFile, cleanedMergedFile):
+            with mergedFile, cleanedMergedFile:
+                header = self.typeNamesHeaderDict[typeName]
+                cleanedMergedFile.write("%s\n" % header)
+                # start readlines/compare
+                previousLine = next(mergedFile)
+                previousRecordID = getSplitID(previousLine)
+                duplicateRecordLines = [previousLine]
+                for line in mergedFile:
+                    recordID = getSplitID(line)
+                    if previousRecordID == recordID:
+                        # if duplicate, add to list to merge later
+                        duplicateRecordLines.append(line)
+                    else:
+                        # if different id, do merge [if necessary], then continue processing
+                        if len(duplicateRecordLines) > 1:
+                            mergedRecordLine = mergeRecords(duplicateRecordLines) 
                         else:
-                            # if different id, do merge [if necessary], then continue processing
-                            if len(duplicateRecordLines) > 1:
-                                mergedRecordLine = mergeRecords(duplicateRecordLines)    
-                            else:
-                                # if only one entry
-                                mergedRecordLine = duplicateRecordLines[0]                     
-                            cleanedMergedFile.write(mergedRecordLine)
-                            duplicateRecordLines = [line]
+                            # if only one entry
+                            mergedRecordLine = duplicateRecordLines[0]
+                            # add/overwrite new record line
+                        # write distinct lines and continue
+                        cleanedMergedFile.write(mergedRecordLine)
+                        duplicateRecordLines = [line]
                         previousRecordID = getSplitID(line)
+        # main loop                 
+        for typeName in self.batchedRecords:
+            mergedFile = open(f'{self.OutputPathFile}{typeName}.csv','r', encoding='utf8')
+            cleanedMergedFile = open(f'{self.OutputPathFile}{typeName}_cleaned.csv','w', encoding='utf8')
+            cleanMergedFile(mergedFile, cleanedMergedFile)
+            
                     
     
                       
