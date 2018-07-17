@@ -2,7 +2,7 @@
 
 __author__      = "Alexander Dunkel"
 __license__   = "GNU GPLv3"
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 import getpass
 import logging 
