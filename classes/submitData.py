@@ -4,11 +4,13 @@ import psycopg2
 from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from lbsnstructure.Structure_pb2 import *
+#from descriptor_pb2 import DescriptorProto
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import logging 
 from sys import exit
 import traceback
 import os
+import sys
 # for debugging only:
 from google.protobuf import text_format
 import re
@@ -21,6 +23,10 @@ from heapq import merge as heapqMerge
 from operator import itemgetter
 from contextlib import ExitStack
 
+from google.protobuf.internal import encoder
+from google.protobuf.internal.decoder import _DecodeVarint32
+from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
+import base64
 
 class lbsnDB():
     def __init__(self, dbCursor = None, 
@@ -46,6 +52,16 @@ class lbsnDB():
                          lbsnPost.DESCRIPTOR.name: list(),
                          lbsnPostReaction.DESCRIPTOR.name: list(),
                          lbsnRelationship.DESCRIPTOR.name: list()}
+        self.dictTypeSwitcher = { # create protoBuf messages by name
+            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
+            lbsnCity().DESCRIPTOR.name: lbsnCity(),
+            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
+            lbsnUser().DESCRIPTOR.name: lbsnUser(),
+            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
+            lbsnPost().DESCRIPTOR.name: lbsnPost(),
+            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
+            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
+        }
         self.countRound = 0
         self.batchDBVolume = 100 # Records are batched and submitted in one insert with x number of records
         self.storeCSV = storeCSV
@@ -97,8 +113,9 @@ class lbsnDB():
         print(f'\nRound {self.countRound:03d}: Updated/Inserted {self.count_affected} records.')
                 
     def prepareLbsnRecord(self, record, record_type):
-        # this can be done better
-        #record_type = record.DESCRIPTOR.name
+        # clean duplicates in repeated Fields and Sort List
+        self.sortCleanProtoRepeatedField(record)
+        # store cleaned ProtoBuf records
         self.batchedRecords[record_type].append(record)
         for listType, batchList in self.batchedRecords.items():
             # if any dict contains more values than self.batchDBVolume, submit/store all
@@ -118,13 +135,13 @@ class lbsnDB():
         }
         prepareFunction = dictSwitcher.get(record.DESCRIPTOR.name)
         return prepareFunction(record)
-                                 
+                        
     def submitAllBatches(self):
         for recordType, batchList in self.batchedRecords.items():
             if batchList:
-                if self.storeCSV and not recordType in self.headersWritten:
-                    self.writeCSVHeader(recordType)
-                    self.headersWritten.add(recordType)
+                #if self.storeCSV and not recordType in self.headersWritten:
+                #    self.writeCSVHeader(recordType)
+                #    self.headersWritten.add(recordType)
                 self.submitLbsnRecords(recordType)
                 #self.funcSubmitSelector(recordType)
                 batchList.clear()
@@ -140,7 +157,7 @@ class lbsnDB():
     def submitLbsnRecords(self, recordType):
         preparedRecords = self.prepareRecords(recordType)
         if self.storeCSV:
-            self.storeAppendCSV(preparedRecords, recordType)
+            self.storeAppendCSV(recordType)
         if self.dbCursor:
             values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
             if recordType == lbsnCountry().DESCRIPTOR.name:
@@ -523,29 +540,41 @@ class lbsnDB():
         preparedSQLRecord = preparedSQLRecord.decode()
         return preparedSQLRecord
     
-    ############################
-    ## CSV Functions Below ##
-    ############################ 
+    def sortCleanProtoRepeatedField(self, record):
+        # remove duplicate values in repeated field, sort alphabetically
+        # needed for unique compare
+        for descriptor in record.DESCRIPTOR.fields:
+            if descriptor.label == descriptor.LABEL_REPEATED:
+                x = getattr(record, descriptor.name)
+                if x and not isinstance(x, RepeatedCompositeFieldContainer):
+                    xCleaned = set(x)   
+                    xSorted = sorted(xCleaned)
+                    #Complete clear of repeated field
+                    for key in range(0, len(x)):
+                        x.pop()
+                    # add sorted list
+                    x.extend(xSorted)
+
+    ###########################
+    ### CSV Functions Below ###
+    ###########################
                    
-    def storeAppendCSV(self, values, typeName, pgCopyFormat = False):
+    def storeAppendCSV(self, typeName, pgCopyFormat = False):
+        records = self.batchedRecords[typeName]
         filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
         with open(filePath, 'a', encoding='utf8') as f:
-            csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            for record in values:
-                formattedValueList = []
-                for value in record:
-                    # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
-                    # Format some types manually (e.g. arrays, null values)
-                    #if isinstance(value, list):
-                    #    sys.exit(str(value))                 
-                    if pgCopyFormat and isinstance(value, list):
-                        value = '{' + ','.join(value) + '}'
-                    elif self.CSVsuppressLinebreaks and isinstance(value, str):
-                        # replace linebreaks by actual string so we can use heapqMerge to merge line by line
-                        value = value.replace('\n','\\n').replace('\r', '\\r')
-                    formattedValueList.append(value)
-                csvOutput.writerow(formattedValueList)
-    
+            #csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for record in records:
+                serializedRecord_b64 = self.serializeEncodeRecord(record)
+                f.write(f'{record.pkey.id},{serializedRecord_b64}\n')
+                
+    def serializeEncodeRecord(self, record):
+        # serializes record as string and encodes in base64 for corrupt-resistant backup/store/transfer
+        serializedRecord = record.SerializeToString()
+        serializedEncodedRecord = base64.b64encode(serializedRecord)
+        serializedEncodedRecordUTF = serializedEncodedRecord.decode("utf-8")
+        return serializedEncodedRecordUTF
+        
     def writeCSVHeader(self, typeName):
         # create files and write headers
         #for typename, header in self.typeNamesHeaderDict.items():
@@ -553,20 +582,35 @@ class lbsnDB():
         csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
         csvOutput.write("%s\n" % header)
     
-    def mergeCSVBatches(self):
-        # function that merges all outputed CSV at end
+    def cleanCSVBatches(self):
+        # function that merges all output streams at end 
+        x=0
         for typeName in self.batchedRecords:
+            x+= 1
             filelist = glob(f'{self.OutputPathFile}{typeName}_*.csv')
-            self.sortFiles(filelist,typeName)
-            self.mergeFiles(filelist,typeName)
-            
+            if filelist:
+                print(f'Cleaning & merging output files..{x}/{len(self.batchedRecords)}', end='\r')
+                sys.stdout.flush()
+                self.sortFiles(filelist,typeName)
+                if len(filelist) > 1:
+                    self.mergeFiles(filelist,typeName)
+                else:
+                    # no need to merge files if only one round
+                    new_filename = filelist[0].replace('_001','')
+                    if os.path.isfile(new_filename):
+                        os.remove(new_filename)
+                    os.rename(filelist[0], new_filename)
+                self.removeMergeDuplicateRecords_FormatCSV(typeName)
+        
     def sortFiles(self, filelist, typeName):
         for f in filelist:
             with open(f,'r+', encoding='utf8') as batchFile:
                 #skip header
-                header = batchFile.readline()
+                #header = batchFile.readline()
                 lines = batchFile.readlines()
-                lines.sort()
+                # sort by first column
+                lines.sort(key=lambda a_line: a_line.split()[0])
+                #lines.sort()
                 batchFile.seek(0)
                 # delete original records in file
                 batchFile.truncate()
@@ -582,52 +626,115 @@ class lbsnDB():
                 mergedFile.writelines(heapqMerge(*files))
         for file in filelist:
             os.remove(file)
-    
-    def removeMergeDuplicateRecords(self):
-        def getSplitID(line):
-            return line.split(',')[1]
+            
+    def createProtoByDescriptorName(self, descName):
+        newRecord = self.dictTypeSwitcher[descName]
+        return newRecord
+                
+    def parseMessage(self,msgType,stringMessage):
+            #result_class = reflection.GeneratedProtocolMessageType(msgType,(stringMessage,),{'DESCRIPTOR': descriptor, '__module__': None})
+            ParseMessage
+            msgClass=lbsnstructure.Structure_pb2[msgType]
+            message=msgClass()
+            message.ParseFromString(stringMessage)
+            return message
+        
+    def removeMergeDuplicateRecords_FormatCSV(self, typeName):
+        def getRecordID_From_base64EncodedString(line):
+            record = getRecord_From_base64EncodedString(line)
+            return record.pkey.id
+        def getRecord_From_base64EncodedString(line):
+            record = self.createProtoByDescriptorName(typeName)
+            record.ParseFromString(base64.b64decode(line))#.strip("\n"))
+            return record
         def mergeRecords(duplicateRecordLines):
-            uniqueRecords = set(duplicateRecordLines)
-            if len(uniqueRecords) > 1:
-                mergedRecord = deepMerge(uniqueRecords)
-                print(type(uniqueRecords))
-                sys.exit(uniqueRecords)
+            if len(duplicateRecordLines) > 1:
+                # first do a simple compare/unique
+                uniqueRecords = set(duplicateRecordLines)
+                if len(uniqueRecords) > 1:
+                    #input(f'Len: {len(uniqueRecords)} : {uniqueRecords}')
+                    # if more than one unqiue record infos, get first and deep-compare-merge with following
+                    prevDuprecord = getRecord_From_base64EncodedString(duplicateRecordLines[0])
+                    for duprecord in duplicateRecordLines[1:]:
+                        # merge current record with previous until no more found
+                        # will modify/overwrite prevDuprecord
+                        helperFunctions.MergeExistingRecords(prevDuprecord,getRecord_From_base64EncodedString(duprecord))                  
+                    mergedRecord = self.serializeEncodeRecord(prevDuprecord)
+                else:
+                    # take first element
+                    mergedRecord = next(iter(uniqueRecords))
             else:
-                mergedRecord = uniqueRecords[0]
+                mergedRecord = duplicateRecordLines[0]
             return mergedRecord
+        def formatB64EncodedRecordForCSV(record_b64):
+            record = getRecord_From_base64EncodedString(record_b64)
+            # convert Protobuf to Value list
+            preparedRecord = self.funcPrepareSelector(record)
+            formattedValueList = []
+            for value in preparedRecord:
+                # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
+                # Format some types manually (e.g. arrays, null values)
+                if isinstance(value, list):
+                    #value = '{' + ",".join([f"'{entr}'" for entr in value]) + '}'
+                    value = '{' + ",".join(value) + '}'
+                    #input(value)
+                elif self.CSVsuppressLinebreaks and isinstance(value, str):
+                    # replace linebreaks by actual string so we can use heapqMerge to merge line by line
+                    value = value.replace('\n','\\n').replace('\r', '\\r')
+                formattedValueList.append(value)
+            return formattedValueList
         def cleanMergedFile(mergedFile, cleanedMergedFile):
-            with mergedFile, cleanedMergedFile:
+            dupsremoved = 0
+            with mergedFile, cleanedMergedFile, cleanedMergedFileCopy:
                 header = self.typeNamesHeaderDict[typeName]
-                cleanedMergedFile.write("%s\n" % header)
+                cleanedMergedFileCopy.write("%s\n" % header)
+                csvOutput = csv.writer(cleanedMergedFileCopy, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 # start readlines/compare
-                previousLine = next(mergedFile)
-                previousRecordID = getSplitID(previousLine)
-                duplicateRecordLines = [previousLine]
+                previousRecord_id, previousRecord_b64 = next(mergedFile).split(',', 1)
+                # strip linebreak from line ending
+                previousRecord_b64 = previousRecord_b64.strip()
+                duplicateRecordLines = []
                 for line in mergedFile:
-                    recordID = getSplitID(line)
-                    if previousRecordID == recordID:
+                    record_id, record_b64 = line.split(',', 1)
+                    # strip linebreak from line ending
+                    record_b64 = record_b64.strip()
+                    if record_id == previousRecord_id:
                         # if duplicate, add to list to merge later
-                        duplicateRecordLines.append(line)
+                        duplicateRecordLines.extend((previousRecord_b64, record_b64))
+                        continue
                     else:
                         # if different id, do merge [if necessary], then continue processing
-                        if len(duplicateRecordLines) > 1:
-                            mergedRecordLine = mergeRecords(duplicateRecordLines) 
-                        else:
-                            # if only one entry
-                            mergedRecordLine = duplicateRecordLines[0]
+                        if duplicateRecordLines:
                             # add/overwrite new record line
-                        # write distinct lines and continue
-                        cleanedMergedFile.write(mergedRecordLine)
-                        duplicateRecordLines = [line]
-                        previousRecordID = getSplitID(line)
-        # main loop                 
-        for typeName in self.batchedRecords:
-            mergedFile = open(f'{self.OutputPathFile}{typeName}.csv','r', encoding='utf8')
-            cleanedMergedFile = open(f'{self.OutputPathFile}{typeName}_cleaned.csv','w', encoding='utf8')
-            cleanMergedFile(mergedFile, cleanedMergedFile)
-            
-                    
-    
+                            # write merged record and continue
+                            mergedRecord_b64 = mergeRecords(duplicateRecordLines) 
+                            dupsremoved += len(duplicateRecordLines) - 1
+                            duplicateRecordLines = []
+                            previousRecord_b64 = mergedRecord_b64
+                    cleanedMergedFile.write(f'{previousRecord_id},{previousRecord_b64}\n')
+                    formattedValueList = formatB64EncodedRecordForCSV(previousRecord_b64)
+                    csvOutput.writerow(formattedValueList)
+                    previousRecord_id = record_id
+                    previousRecord_b64 = record_b64
+                # finally
+                if duplicateRecordLines:
+                    finalMergedRecord = mergeRecords(duplicateRecordLines)
+                else:
+                    finalMergedRecord = previousRecord_b64
+                cleanedMergedFile.write(f'{previousRecord_id},{finalMergedRecord}\n') 
+                formattedValueList = formatB64EncodedRecordForCSV(finalMergedRecord)
+                csvOutput.writerow(formattedValueList)                    
+            print(f'{typeName} Duplicates Merged: {dupsremoved}                             ')
+        # main
+        mergedFilename = f'{self.OutputPathFile}{typeName}.csv'
+        cleanedMergedFilename = f'{self.OutputPathFile}{typeName}_cleaned.csv'
+        cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}_pgCSV.csv'
+        mergedFile = open(mergedFilename,'r', encoding='utf8')
+        cleanedMergedFile = open(cleanedMergedFilename,'w', encoding='utf8')
+        cleanedMergedFileCopy = open(cleanedMergedFilename_CSV,'w', encoding='utf8')
+        cleanMergedFile(mergedFile, cleanedMergedFile)
+        os.remove(mergedFilename)
+        os.rename(cleanedMergedFilename, mergedFilename)
                       
 class placeAttrShared():   
     def __init__(self, record):

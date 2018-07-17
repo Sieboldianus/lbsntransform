@@ -173,7 +173,17 @@ class helperFunctions():
     def clean_null_bytes_from_str(str):
         str_without_null_byte = str.replace('\x00','') 
         return str_without_null_byte
-                 
+    
+    def MergeExistingRecords(oldrecord, newrecord):
+        # Basic Compare function for GUIDS
+        # First check if length of both ProtoBuf Messages are the same
+        oldRecordString = oldrecord.SerializeToString()
+        newRecordString = newrecord.SerializeToString()
+        if not len(oldRecordString) == len(newRecordString):
+            # no need to do anything if same lengt
+            oldrecord.MergeFrom(newrecord)
+            #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)   
+                             
 class lbsnRecordDicts():
     def __init__(self):
         self.lbsnCountryDict = dict()
@@ -221,16 +231,6 @@ class lbsnRecordDicts():
         else:
             # all other entities can be globally uniquely identified by their local guid
             self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
-        
-    def MergeExistingRecords(self, oldrecord, newrecord):
-        # Basic Compare function for GUIDS
-        # First check if length of both ProtoBuf Messages are the same
-        oldRecordString = oldrecord.SerializeToString()
-        newRecordString = newrecord.SerializeToString()
-        if not len(oldRecordString) == len(newRecordString):
-            # no need to do anything if same lengt
-            oldrecord.MergeFrom(newrecord)
-            #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)   
     
     def deepCompareMergeMessages(self,oldRecord,newRecord):
         # Do a deep compare
@@ -276,7 +276,8 @@ class lbsnRecordDicts():
         pkeyID = newrecord.pkey.id
         if newrecord.pkey.id in dict:
             oldrecord = dict[pkeyID]
-            self.MergeExistingRecords(oldrecord,newrecord)
+            # oldrecord will be modified/updated
+            helperFunctions.MergeExistingRecords(oldrecord,newrecord)
         else:
             # just count new entries
             self.countProgressReport()

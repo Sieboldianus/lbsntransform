@@ -64,7 +64,8 @@ def main():
     
     # load from local json/csv or from PostgresDB
     if config.LocalInput:
-        loc_filelist = glob(f'{config.InputPath}{config.LocalFileType}')
+        filepath = f'{config.InputPath}{config.LocalFileType}'
+        loc_filelist = glob(filepath)
         inputCount = (len(loc_filelist))
         if inputCount == 0:
             sys.exit("No location files found.")
@@ -164,11 +165,11 @@ def main():
         output.storeLbsnRecordDicts(twitterRecords)
         output.commitChanges()
         
-    if config.CSVOutput and output.countRound > 1:
+    if config.CSVOutput:
         # merge all CSVs at end and remove duplicates
         # this is necessary because Postgres can't import Duplicates with /copy
         # and it is impossible to keep all records in RAM while processing input data
-        output.mergeCSVBatches()
+        output.cleanCSVBatches()
         
     # Close connections to DBs       
     if not config.LocalInput: 
