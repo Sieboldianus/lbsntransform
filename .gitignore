@@ -3,9 +3,10 @@ tests/
 .project
 .pydevproject
 .settings/org.eclipse.core.resources.prefs
-.vs/transferIncremental_AllJson_To_Lbsn/v15/.suo
+.vs/
 transferIncremental_AllJson_To_Lbsn.pyproj
 transferIncremental_AllJson_To_Lbsn.sln
+test_env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
