@@ -38,8 +38,9 @@ class lbsnDB():
         if not self.dbCursor:
             print("CSV Output Mode.")
         self.commit_volume = commit_volume
-        self.count_entries_commit = 0
+        self.count_entries_store = 0
         self.count_affected = 0
+        self.store_volume = 500000
         self.count_glob = 0
         self.null_island_count = 0
         self.disableReactionPostReferencing = disableReactionPostReferencing
@@ -89,12 +90,15 @@ class lbsnDB():
         if self.dbCursor:
             self.dbConnection.commit() # commit changes to db
             self.count_entries_commit = 0
-        
+     def commitChanges(self):
+        if self.storeCSV:
+            self.cleanCSVBatches()
+            self.count_entries_store = 0
     def storeLbsnRecordDicts(self, fieldMappingTwitter):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
         # therefore, records are processed starting from lowest granularity. Order is stored in allDicts()
         self.countRound += 1
-        self.headersWritten.clear()
+        #self.headersWritten.clear()
         recordDicts = fieldMappingTwitter.lbsnRecords
         x = 0
         self.count_affected = 0
@@ -106,11 +110,15 @@ class lbsnDB():
                 self.prepareLbsnRecord(record,type_name)
                 self.count_glob +=  1 #self.dbCursor.rowcount
                 self.count_entries_commit +=  1 #self.dbCursor.rowcount
+                self.count_entries_store += 1
                 if self.dbCursor and (self.count_glob == 100 or self.count_entries_commit > self.commit_volume):
                     self.commitChanges()
+                if self.storeCSV and (self.count_entries_store > self.store_volume):
+                    self.storeChanges()
         # submit remaining rest
         self.submitAllBatches()
-        print(f'\nRound {self.countRound:03d}: Updated/Inserted {self.count_affected} records.')
+        #self.count_affected += x # monitoring
+        print(f'\nRound {self.countRound:03d}: Updated/Inserted {self.count_glob} records.')
                 
     def prepareLbsnRecord(self, record, record_type):
         # clean duplicates in repeated Fields and Sort List
@@ -526,7 +534,7 @@ class lbsnDB():
             except psycopg2.ProgrammingError as e:
                 sys.exit(insert_sql)                
             else:
-                self.count_affected += self.dbCursor.rowcount # monitoring
+                #self.count_affected += self.dbCursor.rowcount # monitoring
                 self.dbCursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
 
@@ -575,19 +583,19 @@ class lbsnDB():
         serializedEncodedRecordUTF = serializedEncodedRecord.decode("utf-8")
         return serializedEncodedRecordUTF
         
-    def writeCSVHeader(self, typeName):
-        # create files and write headers
-        #for typename, header in self.typeNamesHeaderDict.items():
-        header = self.typeNamesHeaderDict[typeName]
-        csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
-        csvOutput.write("%s\n" % header)
+    #def writeCSVHeader(self, typeName):
+    #    # create files and write headers
+    #    #for typename, header in self.typeNamesHeaderDict.items():
+    #    header = self.typeNamesHeaderDict[typeName]
+    #    csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
+    #    csvOutput.write("%s\n" % header)
     
     def cleanCSVBatches(self):
         # function that merges all output streams at end 
         x=0
         for typeName in self.batchedRecords:
             x+= 1
-            filelist = glob(f'{self.OutputPathFile}{typeName}_*.csv')
+            filelist = glob(f'{self.OutputPathFile}{typeName}{self.countRound:03d}_*.csv')
             if filelist:
                 print(f'Cleaning & merging output files..{x}/{len(self.batchedRecords)}', end='\r')
                 sys.stdout.flush()
@@ -622,7 +630,7 @@ class lbsnDB():
     def mergeFiles(self, filelist, typeName):
         with ExitStack() as stack:
             files = [stack.enter_context(open(fname, encoding='utf8')) for fname in filelist]
-            with open(f'{self.OutputPathFile}{typeName}.csv','w', encoding='utf8') as mergedFile:
+            with open(f'{self.OutputPathFile}{typeName}{self.countRound}.csv','w', encoding='utf8') as mergedFile:
                 mergedFile.writelines(heapqMerge(*files))
         for file in filelist:
             os.remove(file)
@@ -675,9 +683,7 @@ class lbsnDB():
                 # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
                 # Format some types manually (e.g. arrays, null values)
                 if isinstance(value, list):
-                    #value = '{' + ",".join([f"'{entr}'" for entr in value]) + '}'
                     value = '{' + ",".join(value) + '}'
-                    #input(value)
                 elif self.CSVsuppressLinebreaks and isinstance(value, str):
                     # replace linebreaks by actual string so we can use heapqMerge to merge line by line
                     value = value.replace('\n','\\n').replace('\r', '\\r')
@@ -726,9 +732,9 @@ class lbsnDB():
                 csvOutput.writerow(formattedValueList)                    
             print(f'{typeName} Duplicates Merged: {dupsremoved}                             ')
         # main
-        mergedFilename = f'{self.OutputPathFile}{typeName}.csv'
-        cleanedMergedFilename = f'{self.OutputPathFile}{typeName}_cleaned.csv'
-        cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}_pgCSV.csv'
+        mergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}.csv'
+        cleanedMergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}_cleaned.csv'
+        cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}{self.countRound:03d}pgCSV.csv'
         mergedFile = open(mergedFilename,'r', encoding='utf8')
         cleanedMergedFile = open(cleanedMergedFilename,'w', encoding='utf8')
         cleanedMergedFileCopy = open(cleanedMergedFilename_CSV,'w', encoding='utf8')

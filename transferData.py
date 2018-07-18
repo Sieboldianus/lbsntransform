@@ -80,7 +80,6 @@ def main():
                                        True # ReadOnly Mode
                                        )
         conn_input, cursor_input = inputConnection.connect()
-        inputCount = '∞'
     
     output = lbsnDB(dbCursor = cursor_output, 
                   dbConnection = conn_output,
@@ -140,7 +139,7 @@ def main():
         processedCount, finished = loopInputRecords(records, maxRecords, twitterRecords, endNumber, config.LocalInput, config.InputType)
         processedRecords += processedCount
         processedTotal += processedCount        
-        print(f'{processedTotal} input records processed ({continueNumber} to {inputCount}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
+        print(f'{processedTotal} input records processed (up to {continueNumber}). Count per type: {twitterRecords.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not startNumber or processedRecords >= config.transferCount or finished:
