@@ -2,7 +2,7 @@ lbsnstructure/
 tests/
 .project
 .pydevproject
-.settings/org.eclipse.core.resources.prefs
+.settings/
 .vs/
 transferIncremental_AllJson_To_Lbsn.pyproj
 transferIncremental_AllJson_To_Lbsn.sln
