@@ -37,9 +37,10 @@ class lbsnDB():
         self.dbConnection = dbConnection
         if not self.dbCursor:
             print("CSV Output Mode.")
-        self.commit_volume = commit_volume
+        self.count_entries_commit = 0
         self.count_entries_store = 0
         self.count_affected = 0
+        self.commit_volume = commit_volume
         self.store_volume = 500000
         self.count_glob = 0
         self.null_island_count = 0
@@ -90,10 +91,12 @@ class lbsnDB():
         if self.dbCursor:
             self.dbConnection.commit() # commit changes to db
             self.count_entries_commit = 0
-     def commitChanges(self):
+
+    def storeChanges(self):
         if self.storeCSV:
             self.cleanCSVBatches()
             self.count_entries_store = 0
+
     def storeLbsnRecordDicts(self, fieldMappingTwitter):
         # order is important here, as PostGres will reject any records where Foreign Keys are violated
         # therefore, records are processed starting from lowest granularity. Order is stored in allDicts()
