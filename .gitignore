@@ -1,5 +1,11 @@
 lbsnstructure/
 tests/
+.project
+.pydevproject
+.settings/org.eclipse.core.resources.prefs
+.vs/transferIncremental_AllJson_To_Lbsn/v15/.suo
+transferIncremental_AllJson_To_Lbsn.pyproj
+transferIncremental_AllJson_To_Lbsn.sln
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

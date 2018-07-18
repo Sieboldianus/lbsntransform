@@ -27,7 +27,7 @@ import psycopg2
 # Only necessary for local import:
 from glob import glob
 import json
-import ppygis3
+import ppygis3 # PostGIS geometry objects in python
 
 
 def main():
