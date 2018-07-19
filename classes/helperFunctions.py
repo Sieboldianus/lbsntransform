@@ -4,7 +4,8 @@ from datetime import timezone
 import re
 import csv
 import emoji
-import numpy as np
+#from numpy import amin as np_min
+#from numpy import amax as np_max
 from lbsnstructure.Structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import datetime
@@ -39,10 +40,10 @@ class helperFunctions():
         for point in points:
             lngs.append(point[0])
             lats.append(point[1])
-        limYMin = np.min(lats)       
-        limYMax = np.max(lats)    
-        limXMin = np.min(lngs)       
-        limXMax = np.max(lngs)
+        limYMin = min(lats)       
+        limYMax = max(lats)    
+        limXMin = min(lngs)       
+        limXMax = max(lngs)
         return limYMin,limYMax,limXMin,limXMax
     
     def createNewLBSNRecord_with_id(record,id,origin):

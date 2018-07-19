@@ -1,8 +1,7 @@
 ## LBSN Data Structure Concept: Twitter-json_protobuf_mapping
 
-This tool will read JSON strings from a Postgres Database or local folder* and map the Twitter Endpoints to our common [LBSN Data Structure](https://gitlab.vgiscience.de/lbsn/concept) in ProtoBuf.
-
-^* Not currently implemented
+This tool will read JSON strings from a Postgres Database or local folder and map the Twitter Endpoints to our common [LBSN Data Structure](https://gitlab.vgiscience.de/lbsn/concept) in ProtoBuf.
+Output can be either a Postgres Database or local CSV.
 
 ### Quick Start
 

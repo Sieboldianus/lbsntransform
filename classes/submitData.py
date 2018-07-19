@@ -42,6 +42,7 @@ class lbsnDB():
         self.count_affected = 0
         self.commit_volume = commit_volume
         self.store_volume = 500000
+        self.storeCSVPart = 0
         self.count_glob = 0
         self.null_island_count = 0
         self.disableReactionPostReferencing = disableReactionPostReferencing
@@ -83,7 +84,7 @@ class lbsnDB():
                                     '_user_friends_user': 'origin_id, user_guid, friend_guid'
                                }
         if self.storeCSV:
-            self.OutputPathFile = f'{os.getcwd()}\\Output\\'
+            self.OutputPathFile = f'{os.getcwd()}\\02_Output\\'
             if not os.path.exists(self.OutputPathFile):
                 os.makedirs(self.OutputPathFile)
     
@@ -572,7 +573,7 @@ class lbsnDB():
                    
     def storeAppendCSV(self, typeName, pgCopyFormat = False):
         records = self.batchedRecords[typeName]
-        filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
+        filePath = f'{self.OutputPathFile}{typeName}-{self.countRound:03d}.csv'
         with open(filePath, 'a', encoding='utf8') as f:
             #csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for record in records:
@@ -596,18 +597,19 @@ class lbsnDB():
     def cleanCSVBatches(self):
         # function that merges all output streams at end 
         x=0
+        self.storeCSVPart += 1
+        print('Cleaning and merging output files..')
         for typeName in self.batchedRecords:
             x+= 1
-            filelist = glob(f'{self.OutputPathFile}{typeName}{self.countRound:03d}_*.csv')
+            filelist = glob(f'{self.OutputPathFile}{typeName}-*.csv')
             if filelist:
-                print(f'Cleaning & merging output files..{x}/{len(self.batchedRecords)}', end='\r')
-                sys.stdout.flush()
                 self.sortFiles(filelist,typeName)
                 if len(filelist) > 1:
+                    print(f'Cleaning & merging output files..{x}/{len(self.batchedRecords)}', end='\r')
                     self.mergeFiles(filelist,typeName)
                 else:
                     # no need to merge files if only one round
-                    new_filename = filelist[0].replace('_001','')
+                    new_filename = filelist[0].replace('_001','001Proto')
                     if os.path.isfile(new_filename):
                         os.remove(new_filename)
                     os.rename(filelist[0], new_filename)
@@ -633,7 +635,7 @@ class lbsnDB():
     def mergeFiles(self, filelist, typeName):
         with ExitStack() as stack:
             files = [stack.enter_context(open(fname, encoding='utf8')) for fname in filelist]
-            with open(f'{self.OutputPathFile}{typeName}{self.countRound}.csv','w', encoding='utf8') as mergedFile:
+            with open(f'{self.OutputPathFile}{typeName}_Part{self.countRound:03d}Proto.csv','w', encoding='utf8') as mergedFile:
                 mergedFile.writelines(heapqMerge(*files))
         for file in filelist:
             os.remove(file)
@@ -735,7 +737,7 @@ class lbsnDB():
                 csvOutput.writerow(formattedValueList)                    
             print(f'{typeName} Duplicates Merged: {dupsremoved}                             ')
         # main
-        mergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}.csv'
+        mergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}Proto.csv'
         cleanedMergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}_cleaned.csv'
         cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}{self.countRound:03d}pgCSV.csv'
         mergedFile = open(mergedFilename,'r', encoding='utf8')

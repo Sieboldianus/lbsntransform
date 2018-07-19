@@ -73,7 +73,7 @@ class baseconfig():
                 else:
                     self.isStackedJson = False
             if not self.InputPath:
-                self.InputPath = f'{os.getcwd()}\\Input\\'
+                self.InputPath = f'{os.getcwd()}\\01_Input\\'
                 print(f'Using Path: {self.InputPath}')
             else:
                 self.InputPath = args.InputPath

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__      = "Alexander Dunkel"
@@ -42,7 +43,7 @@ def main():
     config.parseArgs()
     sys.stdout.flush()
     # set logger
-    logging.basicConfig(handlers=[logging.FileHandler('test.log', 'w', 'utf-8')],
+    logging.basicConfig(handlers=[logging.FileHandler('log.log', 'w', 'utf-8')],
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                         datefmt='%H:%M:%S',
                         level=logging.DEBUG)
