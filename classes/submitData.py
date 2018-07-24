@@ -612,7 +612,8 @@ class lbsnDB():
                     new_filename = filelist[0].replace('_001','001Proto')
                     if os.path.isfile(new_filename):
                         os.remove(new_filename)
-                    os.rename(filelist[0], new_filename)
+                    if os.path.isfile(filelist[0]):
+                        os.rename(filelist[0], new_filename)
                 self.removeMergeDuplicateRecords_FormatCSV(typeName)
         
     def sortFiles(self, filelist, typeName):
@@ -740,12 +741,13 @@ class lbsnDB():
         mergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}Proto.csv'
         cleanedMergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}_cleaned.csv'
         cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}{self.countRound:03d}pgCSV.csv'
-        mergedFile = open(mergedFilename,'r', encoding='utf8')
-        cleanedMergedFile = open(cleanedMergedFilename,'w', encoding='utf8')
-        cleanedMergedFileCopy = open(cleanedMergedFilename_CSV,'w', encoding='utf8')
-        cleanMergedFile(mergedFile, cleanedMergedFile)
-        os.remove(mergedFilename)
-        os.rename(cleanedMergedFilename, mergedFilename)
+        if os.path.isfile(mergedFilename):
+            mergedFile = open(mergedFilename,'r', encoding='utf8')
+            cleanedMergedFile = open(cleanedMergedFilename,'w', encoding='utf8')
+            cleanedMergedFileCopy = open(cleanedMergedFilename_CSV,'w', encoding='utf8')
+            cleanMergedFile(mergedFile, cleanedMergedFile)
+            os.remove(mergedFilename)
+            os.rename(cleanedMergedFilename, mergedFilename)
                       
 class placeAttrShared():   
     def __init__(self, record):

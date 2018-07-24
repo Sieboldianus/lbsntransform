@@ -8,7 +8,7 @@ import datetime
 
 log = logging.getLogger()
 
-class dbConnection():  
+class dbConnection():
     def __init__(self, serveradress=None, dbname=None,
                  user=None,password=0,readonly=False, sslmode='prefer'):
         self.serveradress = serveradress
@@ -17,7 +17,7 @@ class dbConnection():
         self.password = password
         self.readonly = readonly
         self.sslmode = sslmode # Choose 'disable' to connect without ssl
-        
+
     def connect(self):
         ## Database config
         conf = {
@@ -49,4 +49,3 @@ class dbConnection():
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
         log.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}')
-        return conn,cursor
