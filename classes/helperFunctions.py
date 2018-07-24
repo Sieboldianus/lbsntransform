@@ -6,7 +6,7 @@ import csv
 import emoji
 #from numpy import amin as np_min
 #from numpy import amax as np_max
-from lbsnstructure.Structure_pb2 import *
+from lbsnstructure.structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import datetime
 import logging
@@ -19,41 +19,41 @@ from shapely import geos, wkb, wkt
 # https://gis.stackexchange.com/questions/225196/conversion-of-a-geojson-into-ewkb-format
 geos.WKBWriter.defaults['include_srid'] = True
 
-class helperFunctions():  
-    
+class helperFunctions():
+
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
-    
+
     def cleanhtml(raw_html):
         cleanr = re.compile('<.*?>')
         cleantext = re.sub(cleanr, '', raw_html)
         return cleantext
-    
+
     def extract_emojis(str):
         #str = str.decode('utf-32').encode('utf-32', 'surrogatepass')
         #return list(c for c in str if c in emoji.UNICODE_EMOJI)
         return list(c for c in str if c in emoji.UNICODE_EMOJI)
-    
+
     def getRectangleBounds(points):
         lats = []
         lngs = []
         for point in points:
             lngs.append(point[0])
             lats.append(point[1])
-        limYMin = min(lats)       
-        limYMax = max(lats)    
-        limXMin = min(lngs)       
+        limYMin = min(lats)
+        limYMax = max(lats)
+        limXMin = min(lngs)
         limXMax = max(lngs)
         return limYMin,limYMax,limXMin,limXMax
-    
+
     def createNewLBSNRecord_with_id(record,id,origin):
             # initializes new record with composite ID
             c_Key = CompositeKey()
             c_Key.origin.CopyFrom(origin)
             c_Key.id = id
-            record.pkey.CopyFrom(c_Key)                        
+            record.pkey.CopyFrom(c_Key)
             return record
-        
+
     def createNewLBSNRelationship_with_id(lbsnRelationship,relation_to_id, relation_from_id, relation_origin):
             # initializes new relationship with 2 composite IDs for one origin
             c_Key_to = CompositeKey()
@@ -65,9 +65,9 @@ class helperFunctions():
             r_Key = RelationshipKey()
             r_Key.relation_to.CopyFrom(c_Key_to)
             r_Key.relation_from.CopyFrom(c_Key_from)
-            lbsnRelationship.pkey.CopyFrom(r_Key)                     
+            lbsnRelationship.pkey.CopyFrom(r_Key)
             return lbsnRelationship
-                
+
     def isPostReaction(jsonString):
         if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
             # The retweeted field will return true if a tweet _got_ retweeted
@@ -75,7 +75,7 @@ class helperFunctions():
             return True
         else:
             return False
-    
+
     def assignMediaPostType(jsonMediaString):
         # if post, get type of first entity
         typeString = jsonMediaString[0].get('type')
@@ -86,20 +86,20 @@ class helperFunctions():
                 post_type = lbsnPost.IMAGE
             elif typeString in ("video","animated_gif"):
                 post_type = lbsnPost.VIDEO
-            
+
         else:
             post_type = lbsnPost.OTHER
             log.debug(f'Other Post type detected: {jsonMediaString}')
         return post_type
-    
+
     def parseJSONDateStringToProtoBuf(jsonDateString):
         # Parse String -Timestamp Format found in Twitter json
-        dateTimeRecord = datetime.datetime.strptime(jsonDateString,'%a %b %d %H:%M:%S +0000 %Y') 
+        dateTimeRecord = datetime.datetime.strptime(jsonDateString,'%a %b %d %H:%M:%S +0000 %Y')
         protobufTimestampRecord = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
         protobufTimestampRecord.FromDatetime(dateTimeRecord)
         return protobufTimestampRecord
-    
+
     def getMentionedUsers(userMentions_jsonString,origin):
         mentionedUsersList = []
         for userMention in userMentions_jsonString:    #iterate over the list
@@ -108,7 +108,7 @@ class helperFunctions():
             refUserRecord.user_name = userMention.get('screen_name')
             mentionedUsersList.append(refUserRecord)
         return mentionedUsersList
-    
+
     def substituteReferencedUser(mainPost, origin, log):
         # Look for mentioned userRecords
         refUser_pkey = None
@@ -119,7 +119,7 @@ class helperFunctions():
             if refUserRecords and refUserRecords[0].user_name.lower() in mainPost.get('text').lower() and  mainPost.get('text').startswith(f'RT @'):
                 refUser_pkey = refUserRecords[0].pkey
             if refUser_pkey is None:
-                log.warning(f'No User record found for referenced post in: {mainPost}')     
+                log.warning(f'No User record found for referenced post in: {mainPost}')
                 input("Press Enter to continue... (post will be saved without userid)")
         return refUser_pkey
 
@@ -140,14 +140,14 @@ class helperFunctions():
                 return None
             else:
                 return recordAttr.ToDatetime()
-    
+
     ## EWKB Conversion now in-code, not server-side
     #def geoconvertOrNone(geom):
     #    if geom:
     #        return "extensions.ST_GeomFromText(%s,4326)"
     #    else:
     #        return "%s"
-        
+
     def returnEWKBFromGeoTEXT(text):
         if not text:
             return None
@@ -163,18 +163,18 @@ class helperFunctions():
             if not match:
                 return
             pos = match.start()
-    
+
             try:
                 obj, pos = decoder.raw_decode(document, pos)
             except JSONDecodeError:
                 # do something sensible if there's some error
                 raise
             yield obj
-            
+
     def clean_null_bytes_from_str(str):
-        str_without_null_byte = str.replace('\x00','') 
+        str_without_null_byte = str.replace('\x00','')
         return str_without_null_byte
-    
+
     def MergeExistingRecords(oldrecord, newrecord):
         # Basic Compare function for GUIDS
         # First check if length of both ProtoBuf Messages are the same
@@ -183,8 +183,8 @@ class helperFunctions():
         if not len(oldRecordString) == len(newRecordString):
             # no need to do anything if same lengt
             oldrecord.MergeFrom(newrecord)
-            #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)   
-                             
+            #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)
+
 class lbsnRecordDicts():
     def __init__(self):
         self.lbsnCountryDict = dict()
@@ -195,7 +195,7 @@ class lbsnRecordDicts():
         self.lbsnPostDict = dict()
         self.lbsnPostReactionDict = dict()
         self.lbsnRelationshipDict = dict()
-        self.KeyHashes = {lbsnPost.DESCRIPTOR.name: set(), 
+        self.KeyHashes = {lbsnPost.DESCRIPTOR.name: set(),
                          lbsnCountry.DESCRIPTOR.name: set(),
                          lbsnCity.DESCRIPTOR.name: set(),
                          lbsnPlace.DESCRIPTOR.name: set(),
@@ -215,13 +215,13 @@ class lbsnRecordDicts():
             (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name),
             (self.lbsnRelationshipDict,lbsnRelationship().DESCRIPTOR.name)
             ]
-                    
+
     def getTypeCounts(self):
         countList = []
         for x, y in self.KeyHashes.items():
             countList.append(f'{x}: {len(y)} ')
         return ''.join(countList)
-            
+
     def update_keyHash(self, record):
         # Keep lists of pkeys for each type
         # this can be used to check for duplicates or to get a total count for each type of records (Number of unique Users, Countries, Places etc.)
@@ -232,7 +232,7 @@ class lbsnRecordDicts():
         else:
             # all other entities can be globally uniquely identified by their local guid
             self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
-    
+
     def deepCompareMergeMessages(self,oldRecord,newRecord):
         # Do a deep compare
         # ProtoBuf MergeFrom does a fine job
@@ -247,11 +247,11 @@ class lbsnRecordDicts():
         #                newEntries = value_new
         #            else:
         #                # only add difference (e.g. = new values)
-        #                newEntries = list(set(value_new) - set(value_old))  
+        #                newEntries = list(set(value_new) - set(value_old))
         #            x = getattr(oldRecord, descriptor.name)
         #            x.extend(newEntries)
         return oldRecord
-           
+
     def AddRecordsToDict(self,records):
         if isinstance(records,(list,)):
             for record in records:
@@ -259,7 +259,7 @@ class lbsnRecordDicts():
         else:
             record = records
             self.AddRecordToDict(record)
-            
+
     def dictSelector(self, record):
         dictSwitcher = {
             lbsnPost().DESCRIPTOR.name: self.lbsnPostDict,
@@ -271,7 +271,7 @@ class lbsnRecordDicts():
             lbsnUserGroup().DESCRIPTOR.name: self.lbsnUserGroupDict
         }
         return dictSwitcher.get(record.DESCRIPTOR.name)
-            
+
     def AddRecordToDict(self,newrecord):
         dict = self.dictSelector(newrecord)
         pkeyID = newrecord.pkey.id
@@ -282,27 +282,27 @@ class lbsnRecordDicts():
         else:
             # just count new entries
             self.countProgressReport()
-            self.update_keyHash(newrecord) # update keyHash only necessary for new record                                                                                            
-            dict[pkeyID] = newrecord    
-            
+            self.update_keyHash(newrecord) # update keyHash only necessary for new record
+            dict[pkeyID] = newrecord
+
     def countProgressReport(self):
         self.CountGlob += 1
         if self.CountGlob % 1000 == 0:
             # progress report (modulo)
-            print(f'Identified Output Records {self.CountGlob}..                                                    ', end='\r') 
+            print(f'Identified Output Records {self.CountGlob}..                                                    ', end='\r')
             sys.stdout.flush()
-                              
+
     def AddRelationshipToDict(self,newrelationship):
         pkeyID = f'{newrelationship.pkey.relation_to.origin.origin_id}{newrelationship.pkey.relation_to.id}{newrelationship.pkey.relation_from.origin.origin_id}{newrelationship.pkey.relation_from.id}{newrelationship.relationship_type}'
         if not pkeyID in self.lbsnRelationshipDict:
             self.countProgressReport()
             self.lbsnRelationshipDict[pkeyID] = newrelationship
             self.update_keyHash(newrelationship) # update keyHash only necessary for new record
-        
+
 class geocodeLocations():
     def __init__(self):
         self.geocodeDict = dict()
-            
+
     def load_geocodelist(self,file):
         with open(file, newline='', encoding='utf8') as f: #read each unsorted file and sort lines based on datetime (as string)
             #next(f) #Skip Headerrow
@@ -314,7 +314,7 @@ class geocodeLocations():
 class timeMonitor():
     def __init__(self):
         self.now = time.time()
-        
+
     def stop_time(self):
         later = time.time()
         hours, rem = divmod(later-self.now, 3600)
@@ -322,7 +322,7 @@ class timeMonitor():
         difference = int(later - self.now)
         reportMsg = f'{int(hours):0>2} Hours {int(minutes):0>2} Minutes and {seconds:05.2f} Seconds passed.'
         return reportMsg
-    
+
 class memoryLeakDetec():
     # use this class to identify memory leaks
     # execute .before() and .after() to see the difference in new objects being added
@@ -337,21 +337,21 @@ class memoryLeakDetec():
         from gc import get_objects
         self._before = defaultdict(int)
         self._after = defaultdict(int)
-        
+
     def before(self):
         for i in get_objects():
             self._before[type(i)] += 1
-            
+
     def after(self):
         for i in get_objects():
             self._after[type(i)] += 1
-            
+
     def report(self):
         reportStat = ""
         if self._before and self._after:
             reportStat = [(k, self._after[k] -  self._before[k]) for k in self._after if self._after[k] -  self._before[k]]
-        return reportStat  
-            
+        return reportStat
+
     def printType(self, type, max = 100):
         x = 0
         toplist = []

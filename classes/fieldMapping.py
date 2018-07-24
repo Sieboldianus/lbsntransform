@@ -2,7 +2,7 @@
 
 from classes.helperFunctions import helperFunctions
 from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
-from lbsnstructure.Structure_pb2 import *
+from lbsnstructure.structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
@@ -23,8 +23,8 @@ class fieldMappingTwitter():
         self.disableReactionPostReferencing = disableReactionPostReferencing
         self.mapFullRelations = mapFullRelations
         self.geocodes = geocodes
-        
-    def parseJsonRecord(self, jsonStringDict, input_type = None): 
+
+    def parseJsonRecord(self, jsonStringDict, input_type = None):
         # decide if main object is post or user json
         if input_type and input_type in ('friendslist','followerslist'):
             for user, relatedUserList in jsonStringDict.items():
@@ -34,7 +34,7 @@ class fieldMappingTwitter():
                     relatedRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
                     self.lbsnRecords.AddRecordsToDict(relatedRecord)
                     # note the switch of order here, direction is important for 'isConnected', and the different list each give us a different view on this relationship
-                    if input_type == 'friendslist':                  
+                    if input_type == 'friendslist':
                         relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), userRecord.pkey.id, relatedRecord.pkey.id, self.origin)
                     elif input_type == 'followerslist':
                         relationshipRecord = helperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), relatedRecord.pkey.id, userRecord.pkey.id, self.origin)
@@ -56,12 +56,12 @@ class fieldMappingTwitter():
                     userStatus = jsonStringDict.get('retweeted_status')
                 # in case user status is available
                 if userStatus:
-                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)           
-        else:              
+                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)
+        else:
             self.parseJsonPost(jsonStringDict)
-               
+
     def parseJsonPost(self, jsonStringDict, userPkey = None):
-        # Post    
+        # Post
         # 1. Extract all relevant Post Attributes
         #    1.a extract post coordinates
         #    1.b extract user attributes
@@ -73,11 +73,11 @@ class fieldMappingTwitter():
         # 5. process all referenced posts
         #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
         #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
-        # process tweet-post object                     
-        postRecord = self.extractPost(jsonStringDict, userPkey)          
+        # process tweet-post object
+        postRecord = self.extractPost(jsonStringDict, userPkey)
         # Assignment Step
         # check if post is reaction to other post
-        # reaction means: reduced structure compared to post; 
+        # reaction means: reduced structure compared to post;
         # reactions often include the complete original post, therefore nested processing necessary
         if helperFunctions.isPostReaction(jsonStringDict):
             postReactionRecord = self.mapPostRecord_To_PostReactionRecord(postRecord)
@@ -90,30 +90,30 @@ class fieldMappingTwitter():
             elif 'retweeted_status' in jsonStringDict:
                 # Note: No retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
                 # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
-                # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html                
+                # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html
                 if not 'user' in jsonStringDict.get('retweeted_status'):
                     # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
                     # but we can get this from other information, such as user_mentions field from the retweet
-                    # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355                       
-                    refUser_pkey = helperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)                
+                    # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355
+                    refUser_pkey = helperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
                 postReactionRecord.reaction_type = lbsnPostReaction.SHARE
                 retweetPost = jsonStringDict.get('retweeted_status')
                 refPostRecord = self.extractPost(retweetPost, refUser_pkey)
-                
+
             elif jsonStringDict.get('in_reply_to_status_id_str'):
                 #if jsonStringDict.get('in_reply_to_status_id_str') == '778121849687465984':
-                #    self.log.warning(f'No User found for status: {jsonStringDict}')   
-                #    input("Press Enter to continue... (no status will be processed)")  
-                     
+                #    self.log.warning(f'No User found for status: {jsonStringDict}')
+                #    input("Press Enter to continue... (no status will be processed)")
+
                 # if reply, original tweet is not available (?)
                 postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
                 refPostRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('in_reply_to_status_id_str'),self.origin)
                 refUserRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('in_reply_to_user_id_str'),self.origin)
                 refUserRecord.user_name = jsonStringDict.get('in_reply_to_screen_name') # Needs to be saved
-                self.lbsnRecords.AddRecordsToDict(refUserRecord)          
+                self.lbsnRecords.AddRecordsToDict(refUserRecord)
                 refPostRecord.user_pkey.CopyFrom(refUserRecord.pkey)
-            
-            # add referenced post pkey to reaction    
+
+            # add referenced post pkey to reaction
             if not self.disableReactionPostReferencing:
                 postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
                 # ToDo: if a Reaction refers to another reaction (Information Spread)
@@ -122,12 +122,12 @@ class fieldMappingTwitter():
                 # would be added to. postReactionRecord.referencedPostReaction_pkey
                 if refPostRecord:
                     self.lbsnRecords.AddRecordsToDict(refPostRecord)
-            # add postReactionRecord to Dict        
-            self.lbsnRecords.AddRecordsToDict(postReactionRecord)      
+            # add postReactionRecord to Dict
+            self.lbsnRecords.AddRecordsToDict(postReactionRecord)
         else:
-            # add postReactionRecord to Dict              
+            # add postReactionRecord to Dict
             self.lbsnRecords.AddRecordsToDict(postRecord)
-                         
+
     def extractUser(self,jsonStringDict):
         user = jsonStringDict
         userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),user.get('id_str'),self.origin)
@@ -147,7 +147,7 @@ class fieldMappingTwitter():
         userRecord.url = f'https://twitter.com/intent/user?user_id={userRecord.pkey.id}'
         refUserLanguage = Language()
         refUserLanguage.language_short = user.get('lang')
-        userRecord.user_language.CopyFrom(refUserLanguage) 
+        userRecord.user_language.CopyFrom(refUserLanguage)
         userLocation = user.get('location')
         if userLocation:
             userRecord.user_location = userLocation
@@ -157,7 +157,7 @@ class fieldMappingTwitter():
                 userRecord.user_location_geom = "POINT(%s %s)" % (l_lng,l_lat)
         #userGeoLocation = user.get('profile_location') # todo!
         userRecord.liked_count = user.get('favourites_count')
-        userRecord.active_since.CopyFrom(helperFunctions.parseJSONDateStringToProtoBuf(user.get('created_at'))) 
+        userRecord.active_since.CopyFrom(helperFunctions.parseJSONDateStringToProtoBuf(user.get('created_at')))
         userProfileImageURL = user.get('profile_image_url')
         if not userProfileImageURL == "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png":
             userRecord.profile_image_url = userProfileImageURL
@@ -176,39 +176,39 @@ class fieldMappingTwitter():
         #        self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
         #userRecord.user_groups_follows = []
         return userRecord
-          
+
     def extractPost(self,jsonStringDict, userPkey = None):
         post_guid = jsonStringDict.get('id_str')
         if not post_guid:
            self.log.warning(f'No PostGuid\n\n{jsonStringDict}')
            input("Press Enter to continue... (entry will be skipped)")
-           return None    
-        postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin) 
-        postGeoaccuracy = None  
+           return None
+        postRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin)
+        postGeoaccuracy = None
         userRecord = None
         userInfo = jsonStringDict.get('user')
         if userInfo :
             # Get Post/Reaction Details of User
-            userRecord = self.extractUser(jsonStringDict.get('user'))               
+            userRecord = self.extractUser(jsonStringDict.get('user'))
         elif userPkey:
             # userPkey is already available for posts that are statuses
-            userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userPkey.id,self.origin)              
+            userRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userPkey.id,self.origin)
         if userRecord:
-            self.lbsnRecords.AddRecordsToDict(userRecord)  
+            self.lbsnRecords.AddRecordsToDict(userRecord)
         else:
-            self.log.warning(f'Record {self.lbsnRecords.CountGlob}: No User record found for post: {post_guid} (post saved without userid)..')   
-            print(f'Record {self.lbsnRecords.CountGlob}', end='\r') 
-            #self.log.warning(f'{originalString}') 
+            self.log.warning(f'Record {self.lbsnRecords.CountGlob}: No User record found for post: {post_guid} (post saved without userid)..')
+            print(f'Record {self.lbsnRecords.CountGlob}', end='\r')
+            #self.log.warning(f'{originalString}')
             #input("Press Enter to continue... (post will be saved without userid)")
-            
+
         # Some preprocessing for all types:
-        post_coordinates = jsonStringDict.get('coordinates') 
+        post_coordinates = jsonStringDict.get('coordinates')
         if post_coordinates:
             l_lng = post_coordinates.get('coordinates')[0]
             l_lat = post_coordinates.get('coordinates')[1]
             postRecord.post_geoaccuracy = lbsnPost.LATLNG
             postRecord.post_latlng = "POINT(%s %s)" % (l_lng,l_lat)
-        
+
         # Check if Place is mentioned
         postPlace_json = jsonStringDict.get('place')
         if postPlace_json:
@@ -218,10 +218,10 @@ class fieldMappingTwitter():
                 userLang = userRecord.user_language
             else:
                 userLang = None
-            placeRecord, postGeoaccuracy, postCountry = self.extractPlace(postPlace_json, postRecord.post_geoaccuracy, userLang) 
+            placeRecord, postGeoaccuracy, postCountry = self.extractPlace(postPlace_json, postRecord.post_geoaccuracy, userLang)
             if not postRecord.post_geoaccuracy:
                 postRecord.post_geoaccuracy = postGeoaccuracy
-            #postRecord.post_geoaccuracy = twitterPostAttributes.geoaccuracy 
+            #postRecord.post_geoaccuracy = twitterPostAttributes.geoaccuracy
             self.lbsnRecords.AddRecordsToDict(placeRecord)
             if postCountry:
                 postRecord.country_pkey.CopyFrom(postCountry.pkey)
@@ -229,8 +229,8 @@ class fieldMappingTwitter():
                 postRecord.city_pkey.CopyFrom(placeRecord.pkey)
             # either city or place, Twitter user cannot attach both (?)
             elif isinstance(placeRecord, lbsnPlace):
-                postRecord.place_pkey.CopyFrom(placeRecord.pkey)      
-            # substitute postRecord LatLng Coordinates from placeRecord, if not already set     
+                postRecord.place_pkey.CopyFrom(placeRecord.pkey)
+            # substitute postRecord LatLng Coordinates from placeRecord, if not already set
             if not postRecord.post_latlng and postGeoaccuracy in (lbsnPost.CITY,lbsnPost.PLACE):
                 postRecord.post_latlng = placeRecord.geom_center
         # if still no geoinformation, send post to Null-Island
@@ -248,10 +248,10 @@ class fieldMappingTwitter():
         postRecord.post_comment_count = valueCount(jsonStringDict.get('reply_count'))
         postRecord.post_share_count = valueCount(jsonStringDict.get('retweet_count'))
         postRecord.post_like_count = valueCount(jsonStringDict.get('favorite_count'))
-        postRecord.post_url = f'https://twitter.com/statuses/{post_guid}'    
+        postRecord.post_url = f'https://twitter.com/statuses/{post_guid}'
         postLanguage = Language()
         postLanguage.language_short = jsonStringDict.get('lang')
-        postRecord.post_language.CopyFrom(postLanguage)            
+        postRecord.post_language.CopyFrom(postLanguage)
         # If Extended_tweet object is available, process entities and post_body (text) data from extended object
         isTruncated = jsonStringDict.get('truncated')
         if isTruncated and 'extended_tweet' in jsonStringDict:
@@ -261,7 +261,7 @@ class fieldMappingTwitter():
             #else:
             #    self.log.warning(f'Truncated but no extended_tweet: {jsonStringDict}')
             #    input("Press Enter to continue... (entry will be skipped)")
-            #    return None  
+            #    return None
         else:
             if 'full_text' in jsonStringDict:
                 postRecord.post_body = jsonStringDict.get('full_text')
@@ -272,8 +272,8 @@ class fieldMappingTwitter():
         if 'extended_entities' in jsonStringDict:
             entitiesJson = jsonStringDict.get('extended_entities')
         else:
-            entitiesJson = jsonStringDict.get('entities')     
-        
+            entitiesJson = jsonStringDict.get('entities')
+
         hashtags_json = entitiesJson.get('hashtags')
         if hashtags_json:
             for hashtag in hashtags_json:    #iterate over the list
@@ -299,7 +299,7 @@ class fieldMappingTwitter():
         # log.debug(f'Post record: {text_format.MessageToString(postRecord,as_utf8=True)}')
         # log.debug(f'Post record: {postRecord}')
         return postRecord
-    
+
     def mapPostRecord_To_PostReactionRecord(self,postRecord):
         postReactionRecord = lbsnPostReaction()
         postReactionRecord.pkey.CopyFrom(postRecord.pkey)
@@ -310,7 +310,7 @@ class fieldMappingTwitter():
         postReactionRecord.reaction_content = postRecord.post_body
         postReactionRecord.user_mentions_pkey.extend([userRefPkey for userRefPkey in postRecord.user_mentions_pkey])
         return postReactionRecord
-     
+
     def extractPlace(self, postPlace_json, postGeoaccuracy, userLanguage = None):
         place = postPlace_json
         placeID = place.get('id')
@@ -331,7 +331,7 @@ class fieldMappingTwitter():
             if countryCode:
                 placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),self.origin)
                 if not postGeoaccuracy:
-                    postGeoaccuracy = lbsnPost.COUNTRY  
+                    postGeoaccuracy = lbsnPost.COUNTRY
             #else:
             #    log.warning(f'No country_code\n\n{postPlace_json}')
             #    input("Press Enter to continue... (entry will be skipped)")
@@ -348,17 +348,17 @@ class fieldMappingTwitter():
             # For POIs, City is not available on Twitter
             placeRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnPlace(),place.get('id'),self.origin)
             if not postGeoaccuracy or postGeoaccuracy in (lbsnPost.COUNTRY, lbsnPost.CITY):
-                postGeoaccuracy = lbsnPost.PLACE  
+                postGeoaccuracy = lbsnPost.PLACE
         else:
-            log.warning(f'No Place Type Detected: {jsonStringDict}')                 
+            log.warning(f'No Place Type Detected: {jsonStringDict}')
         #for some reason, twitter place entities sometimes contain linebreaks or whitespaces. We don't want this.
-        placeName = place.get('name').replace('\n\r','') 
+        placeName = place.get('name').replace('\n\r','')
         placeName = re.sub(' +',' ',placeName) # remove multiple whitespace
         if place_type == "poi" or (userLanguage is None or not userLanguage.language_short or userLanguage.language_short in ('en','und')):
             # At the moment, English name are the main references; all other language specific references are stored in name_alternatives - except for places, where twitter has no alternative place names
             # Bugfix necessary: some English names get still saved as name_alternatives
             placeRecord.name = placeName
-        else:        
+        else:
             placeRecord.name_alternatives.append(placeName)
         placeRecord.url = place.get('url')
         placeRecord.geom_center = "POINT(%s %s)" % (lon_center,lat_center)
@@ -370,7 +370,7 @@ class fieldMappingTwitter():
                 refCountryRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnCountry(),refCountryCode,self.origin)
                 # At the moment, only English name references are processed
                 if userLanguage is None or not userLanguage.language_short or userLanguage.language_short in ('en','und'):
-                    refCountryRecord.name = place.get('country') # Needs to be saved 
+                    refCountryRecord.name = place.get('country') # Needs to be saved
                 else:
                     alt_name = place.get('country')
                     refCountryRecord.name_alternatives.append(alt_name)

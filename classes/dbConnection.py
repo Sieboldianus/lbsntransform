@@ -49,3 +49,4 @@ class dbConnection():
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
         log.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}')
+        return conn, cursor

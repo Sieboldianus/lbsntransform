@@ -24,17 +24,22 @@ import sys
 # Only necessary for local import/export:
 from glob import glob
 import json
-#import ppygis3 # PostGIS geometry objects in python
-from transfer_lbsn_data import dbConnection
-from transfer_lbsn_data import helperFunctions
-from transfer_lbsn_data import geocodeLocations, \
-                               timeMonitor, \
-                               fieldMappingTwitter, \
-                               lbsnDB, \
-                               baseconfig
+# import ppygis3 # PostGIS geometry objects in python
+# LBSN Structure Import from ProtoBuf (vendor directory)
+from classes.dbConnection import dbConnection
+from classes.helperFunctions import helperFunctions
+###from transfer_lbsn_data.classes.helperFunctions import lbsnRecordDicts
+from classes.helperFunctions import geocodeLocations
+from classes.helperFunctions import timeMonitor
+from classes.fieldMapping import fieldMappingTwitter
+from classes.submitData import lbsnDB
+#import config.config
+
+from config.config import baseconfig
 
 def main():
     """ Example function to process data from postgres connection or local file input"""
+
 
     # Set Output to Replace in case of encoding issues (console/windows)
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
@@ -261,13 +266,12 @@ def set_logger():
 def initialize_output_connection(config):
     """Establishes connection to output DB (Postgres), if set in config"""
     if config.dbUser_Output:
-        conn_output, cursor_output = initialize_output_connection(config)
-        outputConnection = dbConnection(config.dbServeradressOutput,
+        output_connection = dbConnection(config.dbServeradressOutput,
                                         config.dbNameOutput,
                                         config.dbUser_Output,
                                         config.dbPassword_Output
                                         )
-        conn_output, cursor_output = outputConnection.connect()
+        conn_output, cursor_output = output_connection.connect()
     else:
         conn_output = None
         cursor_output = None
@@ -278,13 +282,13 @@ def initialize_input_connection(config):
 
     Returns cursor
     """
-    inputConnection = dbConnection(config.dbServeradressInput,
+    input_connection = dbConnection(config.dbServeradressInput,
                                    config.dbNameInput,
                                    config.dbUser_Input,
                                    config.dbPassword_Input,
                                    True # ReadOnly Mode
                                    )
-    cursor_input = inputConnection.connect()[1] # we don't need conn_input
+    conn_input, cursor_input = input_connection.connect()
     return cursor_input
 
 def read_local_files(config):
