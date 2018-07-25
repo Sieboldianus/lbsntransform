@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from classes.helperFunctions import helperFunctions
-from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
+from .helperFunctions import helperFunctions
+from .helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 from lbsnstructure.structure_pb2 import *
 from lbsnstructure.external.timestamp_pb2 import Timestamp
 import shapely.geometry as geometry

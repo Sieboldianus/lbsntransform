@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import psycopg2
-from classes.helperFunctions import helperFunctions
-from classes.helperFunctions import lbsnRecordDicts as lbsnRecordDicts
+from .helperFunctions import helperFunctions
+from .helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 #from lbsn2structure import *
 from lbsnstructure.structure_pb2 import *
 ##from descriptor_pb2 import DescriptorProto
@@ -574,7 +574,7 @@ class lbsnDB():
 
     def storeAppendCSV(self, typeName, pgCopyFormat = False):
         records = self.batchedRecords[typeName]
-        filePath = f'{self.OutputPathFile}{typeName}-{self.countRound:03d}.csv'
+        filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
         with open(filePath, 'a', encoding='utf8') as f:
             #csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for record in records:
@@ -602,7 +602,7 @@ class lbsnDB():
         print('Cleaning and merging output files..')
         for typeName in self.batchedRecords:
             x+= 1
-            filelist = glob(f'{self.OutputPathFile}{typeName}-*.csv')
+            filelist = glob(f'{self.OutputPathFile}{typeName}_*.csv')
             if filelist:
                 self.sortFiles(filelist,typeName)
                 if len(filelist) > 1:
@@ -637,7 +637,7 @@ class lbsnDB():
     def mergeFiles(self, filelist, typeName):
         with ExitStack() as stack:
             files = [stack.enter_context(open(fname, encoding='utf8')) for fname in filelist]
-            with open(f'{self.OutputPathFile}{typeName}_Part{self.countRound:03d}Proto.csv','w', encoding='utf8') as mergedFile:
+            with open(f'{self.OutputPathFile}{typeName}_Proto.csv','w', encoding='utf8') as mergedFile:
                 mergedFile.writelines(heapqMerge(*files))
         for file in filelist:
             os.remove(file)
@@ -739,9 +739,9 @@ class lbsnDB():
                 csvOutput.writerow(formattedValueList)
             print(f'{typeName} Duplicates Merged: {dupsremoved}                             ')
         # main
-        mergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}Proto.csv'
-        cleanedMergedFilename = f'{self.OutputPathFile}{typeName}{self.countRound:03d}_cleaned.csv'
-        cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}{self.countRound:03d}pgCSV.csv'
+        mergedFilename = f'{self.OutputPathFile}{typeName}_Proto.csv'
+        cleanedMergedFilename = f'{self.OutputPathFile}{typeName}_cleaned.csv'
+        cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}_pgCSV.csv'
         if os.path.isfile(mergedFilename):
             mergedFile = open(mergedFilename,'r', encoding='utf8')
             cleanedMergedFile = open(cleanedMergedFilename,'w', encoding='utf8')
