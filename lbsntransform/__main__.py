@@ -21,40 +21,20 @@ __version__ = "0.1.4"
 import logging
 import io
 
-# temporarily add root path of package to path, so we can execute package directly in development
-#sys.path.insert(0, os.path.dirname(__file__))
-# Only necessary for local import/export:
-from glob import glob
-import json
-
-# import ppygis3 # PostGIS geometry objects in python
-# LBSN Structure Import from ProtoBuf (vendor directory)
-
-
 def main():
     """ Example function to process data from postgres connection or local file input"""
-    try:
-        from .classes.dbConnection import dbConnection
-        from .classes.helperFunctions import helperFunctions
-        from .classes.helperFunctions import lbsnRecordDicts
-        from .classes.helperFunctions import geocodeLocations
-        from .classes.helperFunctions import timeMonitor
-        from .classes.fieldMapping import fieldMappingTwitter
-        from .classes.submitData import lbsnDB
-        from .classes.loadData import loadData
-        from .config.config import baseconfig
-    except ImportError:
-        from classes.dbConnection import dbConnection
-        from classes.helperFunctions import helperFunctions
-        from classes.helperFunctions import lbsnRecordDicts
-        from classes.helperFunctions import geocodeLocations
-        from classes.helperFunctions import timeMonitor
-        from classes.fieldMapping import fieldMappingTwitter
-        from classes.submitData import lbsnDB
-        from classes.loadData import loadData
-        from config.config import baseconfig
-
     import sys, os
+    import json
+    from glob import glob
+    from .classes.dbConnection import dbConnection
+    from .classes.helperFunctions import helperFunctions
+    from .classes.helperFunctions import lbsnRecordDicts
+    from .classes.helperFunctions import geocodeLocations
+    from .classes.helperFunctions import timeMonitor
+    from .classes.fieldMapping import fieldMappingTwitter
+    from .classes.submitData import lbsnDB
+    from .classes.loadData import loadData
+    from .config.config import baseconfig
 
     # Set Output to Replace in case of encoding issues (console/windows)
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
