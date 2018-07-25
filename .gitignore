@@ -5,9 +5,10 @@ scripts/
 .pydevproject
 .settings/
 .vs/
+lbsntransform.pyproj
+lbsntransform.sln
 transferIncremental_AllJson_To_Lbsn.pyproj
 transferIncremental_AllJson_To_Lbsn.sln
-lbsntransform.pyproj
 test_env
 
 # Byte-compiled / optimized / DLL files
