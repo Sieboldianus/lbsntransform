@@ -1,11 +1,12 @@
 lbsnstructure/
 tests/
 .project
+scripts/
 .pydevproject
 .settings/
 .vs/
-transferIncremental_AllJson_To_Lbsn.pyproj
-transferIncremental_AllJson_To_Lbsn.sln
+*.pyproj
+*.sln
 test_env
 
 # Byte-compiled / optimized / DLL files
