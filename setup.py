@@ -22,7 +22,12 @@ setup(  name = "lbsntransform",
             'ppygis3',
             'shapely',
             'emoji'
-        ])
+        ],
+        entry_points={
+        'console_scripts': [
+            'lbsntransform = lbsntransform.__main__:main'
+        ]
+        })
 
 # Dependencies are automatically detected, but it might need fine tuning.
 #build_exe_options = {"packages": ["os"], "excludes": []}

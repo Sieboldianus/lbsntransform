@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{a7486d4f-18cb-47f1-8414-d483200ee77f}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>lbsntransform\lbsntransform.py</StartupFile>
+    <StartupFile>lbsntransform\__main__.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.lbsntransform\</WorkingDirectory>
@@ -37,7 +37,7 @@
     <Compile Include="vendor\lbsnstructure\external\__init__.py" />
     <Compile Include="vendor\lbsnstructure\Structure_pb2.py" />
     <Compile Include="vendor\lbsnstructure\__init__.py" />
-    <Compile Include="lbsntransform\lbsntransform.py" />
+    <Compile Include="lbsntransform\__main__.py" />
     <Compile Include="lbsntransform\__init__.py" />
   </ItemGroup>
   <ItemGroup>
