@@ -3,7 +3,7 @@ import argparse
 import os
 import sys
 
-class baseconfig():
+class BaseConfig():
     def __init__(self):
         ## Set Default Config options here
         ## or define options as input args

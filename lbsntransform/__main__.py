@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Collection of classes to import, convert and export data
+lbsntransform package script to load, format and store data
 from and to common lbsn structure
 
 Import options:
@@ -10,8 +10,6 @@ Import options:
 Output options:
     - Postgres Database or
     - local ProtoBuf and CSV Import (prepared for Postgres /Copy)
-
-For more info, see [concept](https://gitlab.vgiscience.de/lbsn/concept)
 """
 
 __author__ = "Alexander Dunkel"
@@ -22,40 +20,36 @@ import logging
 import io
 
 def main():
-    """ Example function to process data from postgres connection or local file input"""
-    import sys, os
-    import json
-    from glob import glob
-    from .classes.dbConnection import dbConnection
-    from .classes.helperFunctions import helperFunctions
-    from .classes.helperFunctions import lbsnRecordDicts
-    from .classes.helperFunctions import geocodeLocations
-    from .classes.helperFunctions import timeMonitor
-    from .classes.fieldMapping import fieldMappingTwitter
-    from .classes.submitData import lbsnDB
-    from .classes.loadData import loadData
-    from .config.config import baseconfig
+    """ Main function to process data from postgres db or local file input
+        to postgres db or local file output
+    """
+    import sys
+    from .classes.helper_functions import TimeMonitor
+    from .classes.field_mapping import FieldMappingTwitter
+    from .classes.submit_data import LBSNTransfer
+    from .classes.load_data import LoadData
+    from .config.config import BaseConfig
 
     # Set Output to Replace in case of encoding issues (console/windows)
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
     # Load Config, will be overwritten if args are given
-    config = baseconfig()
+    config = BaseConfig()
     # Parse args
     config.parseArgs()
     sys.stdout.flush()
     log = set_logger()
     # establish output connection (will return none of no config)
-    conn_output, cursor_output = loadData.initialize_output_connection(config)
-    output = lbsnDB(dbCursor=cursor_output,
-                    dbConnection=conn_output,
-                    storeCSV=config.CSVOutput,
-                    CSVsuppressLinebreaks=config.CSVsuppressLinebreaks)
+    conn_output, cursor_output = LoadData.initialize_output_connection(config)
+    output = LBSNTransfer(dbCursor=cursor_output,
+                          dbConnection=conn_output,
+                          storeCSV=config.CSVOutput,
+                          CSVsuppressLinebreaks=config.CSVsuppressLinebreaks)
     # load from local json/csv or from PostgresDB
     if config.LocalInput:
-        loc_filelist = loadData.read_local_files(config)
+        loc_filelist = LoadData.read_local_files(config)
     else:
         # establish input connection
-        cursor_input = loadData.initialize_input_connection(config)
+        cursor_input = LoadData.initialize_input_connection(config)
 
     # start settings
     processed_records = 0
@@ -67,18 +61,18 @@ def main():
     # Optional Geocoding
     geocode_dict = False
     if config.geocodeLocations:
-        geocode_dict = loadData.load_geocodes(config.geocodeLocations)
+        geocode_dict = LoadData.load_geocodes(config.geocodeLocations)
 
     finished = False
     # initialize field mapping structure
-    twitter_records = fieldMappingTwitter(config.disableReactionPostReferencing,
+    twitter_records = FieldMappingTwitter(config.disableReactionPostReferencing,
                                           geocode_dict,
                                           config.MapRelations)
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(twitter_records)
 
-    how_long = timeMonitor()
+    how_long = TimeMonitor()
     # loop input DB until transferlimit reached or no more rows are returned
     while not finished:
         if config.transferlimit:
@@ -88,7 +82,7 @@ def main():
         if config.LocalInput:
             if continue_number > len(loc_filelist) - 1:
                 break
-            records = loadData.fetch_json_data_from_file(loc_filelist,
+            records = LoadData.fetch_json_data_from_file(loc_filelist,
                                                          continue_number,
                                                          config.is_stacked_json)
             # skip empty files
@@ -96,22 +90,22 @@ def main():
                 continue_number += 1
                 continue
         else:
-            records = loadData.fetch_json_data_from_lbsn(cursor_input,
-                                                continue_number,
-                                                max_records,
-                                                config.number_of_records_to_fetch)
+            records = LoadData.fetch_json_data_from_lbsn(cursor_input,
+                                                         continue_number,
+                                                         max_records,
+                                                         config.number_of_records_to_fetch)
             if not records:
                 break
         if config.LocalInput:
             continue_number += 1
         else:
             continue_number = records[-1][0] #last returned db_row_number
-        processed_count, finished = loadData.loop_input_records(records,
-                                                       max_records,
-                                                       twitter_records,
-                                                       config.end_with_db_row_number,
-                                                       config.LocalInput,
-                                                       config.input_type)
+        processed_count, finished = LoadData.loop_input_records(records,
+                                                                max_records,
+                                                                twitter_records,
+                                                                config.end_with_db_row_number,
+                                                                config.LocalInput,
+                                                                config.input_type)
         processed_records += processed_count
         processed_total += processed_count
         print(f'{processed_total} input records processed (up to {continue_number}). '
@@ -125,7 +119,7 @@ def main():
             output.commitChanges()
             processed_records = 0
             ## create a new empty dict of records
-            twitter_records = fieldMappingTwitter(config.disableReactionPostReferencing,
+            twitter_records = FieldMappingTwitter(config.disableReactionPostReferencing,
                                                   geocode_dict,
                                                   config.MapRelations)
         # remember the first processed DBRow ID

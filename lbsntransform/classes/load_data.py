@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from .dbConnection import dbConnection
+from .db_connection import DBConnection
 #from .helperFunctions import lbsnRecordDicts as lbsnRecordDicts
 
-class loadData():
+class LoadData():
     def loop_input_records(json_records, transferlimit, twitter_records, end_with_db_row_number, is_local_input, input_type):
         """Loops input json records, converts to ProtoBuf structure and adds to records_dict
 
@@ -96,7 +96,7 @@ class loadData():
     def initialize_output_connection(config):
         """Establishes connection to output DB (Postgres), if set in config"""
         if config.dbUser_Output:
-            output_connection = dbConnection(config.dbServeradressOutput,
+            output_connection = DBConnection(config.dbServeradressOutput,
                                              config.dbNameOutput,
                                              config.dbUser_Output,
                                              config.dbPassword_Output)
@@ -111,7 +111,7 @@ class loadData():
 
         Returns cursor
         """
-        input_connection = dbConnection(config.dbServeradressInput,
+        input_connection = DBConnection(config.dbServeradressInput,
                                         config.dbNameInput,
                                         config.dbUser_Input,
                                         config.dbPassword_Input,

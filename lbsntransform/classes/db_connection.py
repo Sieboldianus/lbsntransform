@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
+"""Provides functions to connect to Postgres DB
+
+"""
 
 import getpass
 import logging
-import psycopg2
 import sys
 import datetime
+import psycopg2
 
-log = logging.getLogger()
+LOG = logging.getLogger()
 
-class dbConnection():
+class DBConnection():
+    """ Class for connectiong to Postgres. """
     def __init__(self, serveradress=None, dbname=None,
-                 user=None,password=0,readonly=False, sslmode='prefer'):
+                 user=None, password=0, readonly=False, sslmode='prefer'):
+        """Initialize DBConnection object with attributes, if passed. """
         self.serveradress = serveradress
         self.dbname = dbname
         self.user = user
@@ -19,7 +24,7 @@ class dbConnection():
         self.sslmode = sslmode # Choose 'disable' to connect without ssl
 
     def connect(self):
-        ## Database config
+        """Database config. """
         conf = {
             "host":self.serveradress,
             "dbname":self.dbname,
@@ -37,16 +42,19 @@ class dbConnection():
         else:
             conf["password"] = self.password
         # define connection string
-        conn_string = f"host='{conf['host']}' dbname='{conf['dbname']}' user='{conf['user']}' password='{conf['password']}' sslmode='{conf['sslmode']}'"
-        # print connection string we will use to connect
+        conn_string = f"host='{conf['host']}'" \
+                      f"dbname='{conf['dbname']}'" \
+                      f"user='{conf['user']}'" \
+                      f"password='{conf['password']}'" \
+                      f"sslmode='{conf['sslmode']}'"
         # get a connection, if a connect cannot be made an exception will be raised here
         try:
             conn = psycopg2.connect(conn_string)
-        except Exception as e:
-            print(e)
+        except Exception as err:
+            print(err)
             sys.exit
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
-        log.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}')
+        LOG.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}')
         return conn, cursor

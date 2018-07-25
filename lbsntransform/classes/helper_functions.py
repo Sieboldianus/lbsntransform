@@ -19,7 +19,7 @@ from shapely import geos, wkb, wkt
 # https://gis.stackexchange.com/questions/225196/conversion-of-a-geojson-into-ewkb-format
 geos.WKBWriter.defaults['include_srid'] = True
 
-class helperFunctions():
+class HelperFunctions():
 
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
@@ -103,7 +103,7 @@ class helperFunctions():
     def getMentionedUsers(userMentions_jsonString,origin):
         mentionedUsersList = []
         for userMention in userMentions_jsonString:    #iterate over the list
-            refUserRecord = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userMention.get('id_str'),origin)
+            refUserRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userMention.get('id_str'),origin)
             refUserRecord.user_fullname = userMention.get('name') # Needs to be saved
             refUserRecord.user_name = userMention.get('screen_name')
             mentionedUsersList.append(refUserRecord)
@@ -114,7 +114,7 @@ class helperFunctions():
         refUser_pkey = None
         userMentionsJson = mainPost.get('entities').get('user_mentions')
         if userMentionsJson:
-            refUserRecords = helperFunctions.getMentionedUsers(userMentionsJson,origin)
+            refUserRecords = HelperFunctions.getMentionedUsers(userMentionsJson,origin)
             # if it is a retweet, and the status contains 'RT @', and the mentioned UserID is in status, we can almost be certain that it is the userid who posted the original tweet that was retweeted
             if refUserRecords and refUserRecords[0].user_name.lower() in mainPost.get('text').lower() and  mainPost.get('text').startswith(f'RT @'):
                 refUser_pkey = refUserRecords[0].pkey
@@ -129,7 +129,7 @@ class helperFunctions():
         else:
             # This function will also remove Null bytes from string, which aren't supported by Postgres
             if isinstance(recordAttr, str):
-                recordAttr = helperFunctions.clean_null_bytes_from_str(recordAttr)
+                recordAttr = HelperFunctions.clean_null_bytes_from_str(recordAttr)
             return recordAttr
 
     def null_check_datetime(recordAttr):
@@ -185,7 +185,7 @@ class helperFunctions():
             oldrecord.MergeFrom(newrecord)
             #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)
 
-class lbsnRecordDicts():
+class LBSNRecordDicts():
     def __init__(self):
         self.lbsnCountryDict = dict()
         self.lbsnCityDict = dict()
@@ -278,7 +278,7 @@ class lbsnRecordDicts():
         if newrecord.pkey.id in dict:
             oldrecord = dict[pkeyID]
             # oldrecord will be modified/updated
-            helperFunctions.MergeExistingRecords(oldrecord,newrecord)
+            HelperFunctions.MergeExistingRecords(oldrecord,newrecord)
         else:
             # just count new entries
             self.countProgressReport()
@@ -299,7 +299,7 @@ class lbsnRecordDicts():
             self.lbsnRelationshipDict[pkeyID] = newrelationship
             self.update_keyHash(newrelationship) # update keyHash only necessary for new record
 
-class geocodeLocations():
+class GeocodeLocations():
     def __init__(self):
         self.geocodeDict = dict()
 
@@ -311,7 +311,7 @@ class geocodeLocations():
                 self.geocodeDict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]),location_geocode[1]) # lat/lng
         print(f'Loaded {len(self.geocodeDict)} geocodes.')
 
-class timeMonitor():
+class TimeMonitor():
     def __init__(self):
         self.now = time.time()
 
@@ -323,7 +323,7 @@ class timeMonitor():
         reportMsg = f'{int(hours):0>2} Hours {int(minutes):0>2} Minutes and {seconds:05.2f} Seconds passed.'
         return reportMsg
 
-class memoryLeakDetec():
+class MemoryLeakDetec():
     # use this class to identify memory leaks
     # execute .before() and .after() to see the difference in new objects being added
     # execute report to list
