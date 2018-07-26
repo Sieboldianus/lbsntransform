@@ -41,7 +41,7 @@ For a full list of possible input args and descriptions see [config.py](/lbsntra
 
 ## Contributing
 
-Field mapping from and to ProtoBuffers from different Social Media sites is provided in [lbsntransform\classes\field_mapping.py].  
+Field mapping from and to ProtoBuffers from different Social Media sites is provided in [field_mapping.py](/lbsntransform/classes/field_mapping.py).  
 As an example, a mapping of Twitter json structure is given (see class `FieldMappingTwitter`). This class may be used to extend  
 functionality to cover other networks such as Flickr or Foursquare.  
 
