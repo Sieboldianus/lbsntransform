@@ -25,7 +25,7 @@ e.g. with the following
 lbsntransform.exe --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
-.. LBSNTRANSFORM will: 
+.. and the tool will: 
 - read local json from /01_Input/  
 - and store lbsn records as CSV and ProtoBuf in /02_Output/  
 
@@ -56,7 +56,7 @@ Python's site-packages folder with:
 python setup.py develop
 ```
 
-Now you can run LBSNTRANSFORM in your shell with:  
+Now you can run tool in your shell with:  
 ```shell
 lbsntransform --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
