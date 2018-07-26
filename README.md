@@ -67,8 +67,8 @@ import lbsntransform
 
 ## Versioning and Changelog, and Download
 
-For the versions available, see the [tags on this repository](/../../tags). 
-Latest version is [0.1.4](/../../tags/v0.1.4). The latest windows build is available for download [here](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
+For the versions available, see the [tags on this repository](/../tags). 
+Latest version is [0.1.4](/../tags/v0.1.4). The latest windows build is available for download [here](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
 For all other systems use cx_freeze to build executable:
 ```shell
 python cx_setup.py build
@@ -78,7 +78,7 @@ python cx_setup.py build
 
 * **Alexander Dunkel** - Initial work
 
-See also the list of [contributors](/../../contributors).  
+See also the list of [contributors](/../contributors).  
 
 ## License
 
