@@ -11,8 +11,9 @@ The tool can also be imported to other Python projects with `import lbsntransfor
 ## Quick Start
 
 You can install the package with all its dependencies directly from the Git Repository:
-
-`pip install --upgrade git+git://gitlab.vgiscience.de:lbsn/lbsntransform.git`
+```shell
+pip install --upgrade git+git://gitlab.vgiscience.de:lbsn/lbsntransform.git
+```
 
 (Note: A PyPi package distribution is planned)
 
@@ -45,25 +46,33 @@ As an example, a mapping of Twitter json structure is given (see class `FieldMap
 functionality to cover other networks such as Flickr or Foursquare.  
 
 For development & testing, make a local clone of this repository  
-`git clone git@gitlab.vgiscience.de:lbsn/lbsntransform.git`
-
+```shell
+git clone git@gitlab.vgiscience.de:lbsn/lbsntransform.git
+```
 ..and create package in develop mode to symlink the folder to your  
 Python's site-packages folder with:  
-`python setup.py develop`
+```shell
+python setup.py develop
+```
 
 Now you can run LBSNTRANSFORM in your shell with:  
-`lbsntransform --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput`
+```shell
+lbsntransform --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
+```
 
 ..or import the package to other python projects with:  
-`import lbsntransform`
+```python
+import lbsntransform
+```
 
 ## Versioning and Changelog, and Download
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](./tags). 
 Latest version is [0.1.4](./tags/v0.1.4). The latest windows build is available for download [here](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
 For all other systems use cx_freeze to build executable:
-
-`python cx_setup.py build`
+```shell
+python cx_setup.py build
+```
 
 ## Authors
 
