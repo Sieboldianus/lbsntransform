@@ -4,9 +4,10 @@ A python package that uses the [common lbsn data structure concept] (ProtoBuf) t
 
 ## Description
 
-This tool will read JSON strings from a Postgres Database or local folder and map the Social Media Endpoints (e.g. Twitter)  
-to the common [LBSN Interchange Structure](https://gitlab.vgiscience.de/lbsn/concept) in ProtoBuf. Output can be either a Postgres Database or local CSV.
-The tool can also be imported to other Python projects with `import lbsntransform` for on-the-fly conversion.
+This tool will read JSONs from a Postgres Database or local folder and map Social Media Endpoints (e.g. Twitter)  
+to a common [LBSN Interchange Structure](https://gitlab.vgiscience.de/lbsn/concept) format in ProtoBuf. Output can be either a Postgres Database or local CSV.
+The tool can also be imported to other Python projects with `import lbsntransform` for on-the-fly conversion. The goal is to provide a common interface to process 
+Social Media Data, without custom adjustment to the myriad API Endpoints available.
 
 ## Quick Start
 
@@ -78,7 +79,7 @@ python cx_setup.py build
 
 * **Alexander Dunkel** - Initial work
 
-See also the list of [contributors](/../contributors).  
+See also the list of [contributors](/../graphs/master).  
 
 ## License
 
