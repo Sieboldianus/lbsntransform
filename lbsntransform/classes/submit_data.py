@@ -4,9 +4,8 @@ import psycopg2
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
 #from lbsn2structure import *
-from lbsnstructure.structure_pb2 import *
-##from descriptor_pb2 import DescriptorProto
-from lbsnstructure.external.timestamp_pb2 import Timestamp
+from lbsnstructure.lbsnstructure_pb2 import *
+from google.protobuf.timestamp_pb2 import Timestamp
 import logging
 from sys import exit
 import traceback

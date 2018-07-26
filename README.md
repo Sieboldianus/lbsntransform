@@ -1,6 +1,6 @@
 # LBSNTRANSFORM
 
-A python package that uses the [common lbsn data structure concept] (ProtoBuf) to import, transform and export Social Media data such as Twitter.
+A python package that uses the [common lbsn data structure concept](https://gitlab.vgiscience.de/lbsn/concept) (ProtoBuf) to import, transform and export Social Media data such as Twitter.
 
 ## Description
 
@@ -11,21 +11,24 @@ Social Media Data, without custom adjustment to the myriad API Endpoints availab
 
 ## Quick Start
 
-You can install the package with all its dependencies directly from the Git Repository:
+You can install the newest version with all its dependencies directly from the Git Repository:
 ```shell
 pip install --upgrade git+git://gitlab.vgiscience.de:lbsn/lbsntransform.git
 ```
 
-(Note: A PyPi package distribution is planned)
+or install latest release using pip:
+```shell
+pip install lbsntransform
+```
 
-.. or, for non-developers, simply download the latest build and run with custom args,  
-e.g. with the following
+.. for non-developers, another option is to simply download the latest build and run with custom args,  
+e.g. with the following command line args
 
 ```shell
 lbsntransform.exe --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
-.. and the tool will: 
+.. the the tool will: 
 - read local json from /01_Input/  
 - and store lbsn records as CSV and ProtoBuf in /02_Output/  
 

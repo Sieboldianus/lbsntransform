@@ -2,8 +2,9 @@
 
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
-from lbsnstructure.structure_pb2 import *
-from lbsnstructure.external.timestamp_pb2 import Timestamp
+from lbsnstructure.lbsnstructure_pb2 import *
+from google.protobuf.timestamp_pb2 import Timestamp
+#from lbsnstructure.external.timestamp_pb2 import Timestamp
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 import logging
