@@ -17,13 +17,15 @@ You can install the package with all its dependencies directly from the Git Repo
 (Note: A PyPi package distribution is planned)
 
 .. or, for non-developers, simply download the latest build and run with custom args,  
-e.g. with the following args LBSNTRANSFORM will 
-- read local json from /01_Input/  
-- and store lbsn records as CSV and ProtoBuf in /02_Output/  
+e.g. with the following
 
-```python
+```shell
 lbsntransform.exe --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
+
+.. LBSNTRANSFORM will: 
+- read local json from /01_Input/  
+- and store lbsn records as CSV and ProtoBuf in /02_Output/  
 
 For a full list of possible input args and descriptions see [config.py](/lbsntransform/configconfig.py).
 
@@ -42,23 +44,23 @@ Field mapping from and to ProtoBuffers from different Social Media sites is prov
 As an example, a mapping of Twitter json structure is given (see class `FieldMappingTwitter`). This class may be used to extend  
 functionality to cover other networks such as Flickr or Foursquare.  
 
-For development & testing, make a local clone of this repository 
+For development & testing, make a local clone of this repository  
 `git clone git@gitlab.vgiscience.de:lbsn/lbsntransform.git`
 
 ..and create package in develop mode to symlink the folder to your  
-Python's site-packages folder with:
+Python's site-packages folder with:  
 `python setup.py develop`
 
-Now you can run LBSNTRANSFORM in your shell with:
+Now you can run LBSNTRANSFORM in your shell with:  
 `lbsntransform --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput`
 
-or import the package to other python projects with
+..or import the package to other python projects with:  
 `import lbsntransform`
 
 ## Versioning and Changelog, and Download
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](/tags). 
-Latest version is [0.1.4](/tags/v0.1.4). The latest windows build is available for download [here](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](./tags). 
+Latest version is [0.1.4](./tags/v0.1.4). The latest windows build is available for download [here](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
 For all other systems use cx_freeze to build executable:
 
 `python cx_setup.py build`
@@ -67,8 +69,8 @@ For all other systems use cx_freeze to build executable:
 
 * **Alexander Dunkel** - Initial work
 
-See also the list of [contributors](/contributors).
+See also the list of [contributors](/contributors).  
 
 ## License
 
-This project is licensed under the GNU GPLv3 or any higher - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the GNU GPLv3 or any higher - see the [LICENSE.md](LICENSE.md) file for details.
