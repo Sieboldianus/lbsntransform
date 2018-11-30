@@ -8,8 +8,8 @@ import os.path
 PYTHON_INSTALL_DIR = os.path.dirname(os.path.dirname(os.__file__))
 
 # Dependencies are automatically detected, but it can be fine tuned
-includes_mod = ['lbsntransform',
-                ]
+#includes_mod = ['lbsntransform',
+#                ]
 
 excludes_mod = ['tkinter',
                 'matplotlib',

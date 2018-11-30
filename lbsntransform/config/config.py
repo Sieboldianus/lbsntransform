@@ -7,6 +7,7 @@ class BaseConfig():
     def __init__(self):
         ## Set Default Config options here
         ## or define options as input args
+        self.Origin = 3 # Defaults to 3: Twitter (1 - Instagram, 2 - Flickr, 3 - Twitter)
         self.LocalInput = 0 # Read from File/CSV
         self.LocalFileType = '*.json' # If localread, specify filetype (*.json, *.csv etc.)
         self.InputPath = None # optionally provide path to input folder, otherwise ./Input/ will be used
@@ -20,7 +21,7 @@ class BaseConfig():
         self.dbServeradressOutput = None #'111.11.11.11'
         self.dbNameOutput = None #'test_db'
         self.transferlimit = None
-        self.transferCount = 50000#default:50k # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
+        self.transferCount = 50000 #default:50k # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
         self.number_of_records_to_fetch = 10000
         self.transferReactions = 1
         self.disableReactionPostReferencing = None # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
@@ -36,6 +37,7 @@ class BaseConfig():
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
+        parser.add_argument('-sO', "--Origin", default=self.Origin)
         parser.add_argument('-lI', "--LocalInput", default=self.LocalInput)
         parser.add_argument('-lT', "--LocalFileType", default=self.LocalFileType)
         parser.add_argument('-iP', "--InputPath", default=self.LocalFileType)
@@ -82,6 +84,8 @@ class BaseConfig():
             self.dbPassword_Input = args.dbPassword_Input
             self.dbServeradressInput = args.dbServeradressInput
             self.dbNameInput = args.dbNameInput
+        if args.Origin:
+            self.Origin = int(args.Origin)
         if args.geocodeLocations:
             self.geocodeLocations = f'{os.getcwd()}\\{args.geocodeLocations}'
         if args.dbUser_Output:

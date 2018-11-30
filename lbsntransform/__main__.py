@@ -25,7 +25,7 @@ def main():
     """
     import sys
     from .classes.helper_functions import TimeMonitor
-    from .classes.field_mapping import FieldMappingTwitter
+    from .classes.helper_functions import HelperFunctions
     from .classes.submit_data import LBSNTransfer
     from .classes.load_data import LoadData
     from .config.config import BaseConfig
@@ -38,6 +38,8 @@ def main():
     config.parseArgs()
     sys.stdout.flush()
     log = set_logger()
+    # load import mapper
+    importer = HelperFunctions.load_importer_mapping_module(config.Origin)
     # establish output connection (will return none of no config)
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
     output = LBSNTransfer(dbCursor=cursor_output,
@@ -65,9 +67,9 @@ def main():
 
     finished = False
     # initialize field mapping structure
-    twitter_records = FieldMappingTwitter(config.disableReactionPostReferencing,
-                                          geocode_dict,
-                                          config.MapRelations)
+    twitter_records = importer(config.disableReactionPostReferencing,
+                               geocode_dict,
+                               config.MapRelations)
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(twitter_records)
@@ -119,9 +121,9 @@ def main():
             output.commitChanges()
             processed_records = 0
             ## create a new empty dict of records
-            twitter_records = FieldMappingTwitter(config.disableReactionPostReferencing,
-                                                  geocode_dict,
-                                                  config.MapRelations)
+            twitter_records = importer(config.disableReactionPostReferencing,
+                                       geocode_dict,
+                                       config.MapRelations)
         # remember the first processed DBRow ID
         if not start_number:
             if config.LocalInput:

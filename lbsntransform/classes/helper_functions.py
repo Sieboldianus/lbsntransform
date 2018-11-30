@@ -186,6 +186,16 @@ class HelperFunctions():
             oldrecord.MergeFrom(newrecord)
             #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)
 
+    def load_importer_mapping_module(origin):
+        """ Switch import module based on origin input
+            1 - Instagram, 2 - Flickr, 3 - Twitter
+        """
+        if origin == 2:
+            from .field_mapping_flickr import FieldMappingFlickr as importer
+        elif origin == 3:
+            from .field_mapping_twitter import FieldMappingTwitter as importer
+        return importer
+
 class LBSNRecordDicts():
     def __init__(self):
         self.lbsnCountryDict = dict()

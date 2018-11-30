@@ -12,6 +12,6 @@ from .classes.helper_functions import HelperFunctions
 from .classes.helper_functions import LBSNRecordDicts
 from .classes.helper_functions import GeocodeLocations
 from .classes.helper_functions import TimeMonitor
-from .classes.field_mapping import FieldMappingTwitter
+from .classes.field_mapping_twitter import FieldMappingTwitter
 from .classes.submit_data import LBSNTransfer
 from .config.config import BaseConfig
