@@ -176,7 +176,7 @@ class HelperFunctions():
         str_without_null_byte = str.replace('\x00','')
         return str_without_null_byte
 
-    def MergeExistingRecords(oldrecord, newrecord):
+    def merge_existing_records(oldrecord, newrecord):
         # Basic Compare function for GUIDS
         # First check if length of both ProtoBuf Messages are the same
         oldRecordString = oldrecord.SerializeToString()
@@ -272,6 +272,8 @@ class LBSNRecordDicts():
             self.AddRecordToDict(record)
 
     def dictSelector(self, record):
+        """ Get dictionary by type name
+        """
         dictSwitcher = {
             lbsnPost().DESCRIPTOR.name: self.lbsnPostDict,
             lbsnCountry().DESCRIPTOR.name: self.lbsnCountryDict,
@@ -283,13 +285,28 @@ class LBSNRecordDicts():
         }
         return dictSwitcher.get(record.DESCRIPTOR.name)
 
+    def dict_type_switcher(self, desc_name):
+        """ Create protoBuf messages by name
+        """
+        dict_switcher = {
+            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
+            lbsnCity().DESCRIPTOR.name: lbsnCity(),
+            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
+            lbsnUser().DESCRIPTOR.name: lbsnUser(),
+            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
+            lbsnPost().DESCRIPTOR.name: lbsnPost(),
+            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
+            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
+        }
+        return dict_switcher.get(desc_name)
+
     def AddRecordToDict(self,newrecord):
         dict = self.dictSelector(newrecord)
         pkeyID = newrecord.pkey.id
         if newrecord.pkey.id in dict:
             oldrecord = dict[pkeyID]
             # oldrecord will be modified/updated
-            HelperFunctions.MergeExistingRecords(oldrecord,newrecord)
+            HelperFunctions.merge_existing_records(oldrecord,newrecord)
         else:
             # just count new entries
             self.countProgressReport()

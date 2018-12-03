@@ -3,6 +3,8 @@
 import psycopg2
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
+from .store_csv import LBSNcsv
+from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
 #from lbsn2structure import *
 from lbsnstructure.lbsnstructure_pb2 import *
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -19,10 +21,6 @@ import csv
 from glob import glob
 import shutil
 
-from heapq import merge as heapqMerge
-from operator import itemgetter
-from contextlib import ExitStack
-
 from google.protobuf.internal import encoder
 from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
@@ -32,7 +30,7 @@ class LBSNTransfer():
     def __init__(self, dbCursor = None,
                  dbConnection = None,
                  commit_volume = 10000,
-                 disableReactionPostReferencing = 0, storeCSV = None, CSVsuppressLinebreaks = True):
+                 disableReactionPostReferencing = 0, storeCSV = None, SUPPRESS_LINEBREAKS = True):
         self.dbCursor = dbCursor
         self.dbConnection = dbConnection
         if not self.dbCursor:
@@ -42,7 +40,6 @@ class LBSNTransfer():
         self.count_affected = 0
         self.commit_volume = commit_volume
         self.store_volume = 500000
-        self.storeCSVPart = 0
         self.count_glob = 0
         self.null_island_count = 0
         self.disableReactionPostReferencing = disableReactionPostReferencing
@@ -55,38 +52,16 @@ class LBSNTransfer():
                          lbsnPost.DESCRIPTOR.name: list(),
                          lbsnPostReaction.DESCRIPTOR.name: list(),
                          lbsnRelationship.DESCRIPTOR.name: list()}
-        self.dictTypeSwitcher = { # create protoBuf messages by name
-            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
-            lbsnCity().DESCRIPTOR.name: lbsnCity(),
-            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
-            lbsnUser().DESCRIPTOR.name: lbsnUser(),
-            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
-            lbsnPost().DESCRIPTOR.name: lbsnPost(),
-            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
-            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
-        }
+
         self.countRound = 0
         self.batchDBVolume = 100 # Records are batched and submitted in one insert with x number of records
         self.storeCSV = storeCSV
         self.headersWritten = set()
-        self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
-        self.typeNamesHeaderDict = {lbsnCity.DESCRIPTOR.name: 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
-                                    lbsnCountry.DESCRIPTOR.name: 'origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url',
-                                    lbsnPlace.DESCRIPTOR.name: 'origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count',
-                                    lbsnPost.DESCRIPTOR.name: 'origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source',
-                                    lbsnPostReaction.DESCRIPTOR.name: 'origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions',
-                                    lbsnUser.DESCRIPTOR.name: 'origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows',
-                                    lbsnUserGroup.DESCRIPTOR.name: 'origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate, user_owner',
-                                    '_user_mentions_user': 'origin_id, user_guid, mentioneduser_guid',
-                                    '_user_follows_group': 'origin_id, user_guid, group_guid',
-                                    '_user_memberof_group': 'origin_id, user_guid, group_guid',
-                                    '_user_connectsto_user': 'origin_id, user_guid, connectedto_user_guid',
-                                    '_user_friends_user': 'origin_id, user_guid, friend_guid'
-                               }
+        self.db_mapping = ProtoLBSM_db_Mapping()
+        #self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
+
         if self.storeCSV:
-            self.OutputPathFile = f'{os.getcwd()}\\02_Output\\'
-            if not os.path.exists(self.OutputPathFile):
-                os.makedirs(self.OutputPathFile)
+            self.csv_output = LBSNcsv(SUPPRESS_LINEBREAKS)
 
     def commitChanges(self):
         if self.dbCursor:
@@ -95,7 +70,7 @@ class LBSNTransfer():
 
     def storeChanges(self):
         if self.storeCSV:
-            self.cleanCSVBatches()
+            self.csv_output.clean_csv_batches(self.batchedRecords)
             self.count_entries_store = 0
 
     def storeLbsnRecordDicts(self, fieldMappingTwitter):
@@ -134,19 +109,7 @@ class LBSNTransfer():
             if len(batchList) >= self.batchDBVolume:
                 self.submitAllBatches()
 
-    def funcPrepareSelector(self, record):
-        dictSwitcher = {
-            lbsnCountry().DESCRIPTOR.name: self.prepareLbsnCountry,
-            lbsnCity().DESCRIPTOR.name: self.prepareLbsnCity,
-            lbsnPlace().DESCRIPTOR.name: self.prepareLbsnPlace,
-            lbsnUser().DESCRIPTOR.name: self.prepareLbsnUser,
-            lbsnUserGroup().DESCRIPTOR.name: self.prepareLbsnUserGroup,
-            lbsnPost().DESCRIPTOR.name: self.prepareLbsnPost,
-            lbsnPostReaction().DESCRIPTOR.name: self.prepareLbsnPostReaction,
-            lbsnRelationship().DESCRIPTOR.name: self.prepareLbsnRelationship
-        }
-        prepareFunction = dictSwitcher.get(record.DESCRIPTOR.name)
-        return prepareFunction(record)
+
 
     def submitAllBatches(self):
         for recordType, batchList in self.batchedRecords.items():
@@ -161,7 +124,7 @@ class LBSNTransfer():
     def prepareRecords(self, recordType):
         preparedRecords = []
         for record in self.batchedRecords[recordType]:
-            preparedRecord = self.funcPrepareSelector(record)
+            preparedRecord = self.db_mapping.func_prepare_selector(record)
             if preparedRecord:
                 preparedRecords.append(preparedRecord)
         return preparedRecords
@@ -169,12 +132,12 @@ class LBSNTransfer():
     def submitLbsnRecords(self, recordType):
         preparedRecords = self.prepareRecords(recordType)
         if self.storeCSV:
-            self.storeAppendCSV(recordType)
+            self.csv_output.store_append_batch_to_csv(self.batchedRecords[recordType], self.countRound, recordType)
         if self.dbCursor:
             values_str = ','.join([self.prepareSQLEscapedValues(record) for record in preparedRecords])
             if recordType == lbsnCountry().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."country" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."country" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id,country_guid)
                             DO UPDATE SET
@@ -190,7 +153,7 @@ class LBSNTransfer():
                             # Finally, merge New Entries with existing ones (distinct): extensions.mergeArrays([new],[old]) uses custom mergeArrays function (see function definitions)
             elif recordType == lbsnCity().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."city" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."city" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id,city_guid)
                             DO UPDATE SET
@@ -204,7 +167,7 @@ class LBSNTransfer():
                             '''
             elif recordType == lbsnPlace().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."place" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."place" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id,place_guid)
                             DO UPDATE SET
@@ -218,7 +181,7 @@ class LBSNTransfer():
                             '''
             elif recordType == lbsnUserGroup().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."user_groups" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."user_groups" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id, usergroup_guid)
                             DO UPDATE SET
@@ -231,7 +194,7 @@ class LBSNTransfer():
                             # No coalesce for user: in case user changes or removes information, this should also be removed from the record
             elif recordType == lbsnUser().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."user" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."user" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id, user_guid)
                             DO UPDATE SET
@@ -258,7 +221,7 @@ class LBSNTransfer():
                             '''
             elif recordType == lbsnPost().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."post" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."post" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id, post_guid)
                             DO UPDATE SET
@@ -289,7 +252,7 @@ class LBSNTransfer():
                             '''
             elif recordType == lbsnPostReaction().DESCRIPTOR.name:
                 insert_sql = f'''
-                            INSERT INTO data."post_reaction" ({self.typeNamesHeaderDict[recordType]})
+                            INSERT INTO data."post_reaction" ({self.db_mapping.get_header_for_type(recordType)})
                             VALUES {values_str}
                             ON CONFLICT (origin_id, reaction_guid)
                             DO UPDATE SET
@@ -305,136 +268,12 @@ class LBSNTransfer():
                             '''
             self.submitBatch(insert_sql)
 
-    def prepareLbsnCountry(self, record):
-        # Get common attributes for place types Place, City and Country
-        placeRecord = placeAttrShared(record)
-        preparedRecord = (placeRecord.OriginID,
-                          placeRecord.Guid,
-                          placeRecord.name,
-                          placeRecord.name_alternatives,
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
-                          placeRecord.url)
-        return preparedRecord
-
-    def prepareLbsnCity(self, record):
-        placeRecord = placeAttrShared(record)
-        countryGuid = HelperFunctions.null_check(record.country_pkey.id)
-        subType = HelperFunctions.null_check(record.sub_type)
-        preparedRecord = (placeRecord.OriginID,
-                          placeRecord.Guid,
-                          placeRecord.name,
-                          placeRecord.name_alternatives,
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
-                          placeRecord.url,
-                          countryGuid,
-                          subType)
-        return preparedRecord
-
-    def prepareLbsnPlace(self, record):
-        placeRecord = placeAttrShared(record)
-        cityGuid = HelperFunctions.null_check(record.city_pkey.id)
-        postCount = HelperFunctions.null_check(record.post_count)
-        preparedRecord = (placeRecord.OriginID,
-                          placeRecord.Guid,
-                          placeRecord.name,
-                          placeRecord.name_alternatives,
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
-                          placeRecord.url,
-                          cityGuid,
-                          postCount)
-        return preparedRecord
-
-    def prepareLbsnUser(self, record):
-        userRecord = userAttrShared(record)
-        preparedRecord = (userRecord.OriginID,
-                          userRecord.Guid,
-                          userRecord.user_name,
-                          userRecord.user_fullname,
-                          userRecord.follows,
-                          userRecord.followed,
-                          userRecord.group_count,
-                          userRecord.biography,
-                          userRecord.post_count,
-                          userRecord.is_private,
-                          userRecord.url,
-                          userRecord.is_available,
-                          userRecord.user_language,
-                          userRecord.user_location,
-                          HelperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
-                          userRecord.liked_count,
-                          userRecord.active_since,
-                          userRecord.profile_image_url,
-                          userRecord.user_timezone,
-                          userRecord.user_utc_offset,
-                          userRecord.user_groups_member,
-                          userRecord.user_groups_follows)
-        return preparedRecord
-
-    def prepareLbsnUserGroup(self, record):
-        userGroupRecord = userGroupAttrShared(record)
-        preparedRecord = (userGroupRecord.OriginID,
-                          userGroupRecord.Guid,
-                          userGroupRecord.usergroup_name,
-                          userGroupRecord.usergroup_description,
-                          userGroupRecord.member_count,
-                          userGroupRecord.usergroup_createdate,
-                          userGroupRecord.user_owner)
-        return preparedRecord
-
-    def prepareLbsnPost(self, record):
-        postRecord = postAttrShared(record)
-        preparedRecord = (postRecord.OriginID,
-                          postRecord.Guid,
-                          HelperFunctions.returnEWKBFromGeoTEXT(postRecord.post_latlng),
-                          postRecord.place_guid,
-                          postRecord.city_guid,
-                          postRecord.country_guid,
-                          postRecord.post_geoaccuracy,
-                          postRecord.user_guid,
-                          postRecord.post_create_date,
-                          postRecord.post_publish_date,
-                          postRecord.post_body,
-                          postRecord.post_language,
-                          postRecord.user_mentions,
-                          postRecord.hashtags,
-                          postRecord.emoji,
-                          postRecord.post_like_count,
-                          postRecord.post_comment_count,
-                          postRecord.post_views_count,
-                          postRecord.post_title,
-                          postRecord.post_thumbnail_url,
-                          postRecord.post_url,
-                          postRecord.post_type,
-                          postRecord.post_filter,
-                          postRecord.post_quote_count,
-                          postRecord.post_share_count,
-                          postRecord.input_source)
-        return preparedRecord
-
-    def prepareLbsnPostReaction(self, record):
-        postReactionRecord = postReactionAttrShared(record)
-        preparedRecord = (postReactionRecord.OriginID,
-                          postReactionRecord.Guid,
-                          HelperFunctions.returnEWKBFromGeoTEXT(postReactionRecord.reaction_latlng),
-                          postReactionRecord.user_guid,
-                          postReactionRecord.referencedPost,
-                          postReactionRecord.referencedPostreaction,
-                          postReactionRecord.reaction_type,
-                          postReactionRecord.reaction_date,
-                          postReactionRecord.reaction_content,
-                          postReactionRecord.reaction_like_count,
-                          postReactionRecord.user_mentions)
-        return preparedRecord
-
     def submitLbsnRelationships(self):
         # submit relationships of different types record[1] is the PostgresQL formatted list of values, record[0] is the type of relationship that determines the table selection
         selectFriends = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "isfriend"]
         if selectFriends:
             if self.storeCSV:
-                self.storeAppendCSV(selectFriends, '_user_friends_user')
+                self.csv_output.store_append_batch_to_csv(selectFriends, self.countRound, '_user_friends_user')
             if self.dbCursor:
                 args_isFriend = ','.join(selectFriends)
                 insert_sql = f'''
@@ -447,7 +286,7 @@ class LBSNTransfer():
         selectConnected = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "isconnected"]
         if selectConnected:
             if self.storeCSV:
-                self.storeAppendCSV(selectConnected, '_user_connectsto_user')
+                self.csv_output.store_append_batch_to_csv(selectConnected, self.countRound, '_user_connectsto_user')
             if self.dbCursor:
                 args_isConnected = ','.join(selectConnected)
                 insert_sql = f'''
@@ -460,7 +299,7 @@ class LBSNTransfer():
         selectUserGroupMember = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "ingroup"]
         if selectUserGroupMember:
             if self.storeCSV:
-                self.storeAppendCSV(selectUserGroupMember, '_user_memberof_group')
+                self.csv_output.store_append_batch_to_csv(selectUserGroupMember, self.countRound, '_user_memberof_group')
             if self.dbCursor:
                 args_isInGroup = ','.join(selectUserGroupMember)
                 insert_sql = f'''
@@ -473,7 +312,7 @@ class LBSNTransfer():
         selectUserGroupMember = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "followsgroup"]
         if selectUserGroupMember:
             if self.storeCSV:
-                self.storeAppendCSV(selectUserGroupMember, '_user_follows_group')
+               self.csv_output.store_append_batch_to_csv(selectUserGroupMember, self.countRound, '_user_follows_group')
             if self.dbCursor:
                 args_isInGroup = ','.join(selectUserGroupMember)
                 insert_sql = f'''
@@ -486,7 +325,7 @@ class LBSNTransfer():
         selectUserMentions = [relationship[1] for relationship in self.batchedRecords[lbsnRelationship().DESCRIPTOR.name] if relationship[0] == "mentions_user"]
         if selectUserMentions:
             if self.storeCSV:
-                self.storeAppendCSV(selectUserMentions, '_user_mentions_user')
+                self.csv_output.store_append_batch_to_csv(selectUserMentions, self.countRound, '_user_mentions_user')
             if self.dbCursor:
                 args_isInGroup = ','.join(selectUserMentions)
                 insert_sql = f'''
@@ -496,14 +335,6 @@ class LBSNTransfer():
                                 DO NOTHING
                             '''
                 self.submitBatch(insert_sql)
-    #??
-    def prepareLbsnRelationship(self, record):
-        relationshipRecord = relationshipAttrShared(record)
-        preparedTypeRecordTuple = (relationshipRecord.relType,
-                          self.prepareRecordValues(relationshipRecord.OriginID,
-                          relationshipRecord.Guid,
-                          relationshipRecord.Guid_Rel))
-        return preparedTypeRecordTuple
 
     def submitBatch(self,insert_sql):
         ## Needs testing: is using Savepoint for each insert slower than rolling back entire commit?
@@ -567,282 +398,10 @@ class LBSNTransfer():
                     # add sorted list
                     x.extend(xSorted)
 
-    ###########################
-    ### CSV Functions Below ###
-    ###########################
+    def finalize(self):
+        """ Final procedure calls:
+            - clean and merge csv batches
+        """
+        if self.storeCSV:
+            self.csv_output.clean_csv_batches(self.batchedRecords)
 
-    def storeAppendCSV(self, typeName, pgCopyFormat = False):
-        records = self.batchedRecords[typeName]
-        filePath = f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv'
-        with open(filePath, 'a', encoding='utf8') as f:
-            #csvOutput = csv.writer(f, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            for record in records:
-                serializedRecord_b64 = self.serializeEncodeRecord(record)
-                f.write(f'{record.pkey.id},{serializedRecord_b64}\n')
-
-    def serializeEncodeRecord(self, record):
-        # serializes record as string and encodes in base64 for corrupt-resistant backup/store/transfer
-        serializedRecord = record.SerializeToString()
-        serializedEncodedRecord = base64.b64encode(serializedRecord)
-        serializedEncodedRecordUTF = serializedEncodedRecord.decode("utf-8")
-        return serializedEncodedRecordUTF
-
-    #def writeCSVHeader(self, typeName):
-    #    # create files and write headers
-    #    #for typename, header in self.typeNamesHeaderDict.items():
-    #    header = self.typeNamesHeaderDict[typeName]
-    #    csvOutput = open(f'{self.OutputPathFile}{typeName}_{self.countRound:03d}.csv', 'w', encoding='utf8')
-    #    csvOutput.write("%s\n" % header)
-
-    def cleanCSVBatches(self):
-        # function that merges all output streams at end
-        x=0
-        self.storeCSVPart += 1
-        print('Cleaning and merging output files..')
-        for typeName in self.batchedRecords:
-            x+= 1
-            filelist = glob(f'{self.OutputPathFile}{typeName}_*.csv')
-            if filelist:
-                self.sortFiles(filelist,typeName)
-                if len(filelist) > 1:
-                    print(f'Cleaning & merging output files..{x}/{len(self.batchedRecords)}', end='\r')
-                    self.mergeFiles(filelist,typeName)
-                else:
-                    # no need to merge files if only one round
-                    new_filename = filelist[0].replace('_001','001Proto')
-                    if os.path.isfile(new_filename):
-                        os.remove(new_filename)
-                    if os.path.isfile(filelist[0]):
-                        os.rename(filelist[0], new_filename)
-                self.removeMergeDuplicateRecords_FormatCSV(typeName)
-
-    def sortFiles(self, filelist, typeName):
-        for f in filelist:
-            with open(f,'r+', encoding='utf8') as batchFile:
-                #skip header
-                #header = batchFile.readline()
-                lines = batchFile.readlines()
-                # sort by first column
-                lines.sort(key=lambda a_line: a_line.split()[0])
-                #lines.sort()
-                batchFile.seek(0)
-                # delete original records in file
-                batchFile.truncate()
-                # write sorted records
-                #batchFile.writeline(header)
-                for line in lines:
-                    batchFile.write(line)
-
-    def mergeFiles(self, filelist, typeName):
-        with ExitStack() as stack:
-            files = [stack.enter_context(open(fname, encoding='utf8')) for fname in filelist]
-            with open(f'{self.OutputPathFile}{typeName}_Proto.csv','w', encoding='utf8') as mergedFile:
-                mergedFile.writelines(heapqMerge(*files))
-        for file in filelist:
-            os.remove(file)
-
-    def createProtoByDescriptorName(self, descName):
-        newRecord = self.dictTypeSwitcher[descName]
-        return newRecord
-
-    def parseMessage(self,msgType,stringMessage):
-            #result_class = reflection.GeneratedProtocolMessageType(msgType,(stringMessage,),{'DESCRIPTOR': descriptor, '__module__': None})
-            ParseMessage
-            msgClass=lbsnstructure.Structure_pb2[msgType]
-            message=msgClass()
-            message.ParseFromString(stringMessage)
-            return message
-
-    def removeMergeDuplicateRecords_FormatCSV(self, typeName):
-        def getRecordID_From_base64EncodedString(line):
-            record = getRecord_From_base64EncodedString(line)
-            return record.pkey.id
-        def getRecord_From_base64EncodedString(line):
-            record = self.createProtoByDescriptorName(typeName)
-            record.ParseFromString(base64.b64decode(line))#.strip("\n"))
-            return record
-        def mergeRecords(duplicateRecordLines):
-            if len(duplicateRecordLines) > 1:
-                # first do a simple compare/unique
-                uniqueRecords = set(duplicateRecordLines)
-                if len(uniqueRecords) > 1:
-                    #input(f'Len: {len(uniqueRecords)} : {uniqueRecords}')
-                    # if more than one unqiue record infos, get first and deep-compare-merge with following
-                    prevDuprecord = getRecord_From_base64EncodedString(duplicateRecordLines[0])
-                    for duprecord in duplicateRecordLines[1:]:
-                        # merge current record with previous until no more found
-                        # will modify/overwrite prevDuprecord
-                        HelperFunctions.MergeExistingRecords(prevDuprecord,getRecord_From_base64EncodedString(duprecord))
-                    mergedRecord = self.serializeEncodeRecord(prevDuprecord)
-                else:
-                    # take first element
-                    mergedRecord = next(iter(uniqueRecords))
-            else:
-                mergedRecord = duplicateRecordLines[0]
-            return mergedRecord
-        def formatB64EncodedRecordForCSV(record_b64):
-            record = getRecord_From_base64EncodedString(record_b64)
-            # convert Protobuf to Value list
-            preparedRecord = self.funcPrepareSelector(record)
-            formattedValueList = []
-            for value in preparedRecord:
-                # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
-                # Format some types manually (e.g. arrays, null values)
-                if isinstance(value, list):
-                    value = '{' + ",".join(value) + '}'
-                elif self.CSVsuppressLinebreaks and isinstance(value, str):
-                    # replace linebreaks by actual string so we can use heapqMerge to merge line by line
-                    value = value.replace('\n','\\n').replace('\r', '\\r')
-                formattedValueList.append(value)
-            return formattedValueList
-        def cleanMergedFile(mergedFile, cleanedMergedFile):
-            dupsremoved = 0
-            with mergedFile, cleanedMergedFile, cleanedMergedFileCopy:
-                header = self.typeNamesHeaderDict[typeName]
-                cleanedMergedFileCopy.write("%s\n" % header)
-                csvOutput = csv.writer(cleanedMergedFileCopy, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                # start readlines/compare
-                previousRecord_id, previousRecord_b64 = next(mergedFile).split(',', 1)
-                # strip linebreak from line ending
-                previousRecord_b64 = previousRecord_b64.strip()
-                duplicateRecordLines = []
-                for line in mergedFile:
-                    record_id, record_b64 = line.split(',', 1)
-                    # strip linebreak from line ending
-                    record_b64 = record_b64.strip()
-                    if record_id == previousRecord_id:
-                        # if duplicate, add to list to merge later
-                        duplicateRecordLines.extend((previousRecord_b64, record_b64))
-                        continue
-                    else:
-                        # if different id, do merge [if necessary], then continue processing
-                        if duplicateRecordLines:
-                            # add/overwrite new record line
-                            # write merged record and continue
-                            mergedRecord_b64 = mergeRecords(duplicateRecordLines)
-                            dupsremoved += len(duplicateRecordLines) - 1
-                            duplicateRecordLines = []
-                            previousRecord_b64 = mergedRecord_b64
-                    cleanedMergedFile.write(f'{previousRecord_id},{previousRecord_b64}\n')
-                    formattedValueList = formatB64EncodedRecordForCSV(previousRecord_b64)
-                    csvOutput.writerow(formattedValueList)
-                    previousRecord_id = record_id
-                    previousRecord_b64 = record_b64
-                # finally
-                if duplicateRecordLines:
-                    finalMergedRecord = mergeRecords(duplicateRecordLines)
-                else:
-                    finalMergedRecord = previousRecord_b64
-                cleanedMergedFile.write(f'{previousRecord_id},{finalMergedRecord}\n')
-                formattedValueList = formatB64EncodedRecordForCSV(finalMergedRecord)
-                csvOutput.writerow(formattedValueList)
-            print(f'{typeName} Duplicates Merged: {dupsremoved}                             ')
-        # main
-        mergedFilename = f'{self.OutputPathFile}{typeName}_Proto.csv'
-        cleanedMergedFilename = f'{self.OutputPathFile}{typeName}_cleaned.csv'
-        cleanedMergedFilename_CSV = f'{self.OutputPathFile}{typeName}_pgCSV.csv'
-        if os.path.isfile(mergedFilename):
-            mergedFile = open(mergedFilename,'r', encoding='utf8')
-            cleanedMergedFile = open(cleanedMergedFilename,'w', encoding='utf8')
-            cleanedMergedFileCopy = open(cleanedMergedFilename_CSV,'w', encoding='utf8')
-            cleanMergedFile(mergedFile, cleanedMergedFile)
-            os.remove(mergedFilename)
-            os.rename(cleanedMergedFilename, mergedFilename)
-
-class placeAttrShared():
-    def __init__(self, record):
-        self.OriginID = record.pkey.origin.origin_id # = 3
-        self.Guid = record.pkey.id
-        self.name = HelperFunctions.null_check(record.name)
-        # because ProtoBuf Repeated Field does not support distinct rule, we remove any duplicates in list fields prior to submission here
-        self.name_alternatives = list(set(record.name_alternatives))
-        if self.name and self.name in self.name_alternatives:
-            self.name_alternatives.remove(self.name)
-        self.url = HelperFunctions.null_check(record.url)
-        self.geom_center = HelperFunctions.null_check(record.geom_center)
-        self.geom_area = HelperFunctions.null_check(record.geom_area)
-
-class userAttrShared():
-    def __init__(self, record):
-        self.OriginID = record.pkey.origin.origin_id
-        self.Guid = record.pkey.id
-        self.user_name = HelperFunctions.null_check(record.user_name)
-        self.user_fullname = HelperFunctions.null_check(record.user_fullname)
-        self.follows = HelperFunctions.null_check(record.follows)
-        self.followed = HelperFunctions.null_check(record.followed)
-        self.group_count = HelperFunctions.null_check(record.group_count)
-        self.biography = HelperFunctions.null_check(record.biography)
-        self.post_count = HelperFunctions.null_check(record.post_count)
-        self.url = HelperFunctions.null_check(record.url)
-        self.is_private = HelperFunctions.null_check(record.is_private)
-        self.is_available = HelperFunctions.null_check(record.is_available)
-        self.user_language = HelperFunctions.null_check(record.user_language.language_short)
-        self.user_location = HelperFunctions.null_check(record.user_location)
-        self.user_location_geom = HelperFunctions.null_check(record.user_location_geom)
-        self.liked_count = HelperFunctions.null_check(record.liked_count)
-        self.active_since = HelperFunctions.null_check_datetime(record.active_since)
-        self.profile_image_url = HelperFunctions.null_check(record.profile_image_url)
-        self.user_timezone = HelperFunctions.null_check(record.user_timezone)
-        self.user_utc_offset = HelperFunctions.null_check(record.user_utc_offset)
-        self.user_groups_member = list(set(record.user_groups_member))
-        self.user_groups_follows = list(set(record.user_groups_follows))
-
-class userGroupAttrShared():
-    def __init__(self, record):
-        self.OriginID = record.pkey.origin.origin_id
-        self.Guid = record.pkey.id
-        self.usergroup_name = HelperFunctions.null_check(record.usergroup_name)
-        self.usergroup_description = HelperFunctions.null_check(record.usergroup_description)
-        self.member_count = HelperFunctions.null_check(record.member_count)
-        self.usergroup_createdate = HelperFunctions.null_check_datetime(record.usergroup_createdate)
-        self.user_owner = HelperFunctions.null_check(record.user_owner_pkey.id)
-
-class postAttrShared():
-    def __init__(self, record):
-        self.OriginID = record.pkey.origin.origin_id
-        self.Guid = record.pkey.id
-        self.post_latlng = HelperFunctions.null_check(record.post_latlng)
-        self.place_guid = HelperFunctions.null_check(record.place_pkey.id)
-        self.city_guid = HelperFunctions.null_check(record.city_pkey.id)
-        self.country_guid = HelperFunctions.null_check(record.country_pkey.id)
-        self.post_geoaccuracy = HelperFunctions.null_check(lbsnPost().PostGeoaccuracy.Name(record.post_geoaccuracy)).lower()
-        self.user_guid = HelperFunctions.null_check(record.user_pkey.id)
-        self.post_create_date = HelperFunctions.null_check_datetime(record.post_create_date)
-        self.post_publish_date = HelperFunctions.null_check_datetime(record.post_publish_date)
-        self.post_body = HelperFunctions.null_check(record.post_body)
-        self.post_language = HelperFunctions.null_check(record.post_language.language_short)
-        self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
-        self.hashtags = list(set(record.hashtags))
-        self.emoji = list(set(record.emoji))
-        self.post_like_count = HelperFunctions.null_check(record.post_like_count)
-        self.post_comment_count = HelperFunctions.null_check(record.post_comment_count)
-        self.post_views_count = HelperFunctions.null_check(record.post_views_count)
-        self.post_title = HelperFunctions.null_check(record.post_title)
-        self.post_thumbnail_url = HelperFunctions.null_check(record.post_thumbnail_url)
-        self.post_url = HelperFunctions.null_check(record.post_url)
-        self.post_type = HelperFunctions.null_check(lbsnPost().PostType.Name(record.post_type)).lower()
-        self.post_filter = HelperFunctions.null_check(record.post_filter)
-        self.post_quote_count = HelperFunctions.null_check(record.post_quote_count)
-        self.post_share_count = HelperFunctions.null_check(record.post_share_count)
-        self.input_source = HelperFunctions.null_check(record.input_source)
-
-class postReactionAttrShared():
-    def __init__(self, record):
-        self.OriginID = record.pkey.origin.origin_id
-        self.Guid = record.pkey.id
-        self.reaction_latlng = HelperFunctions.null_check(record.reaction_latlng)
-        self.user_guid = HelperFunctions.null_check(record.user_pkey.id)
-        self.referencedPost = HelperFunctions.null_check(record.referencedPost_pkey.id)
-        self.referencedPostreaction = HelperFunctions.null_check(record.referencedPostreaction_pkey.id)
-        self.reaction_type = HelperFunctions.null_check(lbsnPostReaction().ReactionType.Name(record.reaction_type)).lower()
-        self.reaction_date = HelperFunctions.null_check_datetime(record.reaction_date)
-        self.reaction_content = HelperFunctions.null_check(record.reaction_content)
-        self.reaction_like_count = HelperFunctions.null_check(record.reaction_like_count)
-        self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
-
-class relationshipAttrShared():
-    def __init__(self, relationship):
-        self.OriginID = relationship.pkey.relation_to.origin.origin_id
-        self.Guid = relationship.pkey.relation_to.id
-        self.Guid_Rel = relationship.pkey.relation_from.id
-        self.relType = HelperFunctions.null_check(lbsnRelationship().RelationshipType.Name(relationship.relationship_type)).lower()

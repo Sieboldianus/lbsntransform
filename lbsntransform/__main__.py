@@ -45,7 +45,7 @@ def main():
     output = LBSNTransfer(dbCursor=cursor_output,
                           dbConnection=conn_output,
                           storeCSV=config.CSVOutput,
-                          CSVsuppressLinebreaks=config.CSVsuppressLinebreaks)
+                          SUPPRESS_LINEBREAKS=config.CSVsuppressLinebreaks)
     # load from local json/csv or from PostgresDB
     if config.LocalInput:
         loc_filelist = LoadData.read_local_files(config)
@@ -138,11 +138,8 @@ def main():
         output.storeLbsnRecordDicts(twitter_records)
         output.commitChanges()
 
-    if config.CSVOutput:
-        # merge all CSVs at end and remove duplicates
-        # this is necessary because Postgres can't import Duplicates with /copy
-        # and it is impossible to keep all records in RAM while processing input data
-        output.cleanCSVBatches()
+    # finalize all transactions (csv merge etc.)
+    output.finalize()
 
     # Close connections to DBs
     if not config.LocalInput:
