@@ -8,10 +8,10 @@ class BaseConfig():
         ## Set Default Config options here
         ## or define options as input args
         self.Origin = 3 # Defaults to 3: Twitter (1 - Instagram, 2 - Flickr, 3 - Twitter)
-        self.LocalInput = 0 # Read from File/CSV
+        self.LocalInput = False # Read from File/CSV
         self.LocalFileType = '*.json' # If localread, specify filetype (*.json, *.csv etc.)
         self.InputPath = None # optionally provide path to input folder, otherwise ./Input/ will be used
-        self.is_stacked_json = 0
+        self.is_stacked_json = False
         self.dbUser_Input = 'example-user-name'
         self.dbPassword_Input = 'example-user-password'
         self.dbServeradressInput = '222.22.222.22'
@@ -24,7 +24,8 @@ class BaseConfig():
         self.transferCount = 50000 #default:50k # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
         self.number_of_records_to_fetch = 10000
         self.transferReactions = 1
-        self.disableReactionPostReferencing = None # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
+        # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
+        self.disableReactionPostReferencing = False # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
         self.transferNotGeotagged = 1
         self.startWithdb_row_number = 0
         self.end_with_db_row_number = None
@@ -38,10 +39,10 @@ class BaseConfig():
     def parseArgs(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-sO', "--Origin", default=self.Origin)
-        parser.add_argument('-lI', "--LocalInput", default=self.LocalInput)
+        parser.add_argument('-lI', "--LocalInput", action='store_true', default=False)
         parser.add_argument('-lT', "--LocalFileType", default=self.LocalFileType)
         parser.add_argument('-iP', "--InputPath", default=self.LocalFileType)
-        parser.add_argument('-iS', "--isStackedJson", default=self.is_stacked_json)
+        parser.add_argument('-iS', "--isStackedJson", action='store_true', default=False)
         parser.add_argument('-pO', "--dbPassword_Output", default=self.dbPassword_Output)
         parser.add_argument('-uO', "--dbUser_Output", default=self.dbUser_Output)
         parser.add_argument('-aO', "--dbServeradressOutput", default=self.dbServeradressOutput)
@@ -54,7 +55,7 @@ class BaseConfig():
         parser.add_argument('-tC', "--transferCount", default=self.transferCount)
         parser.add_argument('-nR', "--numberOfRecordsToFetch", default=self.number_of_records_to_fetch)
         parser.add_argument('-tR', "--transferReactions", default=self.transferReactions)
-        parser.add_argument('-rR', "--disableReactionPostReferencing", default=self.disableReactionPostReferencing)
+        parser.add_argument('-rR', "--disableReactionPostReferencing", action='store_true', default=False)
         parser.add_argument('-tG', "--transferNotGeotagged", default=self.transferNotGeotagged)
         parser.add_argument('-rS', "--startWithDBRowNumber", default=self.startWithdb_row_number)
         parser.add_argument('-rE', "--endWithDBRowNumber", default=self.end_with_db_row_number)
@@ -66,14 +67,11 @@ class BaseConfig():
         parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
 
         args = parser.parse_args()
-        if args.LocalInput and int(args.LocalInput) == 1:
+        if args.LocalInput:
             self.LocalInput = True
             self.LocalFileType = args.LocalFileType
             if args.isStackedJson:
-                if int(args.isStackedJson) == 1:
-                    self.is_stacked_json = True
-                else:
-                    self.is_stacked_json = False
+                self.is_stacked_json = True
             if not self.InputPath:
                 self.InputPath = f'{os.getcwd()}\\01_Input\\'
                 print(f'Using Path: {self.InputPath}')
@@ -102,11 +100,8 @@ class BaseConfig():
         if args.numberOfRecordsToFetch:
             self.number_of_records_to_fetch = int(args.numberOfRecordsToFetch)
         self.transferReactions = args.transferReactions
-        if args.disableReactionPostReferencing and int(args.disableReactionPostReferencing) == 1:
-        # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
+        if args.disableReactionPostReferencing:
             self.disableReactionPostReferencing = True
-        else:
-            self.disableReactionPostReferencing = False
         self.transferNotGeotagged = args.transferNotGeotagged
         if args.startWithDBRowNumber:
             self.startWithdb_row_number = int(args.startWithDBRowNumber)

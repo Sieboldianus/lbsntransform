@@ -25,7 +25,7 @@ pip install lbsntransform
 e.g. with the following command line args
 
 ```shell
-lbsntransform.exe --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
+lbsntransform.exe --Origin 3 --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
 .. the the tool will: 
@@ -59,9 +59,9 @@ Python's site-packages folder with:
 python setup.py develop
 ```
 
-Now you can run tool in your shell with:  
+Now you can run tool in your shell with (Origin 3 = Twitter):  
 ```shell
-lbsntransform --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
+lbsntransform --Origin 3 --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
 ..or import the package to other python projects with:  
