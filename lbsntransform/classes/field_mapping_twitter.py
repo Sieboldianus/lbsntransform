@@ -295,7 +295,7 @@ class FieldMappingTwitter():
             postRecord.post_type = HelperFunctions.assignMediaPostType(mediaJson)
         else:
             postRecord.post_type = lbsnPost.TEXT
-        postRecord.emoji.extend(HelperFunctions.extract_emojis(postRecord.post_body))
+        postRecord.emoji.extend(HelperFunctions.extract_emoji(postRecord.post_body))
         # because standard print statement will produce escaped text, we can use protobuf text_format to give us a human friendly version of the text
         # log.debug(f'Post record: {text_format.MessageToString(postRecord,as_utf8=True)}')
         # log.debug(f'Post record: {postRecord}')
