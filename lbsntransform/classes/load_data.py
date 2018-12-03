@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from .db_connection import DBConnection
-#from .helperFunctions import lbsnRecordDicts as lbsnRecordDicts
+from .helper_functions import HelperFunctions
+from glob import glob
+#import json
+from json import loads as json_loads, decoder as json_decoder
+#from json import decoder, JSONDecoder, JSONDecodeError
 
 class LoadData():
     def loop_input_records(json_records, transferlimit, twitter_records, end_with_db_row_number, is_local_input, input_type):
@@ -68,13 +72,13 @@ class LoadData():
             # {json1}{json2} etc.
             if is_stacked_json:
                 try:
-                    for obj in helperFunctions.decode_stacked(file.read()):
+                    for obj in HelperFunctions.decode_stacked(file.read()):
                         records.append(obj)
-                except json.decoder.JSONDecodeError:
+                except json_decoder.JSONDecodeError:
                     pass
             else:
                 # normal json nesting, e.g.  {{record1},{record2}}
-                records = json.loads(file.read())
+                records = json_loads(file.read())
         if records:
             return records
         return None

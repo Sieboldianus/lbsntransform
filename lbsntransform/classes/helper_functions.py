@@ -157,6 +157,7 @@ class HelperFunctions():
         geom = geom.wkb_hex
         return geom
 
+    @staticmethod
     def decode_stacked(document, pos=0, decoder=JSONDecoder()):
         NOT_WHITESPACE = re.compile(r'[^\s]')
         while True:

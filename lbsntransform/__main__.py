@@ -38,9 +38,9 @@ def main():
     config.parseArgs()
     sys.stdout.flush()
     log = set_logger()
-    # load import mapper
+    # load import mapper depending on lbsn origin (e.g. 1 = Instagram, 2 = Flickr, 3 = Twitter)
     importer = HelperFunctions.load_importer_mapping_module(config.Origin)
-    # establish output connection (will return none of no config)
+    # establish output connection
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
     output = LBSNTransfer(dbCursor=cursor_output,
                           dbConnection=conn_output,
@@ -67,12 +67,12 @@ def main():
 
     finished = False
     # initialize field mapping structure
-    twitter_records = importer(config.disableReactionPostReferencing,
-                               geocode_dict,
-                               config.MapRelations)
+    import_mapper = importer(config.disableReactionPostReferencing,
+                             geocode_dict,
+                             config.MapRelations)
 
     # Manually add entries that need submission prior to parsing data
-    # add_bundestag_group_example(twitter_records)
+    # add_bundestag_group_example(import_mapper)
 
     how_long = TimeMonitor()
     # loop input DB until transferlimit reached or no more rows are returned
@@ -104,24 +104,24 @@ def main():
             continue_number = records[-1][0] #last returned db_row_number
         processed_count, finished = LoadData.loop_input_records(records,
                                                                 max_records,
-                                                                twitter_records,
+                                                                import_mapper,
                                                                 config.end_with_db_row_number,
                                                                 config.LocalInput,
                                                                 config.input_type)
         processed_records += processed_count
         processed_total += processed_count
         print(f'{processed_total} input records processed (up to {continue_number}). '
-              f'Count per type: {twitter_records.lbsnRecords.getTypeCounts()}records.', end='\n')
+              f'Count per type: {import_mapper.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not start_number or processed_records >= config.transferCount or finished:
             sys.stdout.flush()
-            print(f'Storing {twitter_records.lbsnRecords.CountGlob} records ..')
-            output.storeLbsnRecordDicts(twitter_records)
+            print(f'Storing {import_mapper.lbsnRecords.CountGlob} records ..')
+            output.storeLbsnRecordDicts(import_mapper)
             output.commitChanges()
             processed_records = 0
             ## create a new empty dict of records
-            twitter_records = importer(config.disableReactionPostReferencing,
+            import_mapper = importer(config.disableReactionPostReferencing,
                                        geocode_dict,
                                        config.MapRelations)
         # remember the first processed DBRow ID
@@ -133,9 +133,9 @@ def main():
 
     # submit remaining
     # ??
-    if twitter_records.lbsnRecords.CountGlob > 0:
-        print(f'Transferring remaining {twitter_records.lbsnRecords.CountGlob} to db..')
-        output.storeLbsnRecordDicts(twitter_records)
+    if import_mapper.lbsnRecords.CountGlob > 0:
+        print(f'Transferring remaining {import_mapper.lbsnRecords.CountGlob} to db..')
+        output.storeLbsnRecordDicts(import_mapper)
         output.commitChanges()
 
     # finalize all transactions (csv merge etc.)
