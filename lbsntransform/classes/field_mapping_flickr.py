@@ -25,6 +25,58 @@ class FieldMappingFlickr():
         #self.mapFullRelations = mapFullRelations
         #self.geocodes = geocodes
 
+    def parse_csv_record(self, record):
+        if len(photo) < 12 or not photo[0].isdigit():
+            #skip
+            skippedCount += 1
+            return
+        else:
+            photo_guid = photo[5] #photoID
+            photo_userid = photo[7] #userid
+            #if photo_userid in skip_userids:
+            #    skippedCount += 1
+            #    continue
+            photo_owner = photo[6] ##!!!
+            photo_owner_url = "http://www.flickr.com/photos/" + photo_userid + "/"
+            photo_uploadDate = datetime.datetime.strptime(photo[9],'%m/%d/%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')  # format datetime as string
+            photo_dateTaken = datetime.datetime.strptime(photo[8]  ,'%m/%d/%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+            photo_idDate = photo_dateTaken #use date taken date as sorting ID
+            photo_caption = None
+            photo_url = "http://flickr.com/photo.gne?id=" + photo_guid
+            photo_title = photo[3].replace(";",",")
+            photo_emoji_list = extract_emojis(photo_title)
+            photo_mediatype = None
+            photo_tags_list = list(filter(None, photo[11].split(";")))
+            photo_thumbnail_url = photo[4]
+            if not photo[1] == "" and not photo[2] == "":
+                try:
+                    photo_latitude = Decimal(photo[1])
+                    photo_longitude = Decimal(photo[2])
+                except:
+                    print("Send to NULL island A " + str(null_island) + ": " + str(ntpath.basename(file_name)) + " Coordinates: " + str(photo[1]) + "," + str(photo[2]))
+                    null_island += 1
+                    photo_latitude,photo_longitude = 0,0
+            else:
+                print("Send to NULL island B " + str(null_island) + ": " + str(ntpath.basename(file_name)) + " Coordinates: " + str(photo[1]) + "," + str(photo[2]))
+                null_island += 1
+                photo_latitude,photo_longitude = 0,0
+            if (photo_latitude == 0 and photo_longitude == 0) or photo_latitude > 90 or photo_latitude < -90 or photo_longitude > 180 or photo_longitude < -180:
+                print("Send to NULL island C " + str(null_island) + ": "  + str(ntpath.basename(file_name)) + " Coordinates: " + str(photo[1]) + "," + str(photo[2]))
+                null_island += 1
+                photo_latitude,photo_longitude = 0,0
+            photo_latlng = "POINT(%s %s)" % (photo_longitude,photo_latitude) #WKTconversion
+            #photo_latlng = "ST_GeomFromText(POINT(%s,%s),4326)" % (photo_longitude,photo_latitude)
+            #photo_mTags = "" #not used currently but available
+            photo_views = int(photo[10]) if photo[10].isdigit() else None
+            photo_geoaccuracy = "latlng"
+            photo_locID = None #str(photo_latitude) + ':' + str(photo_longitude) #create loc_id from lat/lng
+            photo_locUrl = None
+            photo_filter = None
+            photo_comments = None
+            photo_locName = None
+            photo_likes = None
+            photo_shortcode = None
+
     #def parseJsonRecord(self, jsonStringDict, input_type = None):
     #    # decide if main object is post or user json
     #    if input_type and input_type in ('friendslist', 'followerslist'):
