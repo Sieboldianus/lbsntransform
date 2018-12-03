@@ -21,20 +21,23 @@ from shapely import geos, wkb, wkt
 geos.WKBWriter.defaults['include_srid'] = True
 
 class HelperFunctions():
-
+    @staticmethod
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
 
+    @staticmethod
     def cleanhtml(raw_html):
         cleanr = re.compile('<.*?>')
         cleantext = re.sub(cleanr, '', raw_html)
         return cleantext
 
-    def extract_emojis(str):
+    @staticmethod
+    def extract_emoji(str):
         #str = str.decode('utf-32').encode('utf-32', 'surrogatepass')
         #return list(c for c in str if c in emoji.UNICODE_EMOJI)
         return list(c for c in str if c in emoji.UNICODE_EMOJI)
 
+    @staticmethod
     def getRectangleBounds(points):
         lats = []
         lngs = []
@@ -47,6 +50,7 @@ class HelperFunctions():
         limXMax = max(lngs)
         return limYMin,limYMax,limXMin,limXMax
 
+    @staticmethod
     def createNewLBSNRecord_with_id(record,id,origin):
             # initializes new record with composite ID
             c_Key = CompositeKey()
@@ -55,6 +59,7 @@ class HelperFunctions():
             record.pkey.CopyFrom(c_Key)
             return record
 
+    @staticmethod
     def createNewLBSNRelationship_with_id(lbsnRelationship,relation_to_id, relation_from_id, relation_origin):
             # initializes new relationship with 2 composite IDs for one origin
             c_Key_to = CompositeKey()
@@ -69,6 +74,7 @@ class HelperFunctions():
             lbsnRelationship.pkey.CopyFrom(r_Key)
             return lbsnRelationship
 
+    @staticmethod
     def isPostReaction(jsonString):
         if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
             # The retweeted field will return true if a tweet _got_ retweeted
@@ -77,6 +83,7 @@ class HelperFunctions():
         else:
             return False
 
+    @staticmethod
     def assignMediaPostType(jsonMediaString):
         # if post, get type of first entity
         typeString = jsonMediaString[0].get('type')
@@ -93,6 +100,7 @@ class HelperFunctions():
             log.debug(f'Other Post type detected: {jsonMediaString}')
         return post_type
 
+    @staticmethod
     def parseJSONDateStringToProtoBuf(jsonDateString):
         # Parse String -Timestamp Format found in Twitter json
         dateTimeRecord = datetime.datetime.strptime(jsonDateString,'%a %b %d %H:%M:%S +0000 %Y')
@@ -101,6 +109,7 @@ class HelperFunctions():
         protobufTimestampRecord.FromDatetime(dateTimeRecord)
         return protobufTimestampRecord
 
+    @staticmethod
     def getMentionedUsers(userMentions_jsonString,origin):
         mentionedUsersList = []
         for userMention in userMentions_jsonString:    #iterate over the list
@@ -110,6 +119,7 @@ class HelperFunctions():
             mentionedUsersList.append(refUserRecord)
         return mentionedUsersList
 
+    @staticmethod
     def substituteReferencedUser(mainPost, origin, log):
         # Look for mentioned userRecords
         refUser_pkey = None
@@ -124,6 +134,7 @@ class HelperFunctions():
                 input("Press Enter to continue... (post will be saved without userid)")
         return refUser_pkey
 
+    @staticmethod
     def null_check(recordAttr):
         if not recordAttr:
             return None
@@ -133,6 +144,7 @@ class HelperFunctions():
                 recordAttr = HelperFunctions.clean_null_bytes_from_str(recordAttr)
             return recordAttr
 
+    @staticmethod
     def null_check_datetime(recordAttr):
         if not recordAttr:
             return None
@@ -149,6 +161,7 @@ class HelperFunctions():
     #    else:
     #        return "%s"
 
+    @staticmethod
     def returnEWKBFromGeoTEXT(text):
         if not text:
             return None
@@ -177,6 +190,7 @@ class HelperFunctions():
         str_without_null_byte = str.replace('\x00','')
         return str_without_null_byte
 
+    @staticmethod
     def merge_existing_records(oldrecord, newrecord):
         # Basic Compare function for GUIDS
         # First check if length of both ProtoBuf Messages are the same
@@ -187,6 +201,7 @@ class HelperFunctions():
             oldrecord.MergeFrom(newrecord)
             #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)
 
+    @staticmethod
     def load_importer_mapping_module(origin):
         """ Switch import module based on origin input
             1 - Instagram, 2 - Flickr, 3 - Twitter
