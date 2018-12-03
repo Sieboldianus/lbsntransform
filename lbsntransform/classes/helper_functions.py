@@ -196,6 +196,22 @@ class HelperFunctions():
             from .field_mapping_twitter import FieldMappingTwitter as importer
         return importer
 
+    @staticmethod
+    def dict_type_switcher(desc_name):
+        """ Create protoBuf messages by name
+        """
+        dict_switcher = {
+            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
+            lbsnCity().DESCRIPTOR.name: lbsnCity(),
+            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
+            lbsnUser().DESCRIPTOR.name: lbsnUser(),
+            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
+            lbsnPost().DESCRIPTOR.name: lbsnPost(),
+            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
+            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
+        }
+        return dict_switcher.get(desc_name)
+
 class LBSNRecordDicts():
     def __init__(self):
         self.lbsnCountryDict = dict()
@@ -284,21 +300,6 @@ class LBSNRecordDicts():
             lbsnUserGroup().DESCRIPTOR.name: self.lbsnUserGroupDict
         }
         return dictSwitcher.get(record.DESCRIPTOR.name)
-
-    def dict_type_switcher(self, desc_name):
-        """ Create protoBuf messages by name
-        """
-        dict_switcher = {
-            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
-            lbsnCity().DESCRIPTOR.name: lbsnCity(),
-            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
-            lbsnUser().DESCRIPTOR.name: lbsnUser(),
-            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
-            lbsnPost().DESCRIPTOR.name: lbsnPost(),
-            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
-            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
-        }
-        return dict_switcher.get(desc_name)
 
     def AddRecordToDict(self,newrecord):
         dict = self.dictSelector(newrecord)

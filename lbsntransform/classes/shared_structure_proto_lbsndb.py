@@ -4,6 +4,8 @@ from lbsnstructure.lbsnstructure_pb2 import *
 from .helper_functions import HelperFunctions
 
 class ProtoLBSM_db_Mapping():
+
+    @staticmethod
     def get_header_for_type(desc_name):
         """ Will return lbsn-db headers for proto buf record types
         """

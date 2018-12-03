@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import psycopg2
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
 from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
-#from lbsn2structure import *
 from lbsnstructure.lbsnstructure_pb2 import *
 from google.protobuf.timestamp_pb2 import Timestamp
 import logging
@@ -12,29 +10,41 @@ from sys import exit
 import traceback
 import os
 import sys
+from heapq import merge as heapq_merge
+from contextlib import ExitStack
+import base64
 # for debugging only:
 from google.protobuf import text_format
-import re
+#import re
 import csv
 from glob import glob
-import shutil
 
-from heapq import merge as heapq_merge
-from operator import itemgetter
-from contextlib import ExitStack
-
-from google.protobuf.internal import encoder
-from google.protobuf.internal.decoder import _DecodeVarint32
-from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-import base64
 
 class LBSNcsv():
+    """Class to convert and store protobuf records to CSV file(s).
+
+    Because the amount of data might be quite big, CSVs are stored incrementally first.
+    After no new data arrives, the tool will merge all single CSV files and eliminate duplicates.
+    This is done using heapq_merge:
+        - individual files are first sorted based on primary key
+        - lines beginning with the same primry key are merged (each field is compared)
+    Afterwards, 2 file types are generated:
+        a) archive (ProtoBuf)
+        b) CSV_copy import (postgres)
+
+    Attributes:
+        output_path_file    Where the CSVs will be stored. Note: check for existing files!
+        db_mapping          Reference to access functions from ProtoLBSM_db_Mapping class
+        store_csv_part      Current Number of CSV file parts
+        SUPPRESS_LINEBREAKS Usually, linebreaks will not be a problem, linebreaks are nonetheless surpressed.
+    """
     def __init__(self, SUPPRESS_LINEBREAKS = True):
         self.output_path_file = f'{os.getcwd()}\\02_Output\\'
         self.db_mapping = ProtoLBSM_db_Mapping()
+        self.store_csv_part = 0
+        self.SUPPRESS_LINEBREAKS = SUPPRESS_LINEBREAKS
         if not os.path.exists(self.output_path_file):
             os.makedirs(self.output_path_file)
-        self.store_csv_part = 0
 
     def store_append_batch_to_csv(self, records, round_nr, type_name, pg_copy_format = False):
         """ Takes proto buf lbsn record dict and appends all records
@@ -83,8 +93,9 @@ class LBSNcsv():
                     print(f'Cleaning & merging output files..{x}/{len(batched_records)}', end='\r')
                     self.merge_files(filelist,type_name)
                 else:
+                    #sec = input(f'only one File. {filelist}\n')
                     # no need to merge files if only one round
-                    new_filename = filelist[0].replace('_001','001Proto')
+                    new_filename = filelist[0].replace('_001','_Proto')
                     if os.path.isfile(new_filename):
                         os.remove(new_filename)
                     if os.path.isfile(filelist[0]):
@@ -142,16 +153,16 @@ class LBSNcsv():
 
             This Mainloop uses procedures below.
         """
-        mergedFilename = f'{self.output_path_file}{type_name}_Proto.csv'
-        cleanedMergedFilename = f'{self.output_path_file}{type_name}_cleaned.csv'
-        cleanedMergedFilename_CSV = f'{self.output_path_file}{type_name}_pgCSV.csv'
-        if os.path.isfile(mergedFilename):
-            merged_file = open(mergedFilename,'r', encoding='utf8')
-            cleaned_merged_file = open(cleanedMergedFilename,'w', encoding='utf8')
-            cleaned_merged_file_copy = open(cleanedMergedFilename_CSV,'w', encoding='utf8')
-            cleanMergedFile(merged_file, cleaned_merged_file)
-            os.remove(mergedFilename)
-            os.rename(cleanedMergedFilename, mergedFilename)
+        merged_filename = f'{self.output_path_file}{type_name}_Proto.csv'
+        cleaned_merged_filename = f'{self.output_path_file}{type_name}_cleaned.csv'
+        cleaned_merged_filename_csv = f'{self.output_path_file}{type_name}_pgCSV.csv'
+        if os.path.isfile(merged_filename):
+            merged_file = open(merged_filename,'r', encoding='utf8')
+            cleaned_merged_file = open(cleaned_merged_filename,'w', encoding='utf8')
+            cleaned_merged_file_copy = open(cleaned_merged_filename_csv,'w', encoding='utf8')
+            self.clean_merged_file(merged_file, cleaned_merged_file, cleaned_merged_file_copy, type_name)
+            os.remove(merged_filename)
+            os.rename(cleaned_merged_filename, merged_filename)
 
     def get_record_id_from_base64_encoded_string(line):
         """ Gets record ID from base 64 encoded string
@@ -160,14 +171,14 @@ class LBSNcsv():
         record = get_record_from_base64_encoded_string(line)
         return record.pkey.id
 
-    def get_record_from_base64_encoded_string(line, type_name):
+    def get_record_from_base64_encoded_string(self, line, type_name):
         """ Gets ProtoBuf record from base 64 encoded string.
         """
         record = self.create_proto_by_descriptor_name(type_name)
         record.ParseFromString(base64.b64decode(line))#.strip("\n"))
         return record
 
-    def merge_records(duplicate_record_lines, type_name):
+    def merge_records(self, duplicate_record_lines, type_name):
         """ Will merge multiple proto buf records to one,
             eliminating duplicates and merging information.
         """
@@ -191,13 +202,13 @@ class LBSNcsv():
             merged_record = duplicate_record_lines[0]
         return merged_record
 
-    def format_b64_encoded_record_for_csv(record_b64, type_name):
+    def format_b64_encoded_record_for_csv(self, record_b64, type_name):
         """ Will convert protobuf base 64 encoded (prepared) records and
             convert to CSV formatted list of lines.
         """
         record = self.get_record_from_base64_encoded_string(record_b64, type_name)
         # convert Protobuf to Value list
-        prepared_record = ProtoLBSM_db_Mapping.func_prepare_selector(record)
+        prepared_record = self.db_mapping.func_prepare_selector(record)
         formatted_value_list = []
         for value in prepared_record:
             # CSV Writer can't produce CSV that can be directly read by Postgres with /Copy
@@ -210,7 +221,7 @@ class LBSNcsv():
             formatted_value_list.append(value)
         return formatted_value_list
 
-    def clean_merged_file(merged_file, cleaned_merged_file, type_name):
+    def clean_merged_file(self, merged_file, cleaned_merged_file, cleaned_merged_file_copy, type_name):
         """ Will merge files and remove duplicates records.
         """
         dupsremoved = 0
@@ -253,4 +264,4 @@ class LBSNcsv():
             cleaned_merged_file.write(f'{previous_record_id},{final_merged_record}\n')
             formatted_value_list = self.format_b64_encoded_record_for_csv(final_merged_record, type_name)
             csvOutput.writerow(formatted_value_list)
-        print(f'{typeName} Duplicates Merged: {dupsremoved}                             ')
+        print(f'{type_name} Duplicates Merged: {dupsremoved}                             ')

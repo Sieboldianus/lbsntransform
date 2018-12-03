@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import psycopg2
+from psycopg2 import sql
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
 from .store_csv import LBSNcsv
 from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
-#from lbsn2structure import *
 from lbsnstructure.lbsnstructure_pb2 import *
 from google.protobuf.timestamp_pb2 import Timestamp
 import logging
@@ -15,16 +15,14 @@ import os
 import sys
 # for debugging only:
 from google.protobuf import text_format
-import re
-from psycopg2 import sql
-import csv
+#import re
 from glob import glob
-import shutil
+#import shutil
 
-from google.protobuf.internal import encoder
-from google.protobuf.internal.decoder import _DecodeVarint32
+#from google.protobuf.internal import encoder
+#from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-import base64
+#import base64
 
 class LBSNTransfer():
     def __init__(self, dbCursor = None,
