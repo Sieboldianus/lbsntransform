@@ -1,6 +1,6 @@
 # LBSNTRANSFORM
 
-A python package that uses the [common lbsn data structure concept](https://gitlab.vgiscience.de/lbsn/concept) (ProtoBuf) to import, transform and export Social Media data such as Twitter.
+A python package that uses the [common lbsn data structure concept](https://gitlab.vgiscience.de/lbsn/concept) (ProtoBuf) to import, transform and export Social Media data such as Twitter and Flickr.
 
 ## Description
 
@@ -25,7 +25,7 @@ pip install lbsntransform
 e.g. with the following command line args
 
 ```shell
-lbsntransform.exe --Origin 3 --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
+lbsntransform.exe --Origin 3 --LocalInput --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
 .. the the tool will: 
@@ -45,8 +45,8 @@ For a full list of possible input args and descriptions see [config.py](/lbsntra
 
 ## Contributing
 
-Field mapping from and to ProtoBuffers from different Social Media sites is provided in [field_mapping.py](/lbsntransform/classes/field_mapping.py).  
-As an example, a mapping of Twitter json structure is given (see class `FieldMappingTwitter`). This class may be used to extend  
+Field mapping from and to ProtoBuffers from different Social Media sites is provided in classes [field_mapping_xxx.py](/lbsntransform/classes/field_mapping_twitter.py).  
+As an example, mapping of the Twitter json structure is given (see class `FieldMappingTwitter`). This class may be used to extend  
 functionality to cover other networks such as Flickr or Foursquare.  
 
 For development & testing, make a local clone of this repository  
@@ -61,7 +61,7 @@ python setup.py develop
 
 Now you can run tool in your shell with (Origin 3 = Twitter):  
 ```shell
-lbsntransform --Origin 3 --LocalInput 1 --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
+lbsntransform --Origin 3 --LocalInput --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
 ..or import the package to other python projects with:  
@@ -72,7 +72,7 @@ import lbsntransform
 ## Versioning and Changelog, and Download
 
 For the versions available, see the [tags on this repository](/../tags). 
-Latest version is [0.1.4](/../tags/v0.1.4). The latest windows build is available for download [here](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
+Latest version is [0.1.5](/../tags/v0.1.5). The latest windows build that is available for download is [0.1.4](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
 For all other systems use cx_freeze to build executable:
 ```shell
 python cx_setup.py build
