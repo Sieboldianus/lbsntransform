@@ -83,6 +83,30 @@ class LoadData():
             return records
         return None
 
+    def fetch_csv_data_from_file(loc_filelist, start_file_id=0, is_stacked_json=False):
+        """Read json entries from file.
+
+        Typical form is [{json1},{json2}], if is_stacked_json is True:
+        will process stacked jsons in the form of {json1}{json2}
+        """
+        records = []
+        loc_file = loc_filelist[start_file_id]
+        with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
+            # Stacked JSON is a simple file with many concatenated jsons, e.g.
+            # {json1}{json2} etc.
+            if is_stacked_json:
+                try:
+                    for obj in HelperFunctions.decode_stacked(file.read()):
+                        records.append(obj)
+                except json_decoder.JSONDecodeError:
+                    pass
+            else:
+                # normal json nesting, e.g.  {{record1},{record2}}
+                records = json_loads(file.read())
+        if records:
+            return records
+        return None
+
     def add_bundestag_group_example(twitter_records):
         """ Example: Manually add Group that applies to all entries.
             To use, must uncomment fieldMapping/extractUser
@@ -127,7 +151,13 @@ class LoadData():
     def read_local_files(config):
         """Read Local Files according to config parameters and returns list of file-paths"""
         filepath = f'{config.InputPath}{config.LocalFileType}'
-        loc_filelist = glob(filepath)
+        if config.recursiveLoad:
+            excludefolderlist = ["01_DataSetHistory","02_UserData","03_ClippedData","04_MapVis"]
+            excludestartswithfile = ["log","settings","GridCoordinates"]
+            scanrec(filepath,excludefolderlist=excludefolderlist,excludestartswithfile=excludestartswithfile)
+        else:
+            loc_filelist = glob(filepath)
+
         input_count = (len(loc_filelist))
         if input_count == 0:
             sys.exit("No location files found.")
@@ -140,3 +170,31 @@ class LoadData():
         locationsgeocode_dict.load_geocodelist(geo_config)
         geocode_dict = locationsgeocode_dict.geocode_dict
         return geocode_dict
+
+    @staticmethod
+    def scanrec(root, subdirlimit=2, format="txt", excludefolderlist=[], excludestartswithfile=[]):
+        """Recursively scan subdir for datafiles"""
+        rval = []
+        def do_scan(start_dir,output,depth=0):
+            for f in os.listdir(start_dir):
+                ff = os.path.join(start_dir,f)
+                if os.path.isdir(ff):
+                    if depth<subdirlimit:
+                        efound = False
+                        for entry in excludefolderlist: #check for excludefolders
+                            if entry in ff:
+                                efound = True
+                                break
+                        if efound == False:
+                            do_scan(ff,output,depth+1)
+                else:
+                    if ff.endswith(format):
+                        efound = False
+                        for entry in excludestartswithfile:
+                            if ntpath.basename(ff).startswith(entry):
+                                efound = True
+                                break
+                        if efound == False:
+                            output.append(ff)
+        do_scan(root,rval,0)
+        return rval

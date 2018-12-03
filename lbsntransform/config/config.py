@@ -35,6 +35,7 @@ class BaseConfig():
         self.MapRelations = False # Set to true to map full relations, e.g. many-to-many relationships such as user_follows, user_friend, user_mentions etc. are mapped in a separate table
         self.CSVOutput = False # Set to True to Output all Submit values to CSV
         self.CSVsuppressLinebreaks = True # Set to False will not remove intext-linebreaks (\r or \n) in output CSVs
+        self.recursiveLoad = False
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
@@ -65,6 +66,7 @@ class BaseConfig():
         parser.add_argument('-mR', "--mapFullRelations", default=self.MapRelations)
         parser.add_argument('-CSV', "--CSVOutput", action='store_true', default=self.CSVOutput)
         parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
+        parser.add_argument('-rL', "--recursiveLoad", action='store_true', default=False)
 
         args = parser.parse_args()
         if args.LocalInput:
@@ -116,3 +118,5 @@ class BaseConfig():
             self.CSVOutput = True
         if args.CSVallowLinebreaks:
             self.CSVsuppressLinebreaks = False
+        if args.recursiveLoad:
+            self.recursiveLoad = True

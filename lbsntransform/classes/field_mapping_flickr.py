@@ -21,113 +21,113 @@ class FieldMappingFlickr():
         self.origin = origin
         self.lbsnRecords = LBSNRecordDicts() #this is where all the data will be stored
         self.log = logging.getLogger('__main__')#logging.getLogger()
-        self.disableReactionPostReferencing = disableReactionPostReferencing
-        self.mapFullRelations = mapFullRelations
-        self.geocodes = geocodes
+        #self.disableReactionPostReferencing = disableReactionPostReferencing
+        #self.mapFullRelations = mapFullRelations
+        #self.geocodes = geocodes
 
-    def parseJsonRecord(self, jsonStringDict, input_type = None):
-        # decide if main object is post or user json
-        if input_type and input_type in ('friendslist', 'followerslist'):
-            for user, relatedUserList in jsonStringDict.items():
-                userRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(user),self.origin)
-                self.lbsnRecords.AddRecordsToDict(userRecord)
-                for relatedUser in relatedUserList:
-                    relatedRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
-                    self.lbsnRecords.AddRecordsToDict(relatedRecord)
-                    # note the switch of order here, direction is important for 'isConnected', and the different list each give us a different view on this relationship
-                    if input_type == 'friendslist':
-                        relationshipRecord = HelperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), userRecord.pkey.id, relatedRecord.pkey.id, self.origin)
-                    elif input_type == 'followerslist':
-                        relationshipRecord = HelperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), relatedRecord.pkey.id, userRecord.pkey.id, self.origin)
-                    relationshipRecord.relationship_type = lbsnRelationship.isCONNECTED
-                    self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
-        elif (input_type and input_type == 'profile') or 'screen_name' in jsonStringDict:
-            # user
-            userRecord = self.extractUser(jsonStringDict)
-            self.lbsnRecords.AddRecordsToDict(userRecord)
-            #sys.exit(f'Post record: {text_format.MessageToString(userRecord,as_utf8=True)}')
-            if not userRecord.is_private:
-                # if user profile is private, we cannot access posts
-                userStatus = None
-                if 'status' in jsonStringDict:
-                    userStatus = jsonStringDict.get('status')
-                elif 'quoted_status' in jsonStringDict:
-                    userStatus = jsonStringDict.get('quoted_status')
-                elif 'retweeted_status' in jsonStringDict:
-                    userStatus = jsonStringDict.get('retweeted_status')
-                # in case user status is available
-                if userStatus:
-                    self.parseJsonPost(userStatus, userPkey = userRecord.pkey)
-        else:
-            self.parseJsonPost(jsonStringDict)
+    #def parseJsonRecord(self, jsonStringDict, input_type = None):
+    #    # decide if main object is post or user json
+    #    if input_type and input_type in ('friendslist', 'followerslist'):
+    #        for user, relatedUserList in jsonStringDict.items():
+    #            userRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(user),self.origin)
+    #            self.lbsnRecords.AddRecordsToDict(userRecord)
+    #            for relatedUser in relatedUserList:
+    #                relatedRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
+    #                self.lbsnRecords.AddRecordsToDict(relatedRecord)
+    #                # note the switch of order here, direction is important for 'isConnected', and the different list each give us a different view on this relationship
+    #                if input_type == 'friendslist':
+    #                    relationshipRecord = HelperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), userRecord.pkey.id, relatedRecord.pkey.id, self.origin)
+    #                elif input_type == 'followerslist':
+    #                    relationshipRecord = HelperFunctions.createNewLBSNRelationship_with_id(lbsnRelationship(), relatedRecord.pkey.id, userRecord.pkey.id, self.origin)
+    #                relationshipRecord.relationship_type = lbsnRelationship.isCONNECTED
+    #                self.lbsnRecords.AddRelationshipToDict(relationshipRecord)
+    #    elif (input_type and input_type == 'profile') or 'screen_name' in jsonStringDict:
+    #        # user
+    #        userRecord = self.extractUser(jsonStringDict)
+    #        self.lbsnRecords.AddRecordsToDict(userRecord)
+    #        #sys.exit(f'Post record: {text_format.MessageToString(userRecord,as_utf8=True)}')
+    #        if not userRecord.is_private:
+    #            # if user profile is private, we cannot access posts
+    #            userStatus = None
+    #            if 'status' in jsonStringDict:
+    #                userStatus = jsonStringDict.get('status')
+    #            elif 'quoted_status' in jsonStringDict:
+    #                userStatus = jsonStringDict.get('quoted_status')
+    #            elif 'retweeted_status' in jsonStringDict:
+    #                userStatus = jsonStringDict.get('retweeted_status')
+    #            # in case user status is available
+    #            if userStatus:
+    #                self.parseJsonPost(userStatus, userPkey = userRecord.pkey)
+    #    else:
+    #        self.parseJsonPost(jsonStringDict)
 
-    def parseJsonPost(self, jsonStringDict, userPkey = None):
-        # Post
-        # 1. Extract all relevant Post Attributes
-        #    1.a extract post coordinates
-        #    1.b extract user attributes
-        #    1.c extract place attributes (poi, city, neigborhood, admin, country)
-        #    1.d extract extract extended tweet, if available, and extended entities, if available
-        # 2. decide if post is reaction (reply, quote, share, see https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/entities-object.html)
-        # 3. if post is reaction, copy reduced reaction attributes from extracted lbsnPost
-        # 4. add post/reaction to recordDict
-        # 5. process all referenced posts
-        #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
-        #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
-        # process tweet-post object
-        postRecord = self.extractPost(jsonStringDict, userPkey)
-        # Assignment Step
-        # check if post is reaction to other post
-        # reaction means: reduced structure compared to post;
-        # reactions often include the complete original post, therefore nested processing necessary
-        if HelperFunctions.isPostReaction(jsonStringDict):
-            postReactionRecord = self.mapPostRecord_To_PostReactionRecord(postRecord)
-            refUser_pkey = None
-            if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
-                if not 'user' in jsonStringDict.get('quoted_status'):
-                    refUser_pkey = HelperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
-                postReactionRecord.reaction_type = lbsnPostReaction.QUOTE
-                refPostRecord = self.extractPost(jsonStringDict.get('quoted_status'))
-            elif 'retweeted_status' in jsonStringDict:
-                # Note: No retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
-                # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
-                # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html
-                if not 'user' in jsonStringDict.get('retweeted_status'):
-                    # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
-                    # but we can get this from other information, such as user_mentions field from the retweet
-                    # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355
-                    refUser_pkey = HelperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
-                postReactionRecord.reaction_type = lbsnPostReaction.SHARE
-                retweetPost = jsonStringDict.get('retweeted_status')
-                refPostRecord = self.extractPost(retweetPost, refUser_pkey)
-
-            elif jsonStringDict.get('in_reply_to_status_id_str'):
-                #if jsonStringDict.get('in_reply_to_status_id_str') == '778121849687465984':
-                #    self.log.warning(f'No User found for status: {jsonStringDict}')
-                #    input("Press Enter to continue... (no status will be processed)")
-
-                # if reply, original tweet is not available (?)
-                postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
-                refPostRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('in_reply_to_status_id_str'),self.origin)
-                refUserRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('in_reply_to_user_id_str'),self.origin)
-                refUserRecord.user_name = jsonStringDict.get('in_reply_to_screen_name') # Needs to be saved
-                self.lbsnRecords.AddRecordsToDict(refUserRecord)
-                refPostRecord.user_pkey.CopyFrom(refUserRecord.pkey)
-
-            # add referenced post pkey to reaction
-            if not self.disableReactionPostReferencing:
-                postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
-                # ToDo: if a Reaction refers to another reaction (Information Spread)
-                # This information is currently not [available from Twitter](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object):
-                # "Note that retweets of retweets do not show representations of the intermediary retweet [...]"
-                # would be added to. postReactionRecord.referencedPostReaction_pkey
-                if refPostRecord:
-                    self.lbsnRecords.AddRecordsToDict(refPostRecord)
-            # add postReactionRecord to Dict
-            self.lbsnRecords.AddRecordsToDict(postReactionRecord)
-        else:
-            # add postReactionRecord to Dict
-            self.lbsnRecords.AddRecordsToDict(postRecord)
+    #def parseJsonPost(self, jsonStringDict, userPkey = None):
+    #    # Post
+    #    # 1. Extract all relevant Post Attributes
+    #    #    1.a extract post coordinates
+    #    #    1.b extract user attributes
+    #    #    1.c extract place attributes (poi, city, neigborhood, admin, country)
+    #    #    1.d extract extract extended tweet, if available, and extended entities, if available
+    #    # 2. decide if post is reaction (reply, quote, share, see https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/entities-object.html)
+    #    # 3. if post is reaction, copy reduced reaction attributes from extracted lbsnPost
+    #    # 4. add post/reaction to recordDict
+    #    # 5. process all referenced posts
+    #    #    5.a Retweet(=Share) and Quote Tweets are special kinds of Tweets that contain the original Tweet as an embedded object.
+    #    #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
+    #    # process tweet-post object
+    #    postRecord = self.extractPost(jsonStringDict, userPkey)
+    #    # Assignment Step
+    #    # check if post is reaction to other post
+    #    # reaction means: reduced structure compared to post;
+    #    # reactions often include the complete original post, therefore nested processing necessary
+    #    if HelperFunctions.isPostReaction(jsonStringDict):
+    #        postReactionRecord = self.mapPostRecord_To_PostReactionRecord(postRecord)
+    #        refUser_pkey = None
+    #        if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
+    #            if not 'user' in jsonStringDict.get('quoted_status'):
+    #                refUser_pkey = HelperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
+    #            postReactionRecord.reaction_type = lbsnPostReaction.QUOTE
+    #            refPostRecord = self.extractPost(jsonStringDict.get('quoted_status'))
+    #        elif 'retweeted_status' in jsonStringDict:
+    #            # Note: No retweets are available when data is queried using Bounding Box because of Geo-Tweet limitation:
+    #            # "Note that native Retweets are not matched by this parameter. While the original Tweet may have a location, the Retweet will not"
+    #            # see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters.html
+    #            if not 'user' in jsonStringDict.get('retweeted_status'):
+    #                # Current issue with Twitter search: the retweeting user is not returned in retweeted_status
+    #                # but we can get this from other information, such as user_mentions field from the retweet
+    #                # https://twittercommunity.com/t/status-retweeted-status-quoted-status-user-missing-from-search-tweets-json-response/63355
+    #                refUser_pkey = HelperFunctions.substituteReferencedUser(jsonStringDict,self.origin,self.log)
+    #            postReactionRecord.reaction_type = lbsnPostReaction.SHARE
+    #            retweetPost = jsonStringDict.get('retweeted_status')
+    #            refPostRecord = self.extractPost(retweetPost, refUser_pkey)
+    #
+    #        elif jsonStringDict.get('in_reply_to_status_id_str'):
+    #            #if jsonStringDict.get('in_reply_to_status_id_str') == '778121849687465984':
+    #            #    self.log.warning(f'No User found for status: {jsonStringDict}')
+    #            #    input("Press Enter to continue... (no status will be processed)")
+    #
+    #            # if reply, original tweet is not available (?)
+    #            postReactionRecord.reaction_type = lbsnPostReaction.COMMENT
+    #            refPostRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnPost(),jsonStringDict.get('in_reply_to_status_id_str'),self.origin)
+    #            refUserRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),jsonStringDict.get('in_reply_to_user_id_str'),self.origin)
+    #            refUserRecord.user_name = jsonStringDict.get('in_reply_to_screen_name') # Needs to be saved
+    #            self.lbsnRecords.AddRecordsToDict(refUserRecord)
+    #            refPostRecord.user_pkey.CopyFrom(refUserRecord.pkey)
+    #
+    #        # add referenced post pkey to reaction
+    #        if not self.disableReactionPostReferencing:
+    #            postReactionRecord.referencedPost_pkey.CopyFrom(refPostRecord.pkey)
+    #            # ToDo: if a Reaction refers to another reaction (Information Spread)
+    #            # This information is currently not [available from Twitter](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object):
+    #            # "Note that retweets of retweets do not show representations of the intermediary retweet [...]"
+    #            # would be added to. postReactionRecord.referencedPostReaction_pkey
+    #            if refPostRecord:
+    #                self.lbsnRecords.AddRecordsToDict(refPostRecord)
+    #        # add postReactionRecord to Dict
+    #        self.lbsnRecords.AddRecordsToDict(postReactionRecord)
+    #    else:
+    #        # add postReactionRecord to Dict
+    #        self.lbsnRecords.AddRecordsToDict(postRecord)
 
     def extractUser(self,jsonStringDict):
         user = jsonStringDict
