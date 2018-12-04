@@ -19,6 +19,7 @@ class FieldMappingTwitter():
         origin.origin_id = lbsnOrigin.TWITTER
         self.origin = origin
         self.lbsnRecords = LBSNRecordDicts() #this is where all the data will be stored
+        self.null_island = 0
         self.log = logging.getLogger('__main__')#logging.getLogger()
         self.disableReactionPostReferencing = disableReactionPostReferencing
         self.mapFullRelations = mapFullRelations
@@ -233,6 +234,7 @@ class FieldMappingTwitter():
                 postRecord.post_latlng = placeRecord.geom_center
         # if still no geoinformation, send post to Null-Island
         if not postRecord.post_latlng:
+            self.null_island += 1
             postRecord.post_latlng = "POINT(%s %s)" % (0,0)
         # Process attributes of twitter post
         postSource = jsonStringDict.get('source')

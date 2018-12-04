@@ -77,6 +77,7 @@ class LoadData():
         return records
 
     def fetch_data_from_file(loc_filelist, continue_number, is_stacked_json, format):
+        """Fetches CSV or JSON data (including stacked json) from file"""
         if format == 'json':
            records = LoadData.fetch_json_data_from_file(loc_filelist,
                                                      continue_number,
@@ -120,6 +121,7 @@ class LoadData():
         """
         records = []
         loc_file = loc_filelist[start_file_id]
+        HF.log_main_debug(f'\nCurrent file: {ntpath.basename(loc_file)}')
         with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
             reader = csv.reader(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONE)
             next(reader, None)  # skip headerline
