@@ -25,7 +25,7 @@ def main():
     """
     import sys
     from .classes.helper_functions import TimeMonitor
-    from .classes.helper_functions import HelperFunctions
+    from .classes.helper_functions import HelperFunctions as HF
     from .classes.submit_data import LBSNTransfer
     from .classes.load_data import LoadData
     from .config.config import BaseConfig
@@ -39,7 +39,7 @@ def main():
     sys.stdout.flush()
     log = set_logger()
     # load import mapper depending on lbsn origin (e.g. 1 = Instagram, 2 = Flickr, 3 = Twitter)
-    importer = HelperFunctions.load_importer_mapping_module(config.Origin)
+    importer = HF.load_importer_mapping_module(config.Origin)
     # establish output connection
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
     output = LBSNTransfer(dbCursor=cursor_output,
@@ -115,7 +115,7 @@ def main():
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not start_number or processed_records >= config.transferCount or finished:
             sys.stdout.flush()
-            print(f'Storing {import_mapper.lbsnRecords.CountGlob} records ..')
+            print(f'Storing {import_mapper.lbsnRecords.CountGlob} records .. {HF.null_notice(import_mapper.null_island)})')
             output.storeLbsnRecordDicts(import_mapper)
             output.commitChanges()
             processed_records = 0
@@ -133,7 +133,7 @@ def main():
     # submit remaining
     # ??
     if import_mapper.lbsnRecords.CountGlob > 0:
-        print(f'Transferring remaining {import_mapper.lbsnRecords.CountGlob} to db..')
+        print(f'Transferring remaining {import_mapper.lbsnRecords.CountGlob} to db.. {HF.null_notice(import_mapper.null_island)})')
         output.storeLbsnRecordDicts(import_mapper)
         output.commitChanges()
 

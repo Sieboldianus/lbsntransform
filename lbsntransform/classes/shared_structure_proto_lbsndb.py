@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from lbsnstructure.lbsnstructure_pb2 import *
-from .helper_functions import HelperFunctions
+from .helper_functions import HelperFunctions as HF
 
 class ProtoLBSM_db_Mapping():
 
@@ -45,21 +45,21 @@ class ProtoLBSM_db_Mapping():
                           placeRecord.Guid,
                           placeRecord.name,
                           placeRecord.name_alternatives,
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          HF.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          HF.returnEWKBFromGeoTEXT(placeRecord.geom_area),
                           placeRecord.url)
         return preparedRecord
 
     def prepareLbsnCity(self, record):
         placeRecord = placeAttrShared(record)
-        countryGuid = HelperFunctions.null_check(record.country_pkey.id)
-        subType = HelperFunctions.null_check(record.sub_type)
+        countryGuid = HF.null_check(record.country_pkey.id)
+        subType = HF.null_check(record.sub_type)
         preparedRecord = (placeRecord.OriginID,
                           placeRecord.Guid,
                           placeRecord.name,
                           placeRecord.name_alternatives,
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          HF.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          HF.returnEWKBFromGeoTEXT(placeRecord.geom_area),
                           placeRecord.url,
                           countryGuid,
                           subType)
@@ -67,14 +67,14 @@ class ProtoLBSM_db_Mapping():
 
     def prepareLbsnPlace(self, record):
         placeRecord = placeAttrShared(record)
-        cityGuid = HelperFunctions.null_check(record.city_pkey.id)
-        postCount = HelperFunctions.null_check(record.post_count)
+        cityGuid = HF.null_check(record.city_pkey.id)
+        postCount = HF.null_check(record.post_count)
         preparedRecord = (placeRecord.OriginID,
                           placeRecord.Guid,
                           placeRecord.name,
                           placeRecord.name_alternatives,
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_center),
-                          HelperFunctions.returnEWKBFromGeoTEXT(placeRecord.geom_area),
+                          HF.returnEWKBFromGeoTEXT(placeRecord.geom_center),
+                          HF.returnEWKBFromGeoTEXT(placeRecord.geom_area),
                           placeRecord.url,
                           cityGuid,
                           postCount)
@@ -96,7 +96,7 @@ class ProtoLBSM_db_Mapping():
                           userRecord.is_available,
                           userRecord.user_language,
                           userRecord.user_location,
-                          HelperFunctions.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
+                          HF.returnEWKBFromGeoTEXT(userRecord.user_location_geom),
                           userRecord.liked_count,
                           userRecord.active_since,
                           userRecord.profile_image_url,
@@ -121,7 +121,7 @@ class ProtoLBSM_db_Mapping():
         postRecord = postAttrShared(record)
         preparedRecord = (postRecord.OriginID,
                           postRecord.Guid,
-                          HelperFunctions.returnEWKBFromGeoTEXT(postRecord.post_latlng),
+                          HF.returnEWKBFromGeoTEXT(postRecord.post_latlng),
                           postRecord.place_guid,
                           postRecord.city_guid,
                           postRecord.country_guid,
@@ -152,7 +152,7 @@ class ProtoLBSM_db_Mapping():
         postReactionRecord = postReactionAttrShared(record)
         preparedRecord = (postReactionRecord.OriginID,
                           postReactionRecord.Guid,
-                          HelperFunctions.returnEWKBFromGeoTEXT(postReactionRecord.reaction_latlng),
+                          HF.returnEWKBFromGeoTEXT(postReactionRecord.reaction_latlng),
                           postReactionRecord.user_guid,
                           postReactionRecord.referencedPost,
                           postReactionRecord.referencedPostreaction,
@@ -175,37 +175,37 @@ class placeAttrShared():
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id # = 3
         self.Guid = record.pkey.id
-        self.name = HelperFunctions.null_check(record.name)
+        self.name = HF.null_check(record.name)
         # because ProtoBuf Repeated Field does not support distinct rule, we remove any duplicates in list fields prior to submission here
         self.name_alternatives = list(set(record.name_alternatives))
         if self.name and self.name in self.name_alternatives:
             self.name_alternatives.remove(self.name)
-        self.url = HelperFunctions.null_check(record.url)
-        self.geom_center = HelperFunctions.null_check(record.geom_center)
-        self.geom_area = HelperFunctions.null_check(record.geom_area)
+        self.url = HF.null_check(record.url)
+        self.geom_center = HF.null_check(record.geom_center)
+        self.geom_area = HF.null_check(record.geom_area)
 
 class userAttrShared():
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id
         self.Guid = record.pkey.id
-        self.user_name = HelperFunctions.null_check(record.user_name)
-        self.user_fullname = HelperFunctions.null_check(record.user_fullname)
-        self.follows = HelperFunctions.null_check(record.follows)
-        self.followed = HelperFunctions.null_check(record.followed)
-        self.group_count = HelperFunctions.null_check(record.group_count)
-        self.biography = HelperFunctions.null_check(record.biography)
-        self.post_count = HelperFunctions.null_check(record.post_count)
-        self.url = HelperFunctions.null_check(record.url)
-        self.is_private = HelperFunctions.null_check(record.is_private)
-        self.is_available = HelperFunctions.null_check(record.is_available)
-        self.user_language = HelperFunctions.null_check(record.user_language.language_short)
-        self.user_location = HelperFunctions.null_check(record.user_location)
-        self.user_location_geom = HelperFunctions.null_check(record.user_location_geom)
-        self.liked_count = HelperFunctions.null_check(record.liked_count)
-        self.active_since = HelperFunctions.null_check_datetime(record.active_since)
-        self.profile_image_url = HelperFunctions.null_check(record.profile_image_url)
-        self.user_timezone = HelperFunctions.null_check(record.user_timezone)
-        self.user_utc_offset = HelperFunctions.null_check(record.user_utc_offset)
+        self.user_name = HF.null_check(record.user_name)
+        self.user_fullname = HF.null_check(record.user_fullname)
+        self.follows = HF.null_check(record.follows)
+        self.followed = HF.null_check(record.followed)
+        self.group_count = HF.null_check(record.group_count)
+        self.biography = HF.null_check(record.biography)
+        self.post_count = HF.null_check(record.post_count)
+        self.url = HF.null_check(record.url)
+        self.is_private = HF.null_check(record.is_private)
+        self.is_available = HF.null_check(record.is_available)
+        self.user_language = HF.null_check(record.user_language.language_short)
+        self.user_location = HF.null_check(record.user_location)
+        self.user_location_geom = HF.null_check(record.user_location_geom)
+        self.liked_count = HF.null_check(record.liked_count)
+        self.active_since = HF.null_check_datetime(record.active_since)
+        self.profile_image_url = HF.null_check(record.profile_image_url)
+        self.user_timezone = HF.null_check(record.user_timezone)
+        self.user_utc_offset = HF.null_check(record.user_utc_offset)
         self.user_groups_member = list(set(record.user_groups_member))
         self.user_groups_follows = list(set(record.user_groups_follows))
 
@@ -213,54 +213,54 @@ class userGroupAttrShared():
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id
         self.Guid = record.pkey.id
-        self.usergroup_name = HelperFunctions.null_check(record.usergroup_name)
-        self.usergroup_description = HelperFunctions.null_check(record.usergroup_description)
-        self.member_count = HelperFunctions.null_check(record.member_count)
-        self.usergroup_createdate = HelperFunctions.null_check_datetime(record.usergroup_createdate)
-        self.user_owner = HelperFunctions.null_check(record.user_owner_pkey.id)
+        self.usergroup_name = HF.null_check(record.usergroup_name)
+        self.usergroup_description = HF.null_check(record.usergroup_description)
+        self.member_count = HF.null_check(record.member_count)
+        self.usergroup_createdate = HF.null_check_datetime(record.usergroup_createdate)
+        self.user_owner = HF.null_check(record.user_owner_pkey.id)
 
 class postAttrShared():
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id
         self.Guid = record.pkey.id
-        self.post_latlng = HelperFunctions.null_check(record.post_latlng)
-        self.place_guid = HelperFunctions.null_check(record.place_pkey.id)
-        self.city_guid = HelperFunctions.null_check(record.city_pkey.id)
-        self.country_guid = HelperFunctions.null_check(record.country_pkey.id)
-        self.post_geoaccuracy = HelperFunctions.null_check(lbsnPost().PostGeoaccuracy.Name(record.post_geoaccuracy)).lower()
-        self.user_guid = HelperFunctions.null_check(record.user_pkey.id)
-        self.post_create_date = HelperFunctions.null_check_datetime(record.post_create_date)
-        self.post_publish_date = HelperFunctions.null_check_datetime(record.post_publish_date)
-        self.post_body = HelperFunctions.null_check(record.post_body)
-        self.post_language = HelperFunctions.null_check(record.post_language.language_short)
+        self.post_latlng = HF.null_check(record.post_latlng)
+        self.place_guid = HF.null_check(record.place_pkey.id)
+        self.city_guid = HF.null_check(record.city_pkey.id)
+        self.country_guid = HF.null_check(record.country_pkey.id)
+        self.post_geoaccuracy = HF.null_check(lbsnPost().PostGeoaccuracy.Name(record.post_geoaccuracy)).lower()
+        self.user_guid = HF.null_check(record.user_pkey.id)
+        self.post_create_date = HF.null_check_datetime(record.post_create_date)
+        self.post_publish_date = HF.null_check_datetime(record.post_publish_date)
+        self.post_body = HF.null_check(record.post_body)
+        self.post_language = HF.null_check(record.post_language.language_short)
         self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
         self.hashtags = list(set(record.hashtags))
         self.emoji = list(set(record.emoji))
-        self.post_like_count = HelperFunctions.null_check(record.post_like_count)
-        self.post_comment_count = HelperFunctions.null_check(record.post_comment_count)
-        self.post_views_count = HelperFunctions.null_check(record.post_views_count)
-        self.post_title = HelperFunctions.null_check(record.post_title)
-        self.post_thumbnail_url = HelperFunctions.null_check(record.post_thumbnail_url)
-        self.post_url = HelperFunctions.null_check(record.post_url)
-        self.post_type = HelperFunctions.null_check(lbsnPost().PostType.Name(record.post_type)).lower()
-        self.post_filter = HelperFunctions.null_check(record.post_filter)
-        self.post_quote_count = HelperFunctions.null_check(record.post_quote_count)
-        self.post_share_count = HelperFunctions.null_check(record.post_share_count)
-        self.input_source = HelperFunctions.null_check(record.input_source)
-        self.post_content_license = HelperFunctions.null_check(record.post_content_license)
+        self.post_like_count = HF.null_check(record.post_like_count)
+        self.post_comment_count = HF.null_check(record.post_comment_count)
+        self.post_views_count = HF.null_check(record.post_views_count)
+        self.post_title = HF.null_check(record.post_title)
+        self.post_thumbnail_url = HF.null_check(record.post_thumbnail_url)
+        self.post_url = HF.null_check(record.post_url)
+        self.post_type = HF.null_check(lbsnPost().PostType.Name(record.post_type)).lower()
+        self.post_filter = HF.null_check(record.post_filter)
+        self.post_quote_count = HF.null_check(record.post_quote_count)
+        self.post_share_count = HF.null_check(record.post_share_count)
+        self.input_source = HF.null_check(record.input_source)
+        self.post_content_license = HF.null_check(record.post_content_license)
 
 class postReactionAttrShared():
     def __init__(self, record):
         self.OriginID = record.pkey.origin.origin_id
         self.Guid = record.pkey.id
-        self.reaction_latlng = HelperFunctions.null_check(record.reaction_latlng)
-        self.user_guid = HelperFunctions.null_check(record.user_pkey.id)
-        self.referencedPost = HelperFunctions.null_check(record.referencedPost_pkey.id)
-        self.referencedPostreaction = HelperFunctions.null_check(record.referencedPostreaction_pkey.id)
-        self.reaction_type = HelperFunctions.null_check(lbsnPostReaction().ReactionType.Name(record.reaction_type)).lower()
-        self.reaction_date = HelperFunctions.null_check_datetime(record.reaction_date)
-        self.reaction_content = HelperFunctions.null_check(record.reaction_content)
-        self.reaction_like_count = HelperFunctions.null_check(record.reaction_like_count)
+        self.reaction_latlng = HF.null_check(record.reaction_latlng)
+        self.user_guid = HF.null_check(record.user_pkey.id)
+        self.referencedPost = HF.null_check(record.referencedPost_pkey.id)
+        self.referencedPostreaction = HF.null_check(record.referencedPostreaction_pkey.id)
+        self.reaction_type = HF.null_check(lbsnPostReaction().ReactionType.Name(record.reaction_type)).lower()
+        self.reaction_date = HF.null_check_datetime(record.reaction_date)
+        self.reaction_content = HF.null_check(record.reaction_content)
+        self.reaction_like_count = HF.null_check(record.reaction_like_count)
         self.user_mentions = list(set([pkey.id for pkey in record.user_mentions_pkey]))
 
 class relationshipAttrShared():
@@ -268,4 +268,4 @@ class relationshipAttrShared():
         self.OriginID = relationship.pkey.relation_to.origin.origin_id
         self.Guid = relationship.pkey.relation_to.id
         self.Guid_Rel = relationship.pkey.relation_from.id
-        self.relType = HelperFunctions.null_check(lbsnRelationship().RelationshipType.Name(relationship.relationship_type)).lower()
+        self.relType = HF.null_check(lbsnRelationship().RelationshipType.Name(relationship.relationship_type)).lower()

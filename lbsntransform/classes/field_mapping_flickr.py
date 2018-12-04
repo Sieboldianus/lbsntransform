@@ -172,5 +172,5 @@ class FieldMappingFlickr():
         """Logs entries with problematic lat/lng's,
            increases Null Island Counter by 1.
         """
-        log.debug(f'"Send to NULL island {null_island}: RecordNr {self.lbsnRecords.CountGlob} - Coordinates: {lat_entry}, {lng_entry}')
+        self.log.debug(f'"Send to NULL island: RecordNr {self.lbsnRecords.CountGlob} - Coordinates: {lat_entry}, {lng_entry}')
         self.null_island += 1

@@ -18,6 +18,18 @@ from shapely import geos, wkb, wkt
 geos.WKBWriter.defaults['include_srid'] = True
 
 class HelperFunctions():
+
+    @staticmethod
+    def log_main_debug(debug_text):
+        """Issues a main debug log in case it is needed for static functions."""
+        logging.getLogger('__main__').debug(debug_text)
+
+    @staticmethod
+    def null_notice(x):
+        """Reporting: Suppresses null notice (for Null island) if value is zero."""
+        null_notice_x = lambda x: f'(Null Island: {x})' if x > 0 else ''
+        return null_notice_x(x)
+
     @staticmethod
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
@@ -142,6 +154,8 @@ class HelperFunctions():
 
     @staticmethod
     def null_check(recordAttr):
+        """Helper function to check for Null Values
+        """
         if not recordAttr:
             return None
         else:
