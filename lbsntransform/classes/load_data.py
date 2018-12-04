@@ -2,7 +2,6 @@
 from .db_connection import DBConnection
 from .helper_functions import HelperFunctions as HF
 from glob import glob
-#import json
 from json import loads as json_loads, decoder as json_decoder
 import os
 import ntpath

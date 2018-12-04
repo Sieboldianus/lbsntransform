@@ -2,12 +2,7 @@
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
 from lbsnstructure.lbsnstructure_pb2 import *
-#from google.protobuf.timestamp_pb2 import Timestamp
-#from lbsnstructure.external.timestamp_pb2 import Timestamp
-#import shapely.geometry as geometry
-#from shapely.geometry.polygon import Polygon
 import logging
-#import re
 from decimal import Decimal
 # for debugging only:
 from google.protobuf import text_format
@@ -90,7 +85,7 @@ class FieldMappingFlickr():
         if record_tags_list:
             for tag in record_tags_list:
                 tag = FieldMappingFlickr.clean_tags_from_flickr(tag)
-                postRecord.hashtags.append(clean_tags_from_flickr(tag))
+                postRecord.hashtags.append(tag)
         record_media_type = record[16]
         if record_media_type and record_media_type == "video":
             postRecord.post_type = lbsnPost.VIDEO

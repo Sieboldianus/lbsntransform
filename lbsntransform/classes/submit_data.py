@@ -15,14 +15,9 @@ import os
 import sys
 # for debugging only:
 from google.protobuf import text_format
-#import re
-from glob import glob
-#import shutil
 
-#from google.protobuf.internal import encoder
-#from google.protobuf.internal.decoder import _DecodeVarint32
+from glob import glob
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-#import base64
 
 class LBSNTransfer():
     def __init__(self, dbCursor = None,

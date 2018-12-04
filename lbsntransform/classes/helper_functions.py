@@ -4,11 +4,8 @@ from datetime import timezone
 import re
 import csv
 import emoji
-#from numpy import amin as np_min
-#from numpy import amax as np_max
 from lbsnstructure.lbsnstructure_pb2 import *
 from google.protobuf.timestamp_pb2 import Timestamp
-#from lbsnstructure.external.timestamp_pb2 import Timestamp
 import datetime
 import logging
 import time

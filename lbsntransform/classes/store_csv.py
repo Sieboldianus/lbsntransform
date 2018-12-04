@@ -15,7 +15,6 @@ from contextlib import ExitStack
 import base64
 # for debugging only:
 from google.protobuf import text_format
-#import re
 import csv
 from glob import glob
 
