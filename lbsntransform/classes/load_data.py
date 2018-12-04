@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .db_connection import DBConnection
-from .helper_functions import HelperFunctions
+from .helper_functions import HelperFunctions as HF
 from glob import glob
 #import json
 from json import loads as json_loads, decoder as json_decoder
@@ -102,7 +102,7 @@ class LoadData():
             # {json1}{json2} etc.
             if is_stacked_json:
                 try:
-                    for obj in HelperFunctions.decode_stacked(file.read()):
+                    for obj in HF.decode_stacked(file.read()):
                         records.append(obj)
                 except json_decoder.JSONDecodeError:
                     pass
@@ -134,8 +134,8 @@ class LoadData():
             To use, must uncomment fieldMapping/extractUser
         """
 
-        deutscher_bundestag_group = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(), "MdB (Bundestag)", twitter_records.origin)
-        dbg_owner = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(), "243586130", twitter_records.origin)
+        deutscher_bundestag_group = HF.createNewLBSNRecord_with_id(lbsnUserGroup(), "MdB (Bundestag)", twitter_records.origin)
+        dbg_owner = HF.createNewLBSNRecord_with_id(lbsnUser(), "243586130", twitter_records.origin)
         dbg_owner.user_name = 'wahl_beobachter'
         dbg_owner.user_fullname = 'Martin Fuchs'
         deutscher_bundestag_group.user_owner_pkey.CopyFrom(dbg_owner.pkey)

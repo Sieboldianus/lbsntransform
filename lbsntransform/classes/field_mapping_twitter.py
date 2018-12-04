@@ -180,9 +180,7 @@ class FieldMappingTwitter():
 
     def extractPost(self,jsonStringDict, userPkey = None):
         post_guid = jsonStringDict.get('id_str')
-        if not post_guid:
-           self.log.warning(f'No PostGuid\n\n{jsonStringDict}')
-           input("Press Enter to continue... (entry will be skipped)")
+        if not HelperFunctions.check_notice_empty_post_guid(post_guid):
            return None
         postRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin)
         postGeoaccuracy = None

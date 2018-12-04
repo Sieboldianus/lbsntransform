@@ -110,6 +110,15 @@ class HelperFunctions():
         return protobufTimestampRecord
 
     @staticmethod
+    def parse_csv_datestring_to_protobuf(csv_datestring):
+        # Parse String -Timestamp Format found in Flickr csv
+        dateTimeRecord = datetime.datetime.strptime(csv_datestring,'%m/%d/%Y %H:%M:%S')
+        protobufTimestampRecord = Timestamp()
+        # Convert to ProtoBuf Timestamp Recommendation
+        protobufTimestampRecord.FromDatetime(dateTimeRecord)
+        return protobufTimestampRecord
+
+    @staticmethod
     def getMentionedUsers(userMentions_jsonString,origin):
         mentionedUsersList = []
         for userMention in userMentions_jsonString:    #iterate over the list
@@ -227,6 +236,15 @@ class HelperFunctions():
             lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
         }
         return dict_switcher.get(desc_name)
+
+    @staticmethod
+    def check_notice_empty_post_guid(post_guid):
+        if not post_guid:
+           self.log.warning(f'No PostGuid\n\n{jsonStringDict}')
+           input("Press Enter to continue... (entry will be skipped)")
+           return False
+        else:
+           return True
 
 class LBSNRecordDicts():
     def __init__(self):
