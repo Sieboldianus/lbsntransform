@@ -89,7 +89,8 @@ class FieldMappingFlickr():
         record_tags_list = list(filter(None, record[11].split(";")))
         if record_tags_list:
             for tag in record_tags_list:
-                postRecord.hashtags.append(tag)
+                tag = FieldMappingFlickr.clean_tags_from_flickr(tag)
+                postRecord.hashtags.append(clean_tags_from_flickr(tag))
         record_media_type = record[16]
         if record_media_type and record_media_type == "video":
             postRecord.post_type = lbsnPost.VIDEO
@@ -104,6 +105,15 @@ class FieldMappingFlickr():
         This functon will reverse replacement.
         """
         return csv_string.replace(";", ",")
+
+    @staticmethod
+    def clean_tags_from_flickr(tag):
+        """Clean special vars not allowed in tags.
+        """
+        characters_to_replace = ('{','}')
+        for char_check in characters_to_replace:
+            tag = tag.replace(char_check,'')
+        return tag
 
     @staticmethod
     def flickr_map_geoaccuracy(flickr_geo_accuracy_level):

@@ -158,7 +158,11 @@ class HelperFunctions():
         if not recordAttr:
             return None
         else:
-            if recordAttr.ToDatetime() == datetime.datetime(1970, 1, 1, 0, 0, 0):
+            try:
+                dt_attr = recordAttr.ToDatetime()
+            except:
+                return None
+            if dt_attr == datetime.datetime(1970, 1, 1, 0, 0, 0):
                 return None
             else:
                 return recordAttr.ToDatetime()
