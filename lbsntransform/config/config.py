@@ -8,8 +8,8 @@ class BaseConfig():
         ## Set Default Config options here
         ## or define options as input args
         self.Origin = 3 # Defaults to 3: Twitter (1 - Instagram, 2 - Flickr, 3 - Twitter)
-        self.LocalInput = False # Read from File/CSV
-        self.LocalFileType = '*.json' # If localread, specify filetype (*.json, *.csv etc.)
+        self.is_local_input = False # Read from File/CSV
+        self.local_file_type = 'json' # If localread, specify filetype (json, csv etc.)
         self.InputPath = None # optionally provide path to input folder, otherwise ./Input/ will be used
         self.is_stacked_json = False
         self.dbUser_Input = 'example-user-name'
@@ -31,17 +31,18 @@ class BaseConfig():
         self.end_with_db_row_number = None
         self.debugMode = 'INFO' #needs to be implemented
         self.geocodeLocations = False # provide path to CSV file with location geocodes (CSV Structure: lat, lng, name)
-        self.input_type = None # Input type, e.g. "post", "profile", "friendslist", "followerslist" etc.
+        self.input_lbsn_type = None # Input type, e.g. "post", "profile", "friendslist", "followerslist" etc.
         self.MapRelations = False # Set to true to map full relations, e.g. many-to-many relationships such as user_follows, user_friend, user_mentions etc. are mapped in a separate table
         self.CSVOutput = False # Set to True to Output all Submit values to CSV
         self.CSVsuppressLinebreaks = True # Set to False will not remove intext-linebreaks (\r or \n) in output CSVs
+        self.recursiveLoad = False
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-sO', "--Origin", default=self.Origin)
         parser.add_argument('-lI', "--LocalInput", action='store_true', default=False)
-        parser.add_argument('-lT', "--LocalFileType", default=self.LocalFileType)
-        parser.add_argument('-iP', "--InputPath", default=self.LocalFileType)
+        parser.add_argument('-lT', "--LocalFileType", default=self.local_file_type)
+        parser.add_argument('-iP', "--InputPath", default=self.InputPath)
         parser.add_argument('-iS', "--isStackedJson", action='store_true', default=False)
         parser.add_argument('-pO', "--dbPassword_Output", default=self.dbPassword_Output)
         parser.add_argument('-uO', "--dbUser_Output", default=self.dbUser_Output)
@@ -61,15 +62,16 @@ class BaseConfig():
         parser.add_argument('-rE', "--endWithDBRowNumber", default=self.end_with_db_row_number)
         parser.add_argument('-d', "--debugMode", default=self.debugMode)
         parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations)
-        parser.add_argument('-iT', "--inputType", default=self.input_type)
+        parser.add_argument('-iT', "--inputType", default=self.input_lbsn_type)
         parser.add_argument('-mR', "--mapFullRelations", default=self.MapRelations)
         parser.add_argument('-CSV', "--CSVOutput", action='store_true', default=self.CSVOutput)
         parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
+        parser.add_argument('-rL', "--recursiveLoad", action='store_true', default=False)
 
         args = parser.parse_args()
         if args.LocalInput:
-            self.LocalInput = True
-            self.LocalFileType = args.LocalFileType
+            self.is_local_input = True
+            self.local_file_type = args.LocalFileType
             if args.isStackedJson:
                 self.is_stacked_json = True
             if not self.InputPath:
@@ -109,10 +111,12 @@ class BaseConfig():
             self.end_with_db_row_number = int(args.endWithDBRowNumber)
         self.debugMode = args.debugMode
         if args.inputType:
-            self.input_type = args.inputType
+            self.input_lbsn_type = args.inputType
         if args.mapFullRelations:
             self.MapRelations = True
         if args.CSVOutput:
             self.CSVOutput = True
         if args.CSVallowLinebreaks:
             self.CSVsuppressLinebreaks = False
+        if args.recursiveLoad:
+            self.recursiveLoad = True

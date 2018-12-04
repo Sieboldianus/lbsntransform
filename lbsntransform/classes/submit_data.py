@@ -246,7 +246,8 @@ class LBSNTransfer():
                                 post_filter = COALESCE(EXCLUDED.post_filter, data."post".post_filter),
                                 post_quote_count = COALESCE(EXCLUDED.post_quote_count, data."post".post_quote_count),
                                 post_share_count = COALESCE(EXCLUDED.post_share_count, data."post".post_share_count),
-                                input_source = COALESCE(EXCLUDED.input_source, data."post".input_source);
+                                input_source = COALESCE(EXCLUDED.input_source, data."post".input_source),
+                                post_content_license = COALESCE(EXCLUDED.post_content_license, data."post".post_content_license);
                             '''
             elif recordType == lbsnPostReaction().DESCRIPTOR.name:
                 insert_sql = f'''

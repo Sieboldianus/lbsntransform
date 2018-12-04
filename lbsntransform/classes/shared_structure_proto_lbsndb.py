@@ -12,7 +12,7 @@ class ProtoLBSM_db_Mapping():
         dict_switcher = {lbsnCity.DESCRIPTOR.name: 'origin_id, city_guid, name, name_alternatives, geom_center, geom_area, url, country_guid, sub_type',
                                     lbsnCountry.DESCRIPTOR.name: 'origin_id, country_guid, name, name_alternatives, geom_center, geom_area, url',
                                     lbsnPlace.DESCRIPTOR.name: 'origin_id, place_guid, name, name_alternatives, geom_center, geom_area, url, city_guid, post_count',
-                                    lbsnPost.DESCRIPTOR.name: 'origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source',
+                                    lbsnPost.DESCRIPTOR.name: 'origin_id, post_guid, post_latlng, place_guid, city_guid, country_guid, post_geoaccuracy, user_guid, post_create_date, post_publish_date, post_body, post_language, user_mentions, hashtags, emoji, post_like_count, post_comment_count, post_views_count, post_title, post_thumbnail_url, post_url, post_type, post_filter, post_quote_count, post_share_count, input_source, post_content_license',
                                     lbsnPostReaction.DESCRIPTOR.name: 'origin_id, reaction_guid, reaction_latlng, user_guid, referencedPost_guid, referencedPostreaction_guid, reaction_type, reaction_date, reaction_content, reaction_like_count, user_mentions',
                                     lbsnUser.DESCRIPTOR.name: 'origin_id, user_guid, user_name, user_fullname, follows, followed, group_count, biography, post_count, is_private, url, is_available, user_language, user_location, user_location_geom, liked_count, active_since, profile_image_url, user_timezone, user_utc_offset, user_groups_member, user_groups_follows',
                                     lbsnUserGroup.DESCRIPTOR.name: 'origin_id, usergroup_guid, usergroup_name, usergroup_description, member_count, usergroup_createdate, user_owner',
@@ -144,7 +144,8 @@ class ProtoLBSM_db_Mapping():
                           postRecord.post_filter,
                           postRecord.post_quote_count,
                           postRecord.post_share_count,
-                          postRecord.input_source)
+                          postRecord.input_source,
+                          postRecord.post_content_license)
         return preparedRecord
 
     def prepareLbsnPostReaction(self, record):
@@ -246,6 +247,7 @@ class postAttrShared():
         self.post_quote_count = HelperFunctions.null_check(record.post_quote_count)
         self.post_share_count = HelperFunctions.null_check(record.post_share_count)
         self.input_source = HelperFunctions.null_check(record.input_source)
+        self.post_content_license = HelperFunctions.null_check(record.post_content_license)
 
 class postReactionAttrShared():
     def __init__(self, record):

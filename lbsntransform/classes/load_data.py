@@ -1,39 +1,57 @@
 # -*- coding: utf-8 -*-
 from .db_connection import DBConnection
-from .helper_functions import HelperFunctions
+from .helper_functions import HelperFunctions as HF
 from glob import glob
 #import json
 from json import loads as json_loads, decoder as json_decoder
-#from json import decoder, JSONDecoder, JSONDecodeError
+import os
+import ntpath
+import csv
+from _csv import QUOTE_MINIMAL
+
 
 class LoadData():
-    def loop_input_records(json_records, transferlimit, twitter_records, end_with_db_row_number, is_local_input, input_type):
-        """Loops input json records, converts to ProtoBuf structure and adds to records_dict
 
-        Returns statistic-counts, modifies twitter_records
+    def loop_input_records(records, transferlimit, import_mapper, config):
+        """Loops input json or csv records, converts to ProtoBuf structure and adds to records_dict
+
+        Returns statistic-counts, modifies (adds results to) import_mapper
         """
 
         finished = False
         processed_records = 0
         db_row_number = 0
-        for record in json_records:
+        for record in records:
             processed_records += 1
-            if is_local_input:
-                single_json_record_dict = record
+            if config.is_local_input:
+                single_record = record
             else:
                 db_row_number = record[0]
-                single_json_record_dict = record[2]
-            if not single_json_record_dict or single_json_record_dict.get('limit'):
-                # Skip Rate Limiting Notice or empty records
+                single_record = record[2]
+            if LoadData.skip_empty_or_other(single_record):
                 continue
-            twitter_records.parseJsonRecord(single_json_record_dict, input_type)
+            if config.local_file_type == 'json' or not config.is_local_input:
+                import_mapper.parseJsonRecord(single_record, config.input_lbsn_type)
+            elif config.local_file_type in ('txt','csv'):
+                import_mapper.parse_csv_record(single_record)
+            else:
+                exit(f'Format {config.local_file_type} not supportet.')
+
             if (transferlimit and processed_records >= transferlimit) or \
-               (not is_local_input and end_with_db_row_number and db_row_number >= end_with_db_row_number):
+               (not config.is_local_input and config.end_with_db_row_number and db_row_number >= config.end_with_db_row_number):
                 finished = True
                 break
         return processed_records, finished
 
-    ## edit the following procedures to your structure
+    @staticmethod
+    def skip_empty_or_other(single_record):
+        """Detect  Rate Limiting Notice or empty records
+           so they can be skipped.
+        """
+        skip = False
+        if not single_record or (isinstance(single_record,dict) and single_record.get('limit')):
+            skip = True
+        return skip
 
     def fetch_json_data_from_lbsn(cursor, start_id=0, get_max=None, number_of_records_to_fetch=10000):
         """Fetches records from Postgres DB
@@ -59,6 +77,18 @@ class LoadData():
             return None
         return records
 
+    def fetch_data_from_file(loc_filelist, continue_number, is_stacked_json, format):
+        if format == 'json':
+           records = LoadData.fetch_json_data_from_file(loc_filelist,
+                                                     continue_number,
+                                                     config.is_stacked_json)
+        elif format == 'txt':
+           records = LoadData.fetch_csv_data_from_file(loc_filelist,
+                                                     continue_number)
+        else:
+           exit(f'Format {format} not supported.')
+        return records
+
     def fetch_json_data_from_file(loc_filelist, start_file_id=0, is_stacked_json=False):
         """Read json entries from file.
 
@@ -72,7 +102,7 @@ class LoadData():
             # {json1}{json2} etc.
             if is_stacked_json:
                 try:
-                    for obj in HelperFunctions.decode_stacked(file.read()):
+                    for obj in HF.decode_stacked(file.read()):
                         records.append(obj)
                 except json_decoder.JSONDecodeError:
                     pass
@@ -83,13 +113,29 @@ class LoadData():
             return records
         return None
 
+    def fetch_csv_data_from_file(loc_filelist, start_file_id=0):
+        """Read csv entries from file (either *.txt or *.csv).
+
+        The actual CSV formatting is not setable in config yet. There are many specifics, e.g.
+        #QUOTE_NONE is used here because media saved from Flickr does not contain any quotes ""
+        """
+        records = []
+        loc_file = loc_filelist[start_file_id]
+        with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
+            reader = csv.reader(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONE)
+            next(reader, None)  # skip headerline
+            records = list(reader)
+        if not records:
+            return None
+        return records
+
     def add_bundestag_group_example(twitter_records):
         """ Example: Manually add Group that applies to all entries.
             To use, must uncomment fieldMapping/extractUser
         """
 
-        deutscher_bundestag_group = helperFunctions.createNewLBSNRecord_with_id(lbsnUserGroup(), "MdB (Bundestag)", twitter_records.origin)
-        dbg_owner = helperFunctions.createNewLBSNRecord_with_id(lbsnUser(), "243586130", twitter_records.origin)
+        deutscher_bundestag_group = HF.createNewLBSNRecord_with_id(lbsnUserGroup(), "MdB (Bundestag)", twitter_records.origin)
+        dbg_owner = HF.createNewLBSNRecord_with_id(lbsnUser(), "243586130", twitter_records.origin)
         dbg_owner.user_name = 'wahl_beobachter'
         dbg_owner.user_fullname = 'Martin Fuchs'
         deutscher_bundestag_group.user_owner_pkey.CopyFrom(dbg_owner.pkey)
@@ -126,8 +172,17 @@ class LoadData():
 
     def read_local_files(config):
         """Read Local Files according to config parameters and returns list of file-paths"""
-        filepath = f'{config.InputPath}{config.LocalFileType}'
-        loc_filelist = glob(filepath)
+        path = f'{config.InputPath}'
+        if config.recursiveLoad:
+            excludefolderlist = ["01_DataSetHistory","02_UserData","03_ClippedData","04_MapVis"]
+            excludestartswithfile = ["log","settings","GridCoordinates"]
+            loc_filelist = LoadData.scan_rec(path,
+                                             format=config.local_file_type,
+                                             excludefolderlist=excludefolderlist,
+                                             excludestartswithfile=excludestartswithfile)
+        else:
+            loc_filelist = glob(f'{path}*.{config.local_file_type}')
+
         input_count = (len(loc_filelist))
         if input_count == 0:
             sys.exit("No location files found.")
@@ -140,3 +195,31 @@ class LoadData():
         locationsgeocode_dict.load_geocodelist(geo_config)
         geocode_dict = locationsgeocode_dict.geocode_dict
         return geocode_dict
+
+    @staticmethod
+    def scan_rec(root, subdirlimit=2, format="csv", excludefolderlist=[], excludestartswithfile=[]):
+        """Recursively scan subdir for datafiles"""
+        rval = []
+        def do_scan(start_dir,output,depth=0):
+            for f in os.listdir(start_dir):
+                ff = os.path.join(start_dir,f)
+                if os.path.isdir(ff):
+                    if depth<subdirlimit:
+                        efound = False
+                        for entry in excludefolderlist: #check for excludefolders
+                            if entry in ff:
+                                efound = True
+                                break
+                        if efound == False:
+                            do_scan(ff,output,depth+1)
+                else:
+                    if ff.endswith(format):
+                        efound = False
+                        for entry in excludestartswithfile:
+                            if ntpath.basename(ff).startswith(entry):
+                                efound = True
+                                break
+                        if efound == False:
+                            output.append(ff)
+        do_scan(root,rval,0)
+        return rval

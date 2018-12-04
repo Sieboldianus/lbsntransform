@@ -47,7 +47,7 @@ def main():
                           storeCSV=config.CSVOutput,
                           SUPPRESS_LINEBREAKS=config.CSVsuppressLinebreaks)
     # load from local json/csv or from PostgresDB
-    if config.LocalInput:
+    if config.is_local_input:
         loc_filelist = LoadData.read_local_files(config)
     else:
         # establish input connection
@@ -81,12 +81,13 @@ def main():
             max_records = config.transferlimit - processed_total
         else:
             max_records = None
-        if config.LocalInput:
+        if config.is_local_input:
             if continue_number > len(loc_filelist) - 1:
                 break
-            records = LoadData.fetch_json_data_from_file(loc_filelist,
+            records = LoadData.fetch_data_from_file(loc_filelist,
                                                          continue_number,
-                                                         config.is_stacked_json)
+                                                         config.is_stacked_json,
+                                                         config.local_file_type)
             # skip empty files
             if not records:
                 continue_number += 1
@@ -98,16 +99,14 @@ def main():
                                                          config.number_of_records_to_fetch)
             if not records:
                 break
-        if config.LocalInput:
+        if config.is_local_input:
             continue_number += 1
         else:
             continue_number = records[-1][0] #last returned db_row_number
         processed_count, finished = LoadData.loop_input_records(records,
                                                                 max_records,
                                                                 import_mapper,
-                                                                config.end_with_db_row_number,
-                                                                config.LocalInput,
-                                                                config.input_type)
+                                                                config)
         processed_records += processed_count
         processed_total += processed_count
         print(f'{processed_total} input records processed (up to {continue_number}). '
@@ -126,7 +125,7 @@ def main():
                                        config.MapRelations)
         # remember the first processed DBRow ID
         if not start_number:
-            if config.LocalInput:
+            if config.is_local_input:
                 start_number = 1
             else:
                 start_number = records[0][0] #first returned db_row_number
@@ -142,7 +141,7 @@ def main():
     output.finalize()
 
     # Close connections to DBs
-    if not config.LocalInput:
+    if not config.is_local_input:
         cursor_input.close()
     if config.dbUser_Output:
         cursor_output.close()
