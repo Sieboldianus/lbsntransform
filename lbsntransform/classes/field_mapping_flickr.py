@@ -2,14 +2,16 @@
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
 from lbsnstructure.lbsnstructure_pb2 import *
-from google.protobuf.timestamp_pb2 import Timestamp
+#from google.protobuf.timestamp_pb2 import Timestamp
 #from lbsnstructure.external.timestamp_pb2 import Timestamp
-import shapely.geometry as geometry
-from shapely.geometry.polygon import Polygon
+#import shapely.geometry as geometry
+#from shapely.geometry.polygon import Polygon
 import logging
-import re
+#import re
+from decimal import Decimal
 # for debugging only:
 from google.protobuf import text_format
+
 
 class FieldMappingFlickr():
     def __init__(self, disableReactionPostReferencing=False, geocodes=False, mapFullRelations=False):
@@ -39,7 +41,7 @@ class FieldMappingFlickr():
             skippedCount += 1
             return
         else:
-            self.parse_flickr_post(record)
+            self.extract_flickr_post(record)
 
     def extract_flickr_post(self, record):
         """Main function for processing Flickr CSV entry.
@@ -62,9 +64,7 @@ class FieldMappingFlickr():
         if userRecord:
             postRecord.user_pkey.CopyFrom(userRecord.pkey)
         self.lbsnRecords.AddRecordsToDict(userRecord)
-        l_lng = Decimal(record[2])
-        l_lat = Decimal(record[1])
-        postRecord.post_latlng = self.flickr_extract_postlatlng(l_lat, l_lng)
+        postRecord.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingFlickr.flickr_map_geoaccuracy(record[13])
         if geoaccuracy:
             postRecord.post_geoaccuracy = geoaccuracy
@@ -94,9 +94,9 @@ class FieldMappingFlickr():
         if record_media_type and record_media_type == "video":
             postRecord.post_type = lbsnPost.VIDEO
         else:
-            postRecord.post_type = lbsnPost.PHOTO
-        postRecord.post_content_license = record[14]
-        return postRecord
+            postRecord.post_type = lbsnPost.IMAGE
+        postRecord.post_content_license = valueCount(record[14])
+        self.lbsnRecords.AddRecordsToDict(postRecord)
 
     @staticmethod
     def reverse_csv_comma_replace(csv_string):
@@ -117,12 +117,14 @@ class FieldMappingFlickr():
         flickr_geo_accuracy_level   Geoaccuracy Level returned from Flickr (String, e.g.: "Level12")
         """
         lbsn_geoaccuracy = False
-        if isinstance(flickr_geo_accuracy_level.lstrip('Level'), int):
-            if flickr_geo_accuracy_level >= 15:
+        stripped_level = flickr_geo_accuracy_level.lstrip('Level').strip()
+        if stripped_level.isdigit():
+            stripped_level = int(stripped_level)
+            if stripped_level >= 15:
                 lbsn_geoaccuracy = lbsnPost.LATLNG
-            elif flickr_geo_accuracy_level >= 12:
+            elif stripped_level >= 12:
                 lbsn_geoaccuracy = lbsnPost.PLACE
-            elif flickr_geo_accuracy_level >= 8:
+            elif stripped_level >= 8:
                 lbsn_geoaccuracy = lbsnPost.CITY
             else:
                 lbsn_geoaccuracy = lbsnPost.COUNTRY
