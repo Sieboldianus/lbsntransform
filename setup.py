@@ -9,7 +9,7 @@ with open('README.md') as f:
      
 ## setuptools dev
 setup(  name = "lbsntransform",
-        version = "0.1.510",
+        version = "0.1.511",
         description = "Location based social network (LBSN) data structure format & transfer tool",
         long_description=long_description,
         long_description_content_type='text/markdown',
@@ -18,6 +18,11 @@ setup(  name = "lbsntransform",
         url='https://gitlab.vgiscience.de/lbsn/lbsntransform',
         license='GNU GPLv3 or any higher',
         packages=['lbsntransform'],
+        package_data = {
+            'classes': ['*'],
+            'config': ['*'],
+            'tests': ['*']
+        },
         install_requires=[
             'lbsnstructure>=0.2.6.211',
             'protobuf',

@@ -57,6 +57,7 @@ Python's site-packages folder with:
 ```shell
 python setup.py develop
 ```
+(use `python setup.py develop --uninstall` to uninstall tool in develop mode)
 
 Now you can run tool in your shell with (Origin 3 = Twitter):  
 ```shell
