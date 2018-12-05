@@ -1,13 +1,12 @@
 # LBSNTRANSFORM
 
-A python package that uses the [common lbsn data structure concept](https://gitlab.vgiscience.de/lbsn/concept) (ProtoBuf) to import, transform and export Social Media data such as Twitter and Flickr.
+A python package that uses the [common location based social network (LBSN) data structure concept](https://gitlab.vgiscience.de/lbsn/concept) (ProtoBuf) to import, transform and export Social Media data such as Twitter and Flickr.
 
 ## Description
 
-This tool will read JSONs or CSVs from a Postgres Database or local folder and map Social Media Endpoints (e.g. Twitter)  
-to a common [LBSN Interchange Structure](https://gitlab.vgiscience.de/lbsn/concept) format in ProtoBuf. Output can be either a Postgres Database or local CSV.
-The tool can also be imported to other Python projects with `import lbsntransform` for on-the-fly conversion. The goal is to provide a common interface to process 
-Social Media Data, without custom adjustment to the myriad API Endpoints available.
+This tool enables data import from a Postgres database, JSON, or CSV and export to CSV, [LBSN ProtoBuf](https://gitlab.vgiscience.de/lbsn/concept) or a [LBSN prepared Postgres Database](https://gitlab.vgiscience.de/lbsn/database-setup).
+The tool will map Social Media Endpoints (e.g. Twitter tweets) to a common [LBSN Interchange Structure](https://gitlab.vgiscience.de/lbsn/concept) format in ProtoBuf. The tool can also be imported to other Python projects with `import lbsntransform` for on-the-fly conversion. 
+The goal is to provide a common interface to handle Social Media Data, without custom adjustment to the myriad API Endpoints available. As an example, consider the ProtoBuf spec "Post", which can be a Tweet on Twitter, a Photo shared on Flickr, or a post on Reddit. This tool is based on a 4-Facet conceptual framework for LBSN, introduced in a paper by [Dunkel et al. (2018)](https://www.tandfonline.com/doi/full/10.1080/13658816.2018.1546390). 
 
 ## Quick Start
 
@@ -28,7 +27,7 @@ e.g. with the following command line args
 lbsntransform.exe --Origin 3 --LocalInput --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
 
-.. the the tool will: 
+.. with the above input args, the the tool will: 
 - read local json from /01_Input/  
 - and store lbsn records as CSV and ProtoBuf in /02_Output/  
 
@@ -36,7 +35,7 @@ For a full list of possible input args and descriptions see [config.py](/lbsntra
 
 ## Built With
 
-* [lbsnstructure](https://gitlab.vgiscience.de/lbsn/concept) - A common language independend and cross-network social-media datascheme
+* [lbsnstructure](https://pypi.org/project/lbsnstructure/) - A common language independend and cross-network social-media datascheme
 * [protobuf](https://github.com/google/protobuf) - Google's data interchange format
 * [psycopg2](https://github.com/psycopg/psycopg2) - Python-PostgreSQL Database Adapter
 * [ppygis3](https://github.com/AlexImmer/ppygis3) - A PPyGIS port for Python
@@ -72,7 +71,7 @@ import lbsntransform
 ## Versioning and Changelog, and Download
 
 For the versions available, see the [tags on this repository](/../tags). 
-Latest version is [0.1.5](/../tags/v0.1.5). The latest windows build that is available for download is [0.1.4](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
+Latest version is [0.1.510](/../tags/v0.1.510). The latest windows build that is available for download is [0.1.4](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
 For all other systems use cx_freeze to build executable:
 ```shell
 python cx_setup.py build

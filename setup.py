@@ -9,17 +9,17 @@ with open('README.md') as f:
      
 ## setuptools dev
 setup(  name = "lbsntransform",
-        version = "0.1.5",
-        description = "lbsn data structure format & transfer tool",
+        version = "0.1.510",
+        description = "Location based social network (LBSN) data structure format & transfer tool",
         long_description=long_description,
         long_description_content_type='text/markdown',
         author='Alexander Dunkel',
         author_email='alexander.dunkel@tu-dresden.de',
-        url='https://gitlab.vgiscience.de/lbsn/lbsn-twitter-json-mapping',
+        url='https://gitlab.vgiscience.de/lbsn/lbsntransform',
         license='GNU GPLv3 or any higher',
         packages=['lbsntransform'],
         install_requires=[
-            'lbsnstructure',
+            'lbsnstructure>=0.2.6.211',
             'protobuf',
             'psycopg2',
             'ppygis3',

@@ -22,11 +22,12 @@ excludes_mod = ['tkinter',
                 'scipy',
                 'numpy']
 packages_mod = [
-            'google.protobuf',
-            'psycopg2',
-            'ppygis3',
-            'shapely',
-            'emoji'
+                'lbsnstructure>=0.2.6.211',
+                'protobuf',
+                'psycopg2',
+                'ppygis3',
+                'shapely',
+                'emoji'
         ]
 include_folders_files = [('scripts/00_TransferAll_Default.sh')
                     ]
@@ -36,8 +37,8 @@ executables = [
     Executable('lbsntransform/__main__.py', base=base)
 ]
 setup(  name = "lbsntransform",
-        version = "0.1.4",
-        description = "lbsn data structure format & transfer tool",
+        version = "0.1.510",
+        description = "Location based social network (LBSN) data structure format & transfer tool",
         author='Alexander Dunkel',
         url='https://gitlab.vgiscience.de/lbsn/lbsntransform',
         license='GNU GPLv3 or any higher',
