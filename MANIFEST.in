@@ -1,1 +1,4 @@
 include README.md
+include lbsntransform/classes/*
+include lbsntransform/config/*
+include lbsntransform/tests/*
