@@ -149,16 +149,18 @@ class FieldMappingFlickr():
         """
         lat_entry = record[1]
         lng_entry = record[2]
-        if not lat_entry == "" and not lng_entry == "":
+        if lat_entry == "" and lng_entry == "":
+            l_lat,l_lng = 0,0
+        else:
             try:
                 l_lng = Decimal(lng_entry)
                 l_lat = Decimal(lat_entry)
             except:
                 l_lat,l_lng = 0,0
-        else:
-            l_lat,l_lng = 0,0
+
         if (l_lat == 0 and l_lng == 0) or l_lat > 90 or l_lat < -90 or l_lng > 180 or l_lng < -180:
-            self.send_to_null_island(lat_entry, lng_entry)
+            l_lat,l_lng = 0,0
+            self.send_to_null_island(lat_entry, lng_entry, record[5])
         return FieldMappingFlickr.lat_lng_to_wkt(l_lat, l_lng)
 
     @staticmethod
@@ -168,9 +170,9 @@ class FieldMappingFlickr():
         point_latlng_string = "POINT(%s %s)" % (lng,lat)
         return point_latlng_string
 
-    def send_to_null_island(self, lat_entry, lng_entry):
+    def send_to_null_island(self, lat_entry, lng_entry, record_guid):
         """Logs entries with problematic lat/lng's,
            increases Null Island Counter by 1.
         """
-        self.log.debug(f'"Send to NULL island: RecordNr {self.lbsnRecords.CountGlob} - Coordinates: {lat_entry}, {lng_entry}')
+        self.log.debug(f'"Send to NULL island: Guid {record_guid} - Coordinates: {lat_entry}, {lng_entry}')
         self.null_island += 1

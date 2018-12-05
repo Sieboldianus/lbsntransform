@@ -13,5 +13,9 @@ from .classes.helper_functions import LBSNRecordDicts
 from .classes.helper_functions import GeocodeLocations
 from .classes.helper_functions import TimeMonitor
 from .classes.field_mapping_twitter import FieldMappingTwitter
+from .classes.field_mapping_flickr import FieldMappingFlickr
+from .classes.shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
 from .classes.submit_data import LBSNTransfer
+from .classes.load_data import LoadData
+from .classes.store_csv import LBSNcsv
 from .config.config import BaseConfig

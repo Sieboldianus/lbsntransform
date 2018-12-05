@@ -36,6 +36,7 @@ class BaseConfig():
         self.CSVOutput = False # Set to True to Output all Submit values to CSV
         self.CSVsuppressLinebreaks = True # Set to False will not remove intext-linebreaks (\r or \n) in output CSVs
         self.recursiveLoad = False
+        self.skip_until_file = "" # If local input, skip all files until file with name x appears (default: start immediately)
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
@@ -67,6 +68,7 @@ class BaseConfig():
         parser.add_argument('-CSV', "--CSVOutput", action='store_true', default=self.CSVOutput)
         parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
         parser.add_argument('-rL', "--recursiveLoad", action='store_true', default=False)
+        parser.add_argument('-sF', "--skipUntilFile", default=self.skip_until_file)
 
         args = parser.parse_args()
         if args.LocalInput:
@@ -74,11 +76,15 @@ class BaseConfig():
             self.local_file_type = args.LocalFileType
             if args.isStackedJson:
                 self.is_stacked_json = True
-            if not self.InputPath:
+            if not args.InputPath:
                 self.InputPath = f'{os.getcwd()}\\01_Input\\'
                 print(f'Using Path: {self.InputPath}')
             else:
-                self.InputPath = args.InputPath
+                if args.InputPath.endswith("\\"):
+                    input_path = args.InputPath
+                else:
+                    input_path = f'{args.InputPath}\\'
+                self.InputPath = input_path
         else:
             self.dbUser_Input = args.dbUser_Input
             self.dbPassword_Input = args.dbPassword_Input
@@ -120,3 +126,5 @@ class BaseConfig():
             self.CSVsuppressLinebreaks = False
         if args.recursiveLoad:
             self.recursiveLoad = True
+        if args.skipUntilFile:
+            self.skip_until_file = args.skipUntilFile
