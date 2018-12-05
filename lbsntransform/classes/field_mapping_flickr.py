@@ -10,7 +10,7 @@ from google.protobuf import text_format
 
 class FieldMappingFlickr():
     def __init__(self, disableReactionPostReferencing=False, geocodes=False, mapFullRelations=False):
-        # We're dealing with Twitter in this class, lets create the OriginID
+        # We're dealing with Flickr in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
         origin = lbsnOrigin()
@@ -18,7 +18,7 @@ class FieldMappingFlickr():
         self.origin = origin
         self.null_island = 0
         self.lbsnRecords = LBSNRecordDicts() #this is where all the data will be stored
-        self.log = logging.getLogger('__main__')#logging.getLogger()
+        self.log = logging.getLogger('__main__') #get the main logger object
         #self.disableReactionPostReferencing = disableReactionPostReferencing
         #self.mapFullRelations = mapFullRelations
         #self.geocodes = geocodes
@@ -174,5 +174,5 @@ class FieldMappingFlickr():
         """Logs entries with problematic lat/lng's,
            increases Null Island Counter by 1.
         """
-        self.log.debug(f'"Send to NULL island: Guid {record_guid} - Coordinates: {lat_entry}, {lng_entry}')
+        self.log.debug(f'NULL island: Guid {record_guid} - Coordinates: {lat_entry}, {lng_entry}')
         self.null_island += 1
