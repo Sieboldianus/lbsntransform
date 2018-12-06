@@ -14,7 +14,6 @@ Output options:
 
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
-__version__ = "0.1.513"
 
 import logging
 import io

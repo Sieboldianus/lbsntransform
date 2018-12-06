@@ -20,6 +20,13 @@ geos.WKBWriter.defaults['include_srid'] = True
 class HelperFunctions():
 
     @staticmethod
+    def get_version():
+        """Gets the program version number from version file in root"""
+        with open('VERSION') as version_file:
+            version_var = version_file.read().strip()
+        return version_var
+
+    @staticmethod
     def log_main_debug(debug_text):
         """Issues a main debug log in case it is needed for static functions."""
         logging.getLogger('__main__').debug(debug_text)

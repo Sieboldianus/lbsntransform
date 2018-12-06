@@ -7,6 +7,9 @@ import sys
 import os.path
 PYTHON_INSTALL_DIR = os.path.dirname(os.path.dirname(os.__file__))
 
+with open('VERSION') as version_file:
+    version_var = version_file.read().strip()     
+    
 # Dependencies are automatically detected, but it can be fine tuned
 #includes_mod = ['lbsntransform',
 #                ]
@@ -37,7 +40,7 @@ executables = [
     Executable('lbsntransform/__main__.py', base=base)
 ]
 setup(  name = "lbsntransform",
-        version = "0.1.513",
+        version = version_var,
         description = "Location based social network (LBSN) data structure format & transfer tool",
         author='Alexander Dunkel',
         url='https://gitlab.vgiscience.de/lbsn/lbsntransform',

@@ -5,11 +5,13 @@ import sys
 
 with open('README.md') as f:
     long_description = f.read()
-     
+
+with open('VERSION') as version_file:
+    version_var = version_file.read().strip()     
      
 ## setuptools dev
 setup(  name = "lbsntransform",
-        version = "0.1.513",
+        version = version_var,
         description = "Location based social network (LBSN) data structure format & transfer tool",
         long_description=long_description,
         long_description_content_type='text/markdown',
