@@ -37,7 +37,7 @@ executables = [
     Executable('lbsntransform/__main__.py', base=base)
 ]
 setup(  name = "lbsntransform",
-        version = "0.1.510",
+        version = "0.1.513",
         description = "Location based social network (LBSN) data structure format & transfer tool",
         author='Alexander Dunkel',
         url='https://gitlab.vgiscience.de/lbsn/lbsntransform',

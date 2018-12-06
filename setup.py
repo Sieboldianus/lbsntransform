@@ -9,7 +9,7 @@ with open('README.md') as f:
      
 ## setuptools dev
 setup(  name = "lbsntransform",
-        version = "0.1.511",
+        version = "0.1.513",
         description = "Location based social network (LBSN) data structure format & transfer tool",
         long_description=long_description,
         long_description_content_type='text/markdown',
