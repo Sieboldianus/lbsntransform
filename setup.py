@@ -20,6 +20,7 @@ setup(  name = "lbsntransform",
         url='https://gitlab.vgiscience.de/lbsn/lbsntransform',
         license='GNU GPLv3 or any higher',
         packages=['lbsntransform'],
+        include_package_data=True,
         install_requires=[
             'lbsnstructure>=0.2.6.211',
             'protobuf',
