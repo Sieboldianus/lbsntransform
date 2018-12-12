@@ -46,7 +46,8 @@ class DBConnection():
                       f"dbname='{conf['dbname']}'" \
                       f"user='{conf['user']}'" \
                       f"password='{conf['password']}'" \
-                      f"sslmode='{conf['sslmode']}'"
+                      f"sslmode='{conf['sslmode']}'" \
+                      f"application_name='LBSN Batch Transfer'"
         # get a connection, if a connect cannot be made an exception will be raised here
         try:
             conn = psycopg2.connect(conn_string)
