@@ -125,8 +125,11 @@ def main():
             processed_records = 0
             ## create a new empty dict of records
             import_mapper = importer(config.disableReactionPostReferencing,
-                                       geocode_dict,
-                                       config.MapRelations)
+                                     geocode_dict,
+                                     config.MapRelations,
+                                     config.transferReactions,
+                                     config.ignore_non_geotagged,
+                                     ignore_sources_set)
         # remember the first processed DBRow ID
         if not start_number:
             if config.is_local_input:
