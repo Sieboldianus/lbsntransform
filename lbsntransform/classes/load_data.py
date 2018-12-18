@@ -185,6 +185,14 @@ class LoadData():
         geocode_dict = locationsgeocode_dict.geocode_dict
         return geocode_dict
 
+    def load_ignore_sources(list_source):
+        """Loads list of source types to be ignored"""
+        ignore_source_list = set()
+        with open(list_source, newline='', encoding='utf8') as f:
+            for ignore_source in f:
+                ignore_source_list.add(ignore_source.strip())
+        return ignore_source_list
+
     @staticmethod
     def scan_rec(root, subdirlimit=2, format="csv", excludefolderlist=[], excludestartswithfile=[]):
         """Recursively scan subdir for datafiles"""

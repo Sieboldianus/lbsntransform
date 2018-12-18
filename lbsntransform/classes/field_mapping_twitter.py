@@ -12,7 +12,13 @@ import re
 from google.protobuf import text_format
 
 class FieldMappingTwitter():
-    def __init__(self, disableReactionPostReferencing=False, geocodes=False, mapFullRelations=False):
+    def __init__(self,
+                 disableReactionPostReferencing=False,
+                 geocodes=False,
+                 mapFullRelations=False,
+                 map_reactions=True,
+                 ignore_non_geotagged=False,
+                 ignore_sources_set=set()):
         # We're dealing with Twitter in this class, lets create the OriginID globally
         # this OriginID is required for all CompositeKeys
         origin = lbsnOrigin()
@@ -24,6 +30,9 @@ class FieldMappingTwitter():
         self.disableReactionPostReferencing = disableReactionPostReferencing
         self.mapFullRelations = mapFullRelations
         self.geocodes = geocodes
+        self.map_reactions = map_reactions
+        self.ignore_non_geotagged = ignore_non_geotagged
+        self.ignore_sources_set = ignore_sources_set
 
     def parseJsonRecord(self, jsonStringDict, input_lbsn_type = None):
         # decide if main object is post or user json
@@ -76,11 +85,16 @@ class FieldMappingTwitter():
         #    5.b Retweets have a top-level "retweeted_status" object, and Quoted Tweets have a "quoted_status" object
         # process tweet-post object
         postRecord = self.extractPost(jsonStringDict, userPkey)
+        if postRecord is None:
+            # in case no post has been extracted (e.g. non_geotagged clause)
+            return
         # Assignment Step
         # check if post is reaction to other post
         # reaction means: reduced structure compared to post;
         # reactions often include the complete original post, therefore nested processing necessary
         if HelperFunctions.isPostReaction(jsonStringDict):
+            if self.map_reactions is False:
+                return
             postReactionRecord = self.mapPostRecord_To_PostReactionRecord(postRecord)
             refUser_pkey = None
             if 'quoted_status' in jsonStringDict: #Quote is both: Share & Reply
@@ -129,7 +143,7 @@ class FieldMappingTwitter():
             # add postReactionRecord to Dict
             self.lbsnRecords.AddRecordsToDict(postRecord)
 
-    def extractUser(self,jsonStringDict):
+    def extractUser(self, jsonStringDict):
         user = jsonStringDict
         userRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),user.get('id_str'),self.origin)
         # get additional information about the user, if available
@@ -234,12 +248,19 @@ class FieldMappingTwitter():
                 postRecord.post_latlng = placeRecord.geom_center
         # if still no geoinformation, send post to Null-Island
         if not postRecord.post_latlng:
-            self.null_island += 1
-            postRecord.post_latlng = "POINT(%s %s)" % (0,0)
+            if self.ignore_non_geotagged is True:
+                return None
+            else:
+                self.null_island += 1
+                postRecord.post_latlng = "POINT(%s %s)" % (0,0)
+
         # Process attributes of twitter post
         postSource = jsonStringDict.get('source')
         if postSource:
             postRecord.input_source = HelperFunctions.cleanhtml(jsonStringDict.get('source'))
+            if postRecord.input_source in self.ignore_sources_set:
+                # skip entry if in ignore list
+                return None
         postRecord.post_publish_date.CopyFrom(HelperFunctions.parseJSONDateStringToProtoBuf(jsonStringDict.get('created_at')))
         if userRecord:
             postRecord.user_pkey.CopyFrom(userRecord.pkey)

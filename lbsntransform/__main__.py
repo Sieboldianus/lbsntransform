@@ -63,13 +63,18 @@ def main():
     geocode_dict = False
     if config.geocodeLocations:
         geocode_dict = LoadData.load_geocodes(config.geocodeLocations)
+    # Optional ignore input sources
+    if config.ignore_input_source_list:
+        ignore_sources_set = LoadData.load_ignore_sources(config.ignore_input_source_list)
 
     finished = False
     # initialize field mapping structure
     import_mapper = importer(config.disableReactionPostReferencing,
                              geocode_dict,
-                             config.MapRelations)
-
+                             config.MapRelations,
+                             config.transferReactions,
+                             config.ignore_non_geotagged,
+                             ignore_sources_set)
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)
 

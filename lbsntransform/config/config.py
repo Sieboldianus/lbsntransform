@@ -23,14 +23,15 @@ class BaseConfig():
         self.transferlimit = None
         self.transferCount = 50000 #default:50k # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
         self.number_of_records_to_fetch = 10000
-        self.transferReactions = 1
+        self.transferReactions = True
         # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
         self.disableReactionPostReferencing = False # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
-        self.transferNotGeotagged = 1
+        self.ignore_non_geotagged = False
         self.startWithdb_row_number = 0
         self.end_with_db_row_number = None
         self.debugMode = 'INFO' #needs to be implemented
         self.geocodeLocations = False # provide path to CSV file with location geocodes (CSV Structure: lat, lng, name)
+        self.ignore_input_source_list = False # Provide a list of input_source types that will be ignored (e.g. to ignore certain bots etc.)
         self.input_lbsn_type = None # Input type, e.g. "post", "profile", "friendslist", "followerslist" etc.
         self.MapRelations = False # Set to true to map full relations, e.g. many-to-many relationships such as user_follows, user_friend, user_mentions etc. are mapped in a separate table
         self.CSVOutput = False # Set to True to Output all Submit values to CSV
@@ -56,13 +57,14 @@ class BaseConfig():
         parser.add_argument('-t', "--transferlimit", default=self.transferlimit)
         parser.add_argument('-tC', "--transferCount", default=self.transferCount)
         parser.add_argument('-nR', "--numberOfRecordsToFetch", default=self.number_of_records_to_fetch)
-        parser.add_argument('-tR', "--transferReactions", default=self.transferReactions)
+        parser.add_argument('-tR', "--disableTransferReactions", action='store_true')
         parser.add_argument('-rR', "--disableReactionPostReferencing", action='store_true', default=False)
-        parser.add_argument('-tG', "--transferNotGeotagged", default=self.transferNotGeotagged)
+        parser.add_argument('-iG', "--ignoreNonGeotagged", action='store_true', default=self.ignore_non_geotagged)
         parser.add_argument('-rS', "--startWithDBRowNumber", default=self.startWithdb_row_number)
         parser.add_argument('-rE', "--endWithDBRowNumber", default=self.end_with_db_row_number)
         parser.add_argument('-d', "--debugMode", default=self.debugMode)
         parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations)
+        parser.add_argument('-igS', "--ignoreInputSourceList", default=self.ignore_input_source_list)
         parser.add_argument('-iT', "--inputType", default=self.input_lbsn_type)
         parser.add_argument('-mR', "--mapFullRelations", default=self.MapRelations)
         parser.add_argument('-CSV', "--CSVOutput", action='store_true', default=self.CSVOutput)
@@ -94,6 +96,8 @@ class BaseConfig():
             self.Origin = int(args.Origin)
         if args.geocodeLocations:
             self.geocodeLocations = f'{os.getcwd()}\\{args.geocodeLocations}'
+        if args.ignoreInputSourceList:
+            self.ignore_input_source_list = f'{os.getcwd()}\\{args.ignoreInputSourceList}'
         if args.dbUser_Output:
             self.dbUser_Output = args.dbUser_Output
             self.dbPassword_Output = args.dbPassword_Output
@@ -107,10 +111,11 @@ class BaseConfig():
             self.transferCount = int(args.transferCount)
         if args.numberOfRecordsToFetch:
             self.number_of_records_to_fetch = int(args.numberOfRecordsToFetch)
-        self.transferReactions = args.transferReactions
+        if args.disableTransferReactions is True:
+            self.transferReactions = False
         if args.disableReactionPostReferencing:
             self.disableReactionPostReferencing = True
-        self.transferNotGeotagged = args.transferNotGeotagged
+        self.ignore_non_geotagged = args.ignoreNonGeotagged
         if args.startWithDBRowNumber:
             self.startWithdb_row_number = int(args.startWithDBRowNumber)
         if args.endWithDBRowNumber:
