@@ -7,9 +7,17 @@ from decimal import Decimal
 # for debugging only:
 from google.protobuf import text_format
 
-
 class FieldMappingFlickr():
-    def __init__(self, disableReactionPostReferencing=False, geocodes=False, mapFullRelations=False):
+    """ Provides mapping function from Flickr endpoints to
+        protobuf lbsnstructure
+    """
+    def __init__(self,
+                 disableReactionPostReferencing=False,
+                 geocodes=False,
+                 mapFullRelations=False,
+                 map_reactions=True,
+                 ignore_non_geotagged=False,
+                 ignore_sources_set=set()):
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
@@ -17,7 +25,7 @@ class FieldMappingFlickr():
         origin.origin_id = lbsnOrigin.FLICKR
         self.origin = origin
         self.null_island = 0
-        self.lbsnRecords = LBSNRecordDicts() #this is where all the data will be stored
+        self.lbsn_records = LBSNRecordDicts() #this is where all the data will be stored
         self.log = logging.getLogger('__main__') #get the main logger object
         #self.disableReactionPostReferencing = disableReactionPostReferencing
         #self.mapFullRelations = mapFullRelations
@@ -45,20 +53,25 @@ class FieldMappingFlickr():
         To Do:
             - parameterize column numbers and structure
             - provide external config-file for specific CSV structures
-            - currently not included in lbsn mapping are MachineTags, GeoContext (indoors, outdoors), WoeId
+            - currently not included in lbsn mapping are MachineTags, 
+              GeoContext (indoors, outdoors), WoeId
               and some extra attributes only present for Flickr
         """
         post_guid = record[5]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        postRecord = HF.createNewLBSNRecord_with_id(lbsnPost(),post_guid,self.origin)
+        postRecord = HF.createNewLBSNRecord_with_id(lbsnPost(),
+                                                    post_guid,
+                                                    self.origin)
         postGeoaccuracy = None
-        userRecord = HF.createNewLBSNRecord_with_id(lbsnUser(),record[7],self.origin)
+        userRecord = HF.createNewLBSNRecord_with_id(lbsnUser(),
+                                                    record[7],
+                                                    self.origin)
         userRecord.user_name = record[6]
         userRecord.url = f'http://www.flickr.com/photos/{userRecord.pkey.id}/'
         if userRecord:
             postRecord.user_pkey.CopyFrom(userRecord.pkey)
-        self.lbsnRecords.AddRecordsToDict(userRecord)
+        self.lbsn_records.AddRecordsToDict(userRecord)
         postRecord.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingFlickr.flickr_map_geoaccuracy(record[13])
         if geoaccuracy:
@@ -67,8 +80,10 @@ class FieldMappingFlickr():
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            placeRecord = HF.createNewLBSNRecord_with_id(lbsnPlace(),record[19],self.origin)
-            self.lbsnRecords.AddRecordsToDict(placeRecord)
+            placeRecord = HF.createNewLBSNRecord_with_id(lbsnPlace(),
+                                                         record[19],
+                                                         self.origin)
+            self.lbsn_records.AddRecordsToDict(placeRecord)
             postRecord.place_pkey.CopyFrom(placeRecord.pkey)
         postRecord.post_publish_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[9]))
         postRecord.post_create_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[8]))
@@ -80,7 +95,7 @@ class FieldMappingFlickr():
         postRecord.post_url = f'http://flickr.com/photo.gne?id={post_guid}'
         postRecord.post_body = FieldMappingFlickr.reverse_csv_comma_replace(record[21])
         postRecord.post_title = FieldMappingFlickr.reverse_csv_comma_replace(record[3])
-        postRecord.post_thumbnail_url =record[4]
+        postRecord.post_thumbnail_url = record[4]
         record_tags_list = list(filter(None, record[11].split(";")))
         if record_tags_list:
             for tag in record_tags_list:
@@ -92,7 +107,7 @@ class FieldMappingFlickr():
         else:
             postRecord.post_type = lbsnPost.IMAGE
         postRecord.post_content_license = valueCount(record[14])
-        self.lbsnRecords.AddRecordsToDict(postRecord)
+        self.lbsn_records.AddRecordsToDict(postRecord)
 
     @staticmethod
     def reverse_csv_comma_replace(csv_string):
@@ -105,7 +120,7 @@ class FieldMappingFlickr():
     def clean_tags_from_flickr(tag):
         """Clean special vars not allowed in tags.
         """
-        characters_to_replace = ('{','}')
+        characters_to_replace = ('{', '}')
         for char_check in characters_to_replace:
             tag = tag.replace(char_check,'')
         return tag
@@ -150,16 +165,16 @@ class FieldMappingFlickr():
         lat_entry = record[1]
         lng_entry = record[2]
         if lat_entry == "" and lng_entry == "":
-            l_lat,l_lng = 0,0
+            l_lat, l_lng = 0, 0
         else:
             try:
                 l_lng = Decimal(lng_entry)
                 l_lat = Decimal(lat_entry)
             except:
-                l_lat,l_lng = 0,0
+                l_lat, l_lng = 0, 0
 
         if (l_lat == 0 and l_lng == 0) or l_lat > 90 or l_lat < -90 or l_lng > 180 or l_lng < -180:
-            l_lat,l_lng = 0,0
+            l_lat, l_lng = 0, 0
             self.send_to_null_island(lat_entry, lng_entry, record[5])
         return FieldMappingFlickr.lat_lng_to_wkt(l_lat, l_lng)
 
@@ -167,7 +182,7 @@ class FieldMappingFlickr():
     def lat_lng_to_wkt(lat, lng):
         """Convert lat lng to WKT (Well-Known-Text)
         """
-        point_latlng_string = "POINT(%s %s)" % (lng,lat)
+        point_latlng_string = "POINT(%s %s)" % (lng, lat)
         return point_latlng_string
 
     def send_to_null_island(self, lat_entry, lng_entry, record_guid):

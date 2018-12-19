@@ -73,7 +73,7 @@ class LBSNTransfer():
         # therefore, records are processed starting from lowest granularity. Order is stored in allDicts()
         self.countRound += 1
         #self.headersWritten.clear()
-        recordDicts = fieldMappingTwitter.lbsnRecords
+        recordDicts = fieldMappingTwitter.lbsn_records
         x = 0
         self.count_affected = 0
         for recordsDict in recordDicts.allDicts:

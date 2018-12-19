@@ -53,7 +53,7 @@ class DBConnection():
             conn = psycopg2.connect(conn_string)
         except Exception as err:
             print(err)
-            sys.exit
+            sys.exit()
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
         cursor = conn.cursor()
         dnow = datetime.datetime.now()

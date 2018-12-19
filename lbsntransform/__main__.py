@@ -18,7 +18,6 @@ __version__ = "0.1.520"
 
 import logging
 import io
-import os
 
 def main():
     """ Main function to process data from postgres db or local file input
@@ -91,9 +90,9 @@ def main():
             if continue_number > len(loc_filelist) - 1:
                 break
             records = LoadData.fetch_data_from_file(loc_filelist,
-                                                         continue_number,
-                                                         config.is_stacked_json,
-                                                         config.local_file_type)
+                                                    continue_number,
+                                                    config.is_stacked_json,
+                                                    config.local_file_type)
             # skip empty files
             if not records:
                 continue_number += 1
@@ -116,12 +115,13 @@ def main():
         processed_records += processed_count
         processed_total += processed_count
         print(f'{processed_total} input records processed (up to {continue_number}). '
-              f'Count per type: {import_mapper.lbsnRecords.getTypeCounts()}records.', end='\n')
+              f'Count per type: {import_mapper.lbsn_records.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
         if not start_number or processed_records >= config.transferCount or finished:
             sys.stdout.flush()
-            print(f'Storing {import_mapper.lbsnRecords.CountGlob} records .. {HF.null_notice(import_mapper.null_island)})')
+            print(f'Storing {import_mapper.lbsn_records.CountGlob} records.. '
+                  f'{HF.null_notice(import_mapper.null_island)})')
             output.storeLbsnRecordDicts(import_mapper)
             output.commitChanges()
             processed_records = 0
@@ -141,8 +141,9 @@ def main():
 
     # submit remaining
     # ??
-    if import_mapper.lbsnRecords.CountGlob > 0:
-        print(f'Transferring remaining {import_mapper.lbsnRecords.CountGlob} to db.. {HF.null_notice(import_mapper.null_island)})')
+    if import_mapper.lbsn_records.CountGlob > 0:
+        print(f'Transferring remaining {import_mapper.lbsn_records.CountGlob} to db.. '
+              f'{HF.null_notice(import_mapper.null_island)})')
         output.storeLbsnRecordDicts(import_mapper)
         output.commitChanges()
 
