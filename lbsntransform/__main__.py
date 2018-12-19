@@ -14,18 +14,11 @@ Output options:
 
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
+__version__ = "0.1.519"
 
 import logging
 import io
 import os
-
-# Parse the version according to PEP 440.
-ROOT_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__),
-    os.path.pardir
-))
-with open(os.path.join(ROOT_DIR, 'VERSION')) as version_file:
-    __version__ = version_file.read().strip()  
 
 def main():
     """ Main function to process data from postgres db or local file input
