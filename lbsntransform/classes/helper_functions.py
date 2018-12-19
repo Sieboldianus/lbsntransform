@@ -385,16 +385,18 @@ class LBSNRecordDicts():
             self.update_keyHash(newrelationship) # update keyHash only necessary for new record
 
 class GeocodeLocations():
+    """Class for geocoding of text to lat/lng values.
+    """
     def __init__(self):
-        self.geocodeDict = dict()
+        self.geocode_dict = dict()
 
-    def load_geocodelist(self,file):
+    def load_geocodelist(self, file):
         with open(file, newline='', encoding='utf8') as f: #read each unsorted file and sort lines based on datetime (as string)
             #next(f) #Skip Headerrow
             locationfile_list = csv.reader(f, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
             for location_geocode in locationfile_list:
-                self.geocodeDict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]),location_geocode[1]) # lat/lng
-        print(f'Loaded {len(self.geocodeDict)} geocodes.')
+                self.geocode_dict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]),location_geocode[1]) # lat/lng
+        print(f'Loaded {len(self.geocode_dict)} geocodes.')
 
 class TimeMonitor():
     def __init__(self):
