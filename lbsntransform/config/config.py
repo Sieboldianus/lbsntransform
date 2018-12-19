@@ -66,7 +66,7 @@ class BaseConfig():
         parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations)
         parser.add_argument('-igS', "--ignoreInputSourceList", default=self.ignore_input_source_list)
         parser.add_argument('-iT', "--inputType", default=self.input_lbsn_type)
-        parser.add_argument('-mR', "--mapFullRelations", default=self.MapRelations)
+        parser.add_argument('-mR', "--mapFullRelations", action='store_true')
         parser.add_argument('-CSV', "--CSVOutput", action='store_true', default=self.CSVOutput)
         parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
         parser.add_argument('-rL', "--recursiveLoad", action='store_true', default=False)
