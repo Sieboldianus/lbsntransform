@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from .db_connection import DBConnection
 from .helper_functions import HelperFunctions as HF
+from .helper_functions import GeocodeLocations
 from glob import glob
 from json import loads as json_loads, decoder as json_decoder
 import os
@@ -180,7 +181,7 @@ class LoadData():
 
     def load_geocodes(geo_config):
         """Loads coordinates-string tuples for geocoding text locations (Optional)"""
-        locationsgeocode_dict = geocodeLocations()
+        locationsgeocode_dict = GeocodeLocations()
         locationsgeocode_dict.load_geocodelist(geo_config)
         geocode_dict = locationsgeocode_dict.geocode_dict
         return geocode_dict
