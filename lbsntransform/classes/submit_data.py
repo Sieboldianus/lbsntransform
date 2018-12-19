@@ -17,7 +17,9 @@ import sys
 from google.protobuf import text_format
 
 from glob import glob
+# due to different protocol buffers implementations, import both possible types
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
+from google.protobuf.pyext._message import RepeatedCompositeContainer
 
 class LBSNTransfer():
     def __init__(self, dbCursor = None,
@@ -378,15 +380,25 @@ class LBSNTransfer():
         return preparedSQLRecord
 
     def sortCleanProtoRepeatedField(self, record):
-        # remove duplicate values in repeated field, sort alphabetically
-        # needed for unique compare
+        """Remove duplicate values in repeated field, sort alphabetically
+        
+        ProtocolBuffers has no unique list field type. This function will remove duplicates,
+        which is needed for unique compare.
+
+        There is a 'bug' in Python implementation of ProtocolBuffers:
+        - depending on the implementation type in use, it is possible to spot either 'RepeatedCompositeFieldContainer'
+            or 'RepeatedCompositeContainer'
+        - solution here: import and compare to both types
+        - this is not ideal, since both types are internal to PB and subject to change
+        - see [proto-bug](https://github.com/protocolbuffers/protobuf/issues/3870)
+        """
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x = getattr(record, descriptor.name)
-                if x and not isinstance(x, RepeatedCompositeFieldContainer):
+                if x and not (isinstance(x, RepeatedCompositeFieldContainer) or isinstance(x, RepeatedCompositeContainer)):
                     xCleaned = set(x)
                     xSorted = sorted(xCleaned)
-                    #Complete clear of repeated field
+                    # Complete clear of repeated field
                     for key in range(0, len(x)):
                         x.pop()
                     # add sorted list
