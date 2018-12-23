@@ -3,6 +3,8 @@ import argparse
 import os
 import sys
 
+from lbsnstructure.lbsnstructure_pb2 import lbsnPost
+
 class BaseConfig():
     def __init__(self):
         ## Set Default Config options here
@@ -38,6 +40,7 @@ class BaseConfig():
         self.CSVsuppressLinebreaks = True # Set to False will not remove intext-linebreaks (\r or \n) in output CSVs
         self.recursiveLoad = False
         self.skip_until_file = "" # If local input, skip all files until file with name x appears (default: start immediately)
+        self.min_geoaccuracy = None # set to 'latlng', 'place', or 'city' to limit output based on min geoaccuracy
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
@@ -71,6 +74,7 @@ class BaseConfig():
         parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
         parser.add_argument('-rL', "--recursiveLoad", action='store_true', default=False)
         parser.add_argument('-sF', "--skipUntilFile", default=self.skip_until_file)
+        parser.add_argument('-mGA', "--minGeoAccuracy", default=self.min_geoaccuracy)
 
         args = parser.parse_args()
         if args.LocalInput:
@@ -133,3 +137,20 @@ class BaseConfig():
             self.recursiveLoad = True
         if args.skipUntilFile:
             self.skip_until_file = args.skipUntilFile
+        if args.minGeoAccuracy:
+            self.min_geoaccuracy = self.check_geoaccuracy_input(args.minGeoAccuracy)
+
+    @staticmethod
+    def check_geoaccuracy_input(geoaccuracy_string):
+        """Checks geoaccuracy input string and matches 
+        against proto buf spec
+        """
+        if geoaccuracy_string == 'latlng':
+            return lbsnPost.LATLNG
+        elif geoaccuracy_string == 'place':
+            return lbsnPost.PLACE
+        elif geoaccuracy_string == 'city':
+            return lbsnPost.CITY
+        else:
+            print("Unknown geoaccuracy.")
+            return None
