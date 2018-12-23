@@ -14,7 +14,7 @@ Output options:
 
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
-__version__ = "0.1.520"
+__version__ = "0.1.521"
 
 import logging
 import io
@@ -121,7 +121,7 @@ def main():
         skipped_low_geoaccuracy_total += import_mapper.skipped_low_geoaccuracy
         print(f'{processed_total} input records processed (up to {continue_number}). '
               f'Skipped {skipped_low_geoaccuracy} due to low geoaccuracy. '
-              f'Count per type: {import_mapper.lbsnRecords.getTypeCounts()}records.', end='\n')
+              f'Count per type: {import_mapper.lbsn_records.getTypeCounts()}records.', end='\n')
 
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB

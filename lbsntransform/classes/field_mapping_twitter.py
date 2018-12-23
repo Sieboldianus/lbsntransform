@@ -44,19 +44,11 @@ class FieldMappingTwitter():
         # decide if main object is post or user json
         if input_lbsn_type and input_lbsn_type in ('friendslist', 'followerslist'):
             for user, relatedUserList in jsonStringDict.items():
-<<<<<<< HEAD
-                userRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(user),self.origin)
+                userRecord = HF.createNewLBSNRecord_with_id(lbsnUser(),str(user),self.origin)
                 self.lbsn_records.AddRecordsToDict(userRecord)
                 for relatedUser in relatedUserList:
-                    relatedRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
-                    self.lbsn_records.AddRecordsToDict(relatedRecord)
-=======
-                userRecord = HF.createNewLBSNRecord_with_id(lbsnUser(),str(user),self.origin)
-                self.lbsnRecords.AddRecordsToDict(userRecord)
-                for relatedUser in relatedUserList:
                     relatedRecord = HF.createNewLBSNRecord_with_id(lbsnUser(),str(relatedUser),self.origin)
-                    self.lbsnRecords.AddRecordsToDict(relatedRecord)
->>>>>>> dev
+                    self.lbsn_records.AddRecordsToDict(relatedRecord)
                     # note the switch of order here, direction is important for 'isConnected', and the different list each give us a different view on this relationship
                     if input_lbsn_type == 'friendslist':
                         relationshipRecord = HF.createNewLBSNRelationship_with_id(lbsnRelationship(), userRecord.pkey.id, relatedRecord.pkey.id, self.origin)
@@ -319,13 +311,8 @@ class FieldMappingTwitter():
         # Look for mentioned userRecords
         userMentionsJson = entitiesJson.get('user_mentions')
         if userMentionsJson:
-<<<<<<< HEAD
-            refUserRecords = HelperFunctions.getMentionedUsers(userMentionsJson,self.origin)
-            self.lbsn_records.AddRecordsToDict(refUserRecords)
-=======
             refUserRecords = HF.getMentionedUsers(userMentionsJson,self.origin)
-            self.lbsnRecords.AddRecordsToDict(refUserRecords)
->>>>>>> dev
+            self.lbsn_records.AddRecordsToDict(refUserRecords)
             postRecord.user_mentions_pkey.extend([userRef.pkey for userRef in refUserRecords])
             if self.mapFullRelations:
                 for mentionedUserRecord in refUserRecords:
