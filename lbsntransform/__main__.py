@@ -65,6 +65,8 @@ def main():
     processed_records = 0
     processed_total = 0
     start_number = 0
+    skipped_low_geoaccuracy = 0
+    skipped_low_geoaccuracy_total = 0
     # Start Value, Modify to continue from last processing
     continue_number = config.startWithdb_row_number
 
@@ -73,9 +75,10 @@ def main():
     if config.geocodeLocations:
         geocode_dict = LoadData.load_geocodes(config.geocodeLocations)
     # Optional ignore input sources
+    ignore_sources_set = None
     if config.ignore_input_source_list:
         ignore_sources_set = LoadData.load_ignore_sources(config.ignore_input_source_list)
-
+    
     finished = False
     # initialize field mapping structure
     import_mapper = importer(config.disableReactionPostReferencing,
@@ -83,7 +86,8 @@ def main():
                              config.MapRelations,
                              config.transferReactions,
                              config.ignore_non_geotagged,
-                             ignore_sources_set)
+                             ignore_sources_set,
+                             config.min_geoaccuracy)
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)
 
@@ -122,7 +126,9 @@ def main():
                                                                 config)
         processed_records += processed_count
         processed_total += processed_count
+        skipped_low_geoaccuracy_total += import_mapper.skipped_low_geoaccuracy
         print(f'{processed_total} input records processed (up to {continue_number}). '
+              f'Skipped {skipped_low_geoaccuracy} due to low geoaccuracy. '
               f'Count per type: {import_mapper.lbsnRecords.getTypeCounts()}records.', end='\n')
         # update console
         # On the first loop or after 500.000 processed records, transfer results to DB
@@ -138,7 +144,8 @@ def main():
                                      config.MapRelations,
                                      config.transferReactions,
                                      config.ignore_non_geotagged,
-                                     ignore_sources_set)
+                                     ignore_sources_set,
+                                     config.min_geoaccuracy)
         # remember the first processed DBRow ID
         if not start_number:
             if config.is_local_input:
@@ -162,7 +169,8 @@ def main():
     if config.dbUser_Output:
         cursor_output.close()
     log.info(f'\n\nProcessed {processed_total} input records '
-             f'(Input {start_number} to {continue_number}).')
+             f'(Input {start_number} to {continue_number}).'
+             f'Skipped {skipped_low_geoaccuracy_total} due to low geoaccuracy')
     input(f'Done. {how_long.stop_time()}')
 
 def set_logger():

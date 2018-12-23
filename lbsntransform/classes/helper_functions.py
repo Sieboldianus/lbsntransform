@@ -20,6 +20,23 @@ geos.WKBWriter.defaults['include_srid'] = True
 class HelperFunctions():
 
     @staticmethod
+    def geoaccuracy_within_threshold(post_geoaccuracy, min_geoaccuracy):
+        """Checks if geoaccuracy is within or below threshhold defined"""
+        if min_geoaccuracy == lbsnPost.LATLNG:
+            allowed_geoaccuracies = [lbsnPost.LATLNG]
+        elif min_geoaccuracy == lbsnPost.PLACE:
+            allowed_geoaccuracies = [lbsnPost.LATLNG, lbsnPost.PLACE]
+        elif min_geoaccuracy == lbsnPost.CITY:
+            allowed_geoaccuracies = [lbsnPost.LATLNG, lbsnPost.PLACE, lbsnPost.CITY]
+        else:
+            return True
+        # check post geoaccuracy
+        if post_geoaccuracy in allowed_geoaccuracies:
+            return True
+        else:
+            return False
+
+    @staticmethod
     def get_version():
         """Gets the program version number from version file in root"""
         with open('VERSION') as version_file:
