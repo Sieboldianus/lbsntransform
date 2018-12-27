@@ -6,6 +6,7 @@ scripts/
 .pydevproject
 .settings/
 .vs/
+.vscode/
 *.pyproj
 *.sln
 transferIncremental_AllJson_To_Lbsn.pyproj

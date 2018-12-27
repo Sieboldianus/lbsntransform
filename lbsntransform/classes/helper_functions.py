@@ -4,18 +4,9 @@ from datetime import timezone
 import re
 import csv
 import emoji
-from lbsnstructure.lbsnstructure_pb2 import *
+from lbsnstructure.lbsnstructure_pb2 import lbsnPost
 from google.protobuf.timestamp_pb2 import Timestamp
-import datetime
-import logging
-import time
-from collections import Counter
-from json import JSONDecoder, JSONDecodeError
-# for debugging only:
-from google.protobuf import text_format
-from shapely import geos, wkb, wkt
-# https://gis.stackexchange.com/questions/225196/conversion-of-a-geojson-into-ewkb-format
-geos.WKBWriter.defaults['include_srid'] = True
+
 
 class HelperFunctions():
 
