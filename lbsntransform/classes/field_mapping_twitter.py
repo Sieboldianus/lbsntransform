@@ -348,11 +348,17 @@ class FieldMappingTwitter():
            log.warning(f'No PlaceGuid\n\n{postPlace_json}')
            input("Press Enter to continue... (entry will be skipped)")
            return None,postGeoaccuracy,None
-        bounding_box_points = place.get('bounding_box').get('coordinates')[0]
-        limYMin,limYMax,limXMin,limXMax = HF.getRectangleBounds(bounding_box_points)
-        bound_points_shapely = geometry.MultiPoint([(limXMin, limYMin), (limXMax, limYMax)])
-        lon_center = bound_points_shapely.centroid.coords[0][0] #True centroid (coords may be multipoint)
-        lat_center = bound_points_shapely.centroid.coords[0][1]
+        lon_center = 0
+        lat_center = 0
+        bounding_box = place.get('bounding_box')
+        if bounding_box:
+            bound_coordinates = bounding_box.get('coordinates')
+            if bound_coordinates:
+                bounding_box_points = bound_coordinates[0]
+            limYMin,limYMax,limXMin,limXMax = HF.getRectangleBounds(bounding_box_points)
+            bound_points_shapely = geometry.MultiPoint([(limXMin, limYMin), (limXMax, limYMax)])
+            lon_center = bound_points_shapely.centroid.coords[0][0] #True centroid (coords may be multipoint)
+            lat_center = bound_points_shapely.centroid.coords[0][1]
         place_type = place.get('place_type')
         if place_type == "country":
             # country_guid
@@ -362,10 +368,9 @@ class FieldMappingTwitter():
                 placeRecord = HF.createNewLBSNRecord_with_id(lbsnCountry(),place.get('country_code'),self.origin)
                 if not postGeoaccuracy:
                     postGeoaccuracy = lbsnPost.COUNTRY
-            #else:
-            #    log.warning(f'No country_code\n\n{postPlace_json}')
-            #    input("Press Enter to continue... (entry will be skipped)")
-            #    return None,postGeoaccuracy,None
+            else:
+                log.warning(f'No country_code\n\n{postPlace_json}. PlaceEntry will be skipped..')
+                return None,postGeoaccuracy,None
         elif place_type in ("city","neighborhood","admin"):
             # city_guid
             placeRecord = HF.createNewLBSNRecord_with_id(lbsnCity(),place.get('id'),self.origin)
@@ -392,7 +397,8 @@ class FieldMappingTwitter():
             placeRecord.name_alternatives.append(placeName)
         placeRecord.url = place.get('url')
         placeRecord.geom_center = "POINT(%s %s)" % (lon_center,lat_center)
-        placeRecord.geom_area = Polygon(bounding_box_points).wkt # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
+        if bounding_box and bound_coordinates:
+            placeRecord.geom_area = Polygon(bounding_box_points).wkt # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
         refCountryRecord = None
         if not isinstance(placeRecord, lbsnCountry):
             refCountryCode = place.get('country_code')
