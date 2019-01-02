@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
 
-from .helper_functions import HelperFunctions
-from .helper_functions import LBSNRecordDicts
-from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
-from lbsnstructure.lbsnstructure_pb2 import *
-from google.protobuf.timestamp_pb2 import Timestamp
 import logging
-from sys import exit
 import traceback
 import os
 import sys
+import base64
+import csv
+from sys import exit
+from glob import glob
 from heapq import merge as heapq_merge
 from contextlib import ExitStack
-import base64
+from .helper_functions import HelperFunctions
+from .helper_functions import LBSNRecordDicts
+from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
+from google.protobuf.timestamp_pb2 import Timestamp
+from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
+                                            CompositeKey, \
+                                            RelationshipKey, \
+                                            lbsnUser, \
+                                            lbsnCountry, \
+                                            lbsnPlace, \
+                                            lbsnCity, \
+                                            lbsnUserGroup, \
+                                            lbsnPostRelationship, \
+                                            lbsnPostReaction, \
+                                            lbsnRelationship
 # for debugging only:
 from google.protobuf import text_format
-import csv
-from glob import glob
-
 
 class LBSNcsv():
     """Class to convert and store protobuf records to CSV file(s).
@@ -163,11 +172,11 @@ class LBSNcsv():
             os.remove(merged_filename)
             os.rename(cleaned_merged_filename, merged_filename)
 
-    def get_record_id_from_base64_encoded_string(line):
+    def get_record_id_from_base64_encoded_string(self, line):
         """ Gets record ID from base 64 encoded string
             (unused function)
         """
-        record = get_record_from_base64_encoded_string(line)
+        record = self.get_record_from_base64_encoded_string(line)
         return record.pkey.id
 
     def get_record_from_base64_encoded_string(self, line, type_name):

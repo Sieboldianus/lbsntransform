@@ -1,12 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from datetime import timezone
 import re
 import csv
+import sys
+import logging
+import time
+import datetime
+from datetime import timezone
 import emoji
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost
+from json import JSONDecoder, JSONDecodeError
+from shapely import wkt, geos
 from google.protobuf.timestamp_pb2 import Timestamp
-
+from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
+                                            CompositeKey, \
+                                            RelationshipKey, \
+                                            lbsnUser, \
+                                            lbsnCountry, \
+                                            lbsnPlace, \
+                                            lbsnCity, \
+                                            lbsnUserGroup, \
+                                            lbsnPostRelationship, \
+                                            lbsnPostReaction, \
+                                            lbsnRelationship
 
 class HelperFunctions():
 
@@ -121,7 +136,7 @@ class HelperFunctions():
 
         else:
             post_type = lbsnPost.OTHER
-            log.debug(f'Other Post type detected: {jsonMediaString}')
+            logging.getLogger('__main__').debug(f'Other Post type detected: {jsonMediaString}')
         return post_type
 
     @staticmethod
@@ -270,7 +285,7 @@ class HelperFunctions():
     @staticmethod
     def check_notice_empty_post_guid(post_guid):
         if not post_guid:
-           self.log.warning(f'No PostGuid\n\n{jsonStringDict}')
+           logging.getLogger('__main__').warning(f'No PostGuid\n\n{jsonStringDict}')
            input("Press Enter to continue... (entry will be skipped)")
            return False
         else:
