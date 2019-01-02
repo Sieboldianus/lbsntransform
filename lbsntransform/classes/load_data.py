@@ -82,7 +82,7 @@ class LoadData():
         if format == 'json':
            records = LoadData.fetch_json_data_from_file(loc_filelist,
                                                      continue_number,
-                                                     config.is_stacked_json)
+                                                     is_stacked_json)
         elif format == 'txt':
            records = LoadData.fetch_csv_data_from_file(loc_filelist,
                                                      continue_number)
