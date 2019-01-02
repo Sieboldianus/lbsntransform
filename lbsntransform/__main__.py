@@ -12,12 +12,13 @@ Output options:
     - local ProtoBuf and CSV Import (prepared for Postgres /Copy)
 """
 
+import logging
+import io
+
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
 __version__ = "0.1.521"
 
-import logging
-import io
 
 def main():
     """ Main function to process data from postgres db or local file input
@@ -31,14 +32,17 @@ def main():
     from .config.config import BaseConfig
 
     # Set Output to Replace in case of encoding issues (console/windows)
-    sys.stdout = io.TextIOWrapper(sys.stdout.detach(), sys.stdout.encoding, 'replace')
+    sys.stdout = io.TextIOWrapper(
+        sys.stdout.detach(), sys.stdout.encoding, 'replace')
     # Load Config, will be overwritten if args are given
     config = BaseConfig()
     # Parse args
     config.parseArgs()
     sys.stdout.flush()
     log = set_logger()
-    # load import mapper depending on lbsn origin (e.g. 1 = Instagram, 2 = Flickr, 3 = Twitter)
+    # load import mapper depending on lbsn origin (e.g. 1 = Instagram,
+    #                                                   2 = Flickr,
+    #                                                   3 = Twitter)
     importer = HF.load_importer_mapping_module(config.Origin)
     # establish output connection
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
@@ -69,8 +73,9 @@ def main():
     # Optional ignore input sources
     ignore_sources_set = None
     if config.ignore_input_source_list:
-        ignore_sources_set = LoadData.load_ignore_sources(config.ignore_input_source_list)
-    
+        ignore_sources_set = LoadData.load_ignore_sources(
+            config.ignore_input_source_list)
+
     finished = False
     # initialize field mapping structure
     import_mapper = importer(config.disableReactionPostReferencing,
@@ -102,37 +107,45 @@ def main():
                 continue_number += 1
                 continue
         else:
-            records = LoadData.fetch_json_data_from_lbsn(cursor_input,
-                                                         continue_number,
-                                                         max_records,
-                                                         config.number_of_records_to_fetch)
+            records = \
+                LoadData.fetch_json_data_from_lbsn(
+                    cursor_input,
+                    continue_number,
+                    max_records,
+                    config.number_of_records_to_fetch)
             if not records:
                 break
         if config.is_local_input:
             continue_number += 1
         else:
-            continue_number = records[-1][0] #last returned db_row_number
-        processed_count, finished = LoadData.loop_input_records(records,
-                                                                max_records,
-                                                                import_mapper,
-                                                                config)
+            continue_number = records[-1][0]  # last returned db_row_number
+        processed_count, finished = \
+            LoadData.loop_input_records(
+                records,
+                max_records,
+                import_mapper,
+                config)
         processed_records += processed_count
         processed_total += processed_count
         skipped_low_geoaccuracy_total += import_mapper.skipped_low_geoaccuracy
-        print(f'{processed_total} input records processed (up to {continue_number}). '
+        print(f'{processed_total} input records processed (up to '
+              f'{continue_number}). '
               f'Skipped {skipped_low_geoaccuracy} due to low geoaccuracy. '
-              f'Count per type: {import_mapper.lbsn_records.getTypeCounts()}records.', end='\n')
+              f'Count per type: {import_mapper.lbsn_records.getTypeCounts()}'
+              f'records.', end='\n')
 
         # update console
-        # On the first loop or after 500.000 processed records, transfer results to DB
-        if not start_number or processed_records >= config.transferCount or finished:
+        # On the first loop or after 500.000 processed records,
+        # transfer results to DB
+        if not start_number or processed_records >= config.transferCount or \
+                finished:
             sys.stdout.flush()
             print(f'Storing {import_mapper.lbsn_records.CountGlob} records.. '
                   f'{HF.null_notice(import_mapper.null_island)})')
             output.storeLbsnRecordDicts(import_mapper)
             output.commitChanges()
             processed_records = 0
-            ## create a new empty dict of records
+            # create a new empty dict of records
             import_mapper = importer(config.disableReactionPostReferencing,
                                      geocode_dict,
                                      config.MapRelations,
@@ -145,12 +158,13 @@ def main():
             if config.is_local_input:
                 start_number = 1
             else:
-                start_number = records[0][0] #first returned db_row_number
+                start_number = records[0][0]  # first returned db_row_number
 
     # submit remaining
     # ??
     if import_mapper.lbsn_records.count_glob > 0:
-        print(f'Transferring remaining {import_mapper.lbsn_records.CountGlob} to db.. '
+        print(f'Transferring remaining '
+              f'{import_mapper.lbsn_records.CountGlob} to db.. '
               f'{HF.null_notice(import_mapper.null_island)})')
         output.storeLbsnRecordDicts(import_mapper)
         output.commitChanges()
@@ -165,20 +179,26 @@ def main():
         cursor_output.close()
     log.info(f'\n\nProcessed {processed_total} input records '
              f'(Input {start_number} to {continue_number}).'
-             f'Skipped {skipped_low_geoaccuracy_total} due to low geoaccuracy. ')
+             f'Skipped {skipped_low_geoaccuracy_total} '
+             f'due to low geoaccuracy.')
     input(f'Done. {how_long.stop_time()}')
 
-def set_logger():
-    """ Set logging handler manually, so we can also print to console while logging to file"""
 
-    logging.basicConfig(handlers=[logging.FileHandler('log.log', 'w', 'utf-8')],
-                        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                        datefmt='%H:%M:%S',
-                        level=logging.DEBUG)
+def set_logger():
+    """ Set logging handler manually,
+    so we can also print to console while logging to file
+    """
+
+    logging.basicConfig(handlers=[logging.FileHandler(
+        'log.log', 'w', 'utf-8')],
+        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+        datefmt='%H:%M:%S',
+        level=logging.DEBUG)
     log = logging.getLogger(__name__)
     # Get Stream handler
     logging.getLogger().addHandler(logging.StreamHandler())
     return log
+
 
 if __name__ == "__main__":
     main()

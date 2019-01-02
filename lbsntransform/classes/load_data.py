@@ -10,10 +10,12 @@ from .db_connection import DBConnection
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import GeocodeLocations
 
+
 class LoadData():
 
     def loop_input_records(records, transferlimit, import_mapper, config):
-        """Loops input json or csv records, converts to ProtoBuf structure and adds to records_dict
+        """Loops input json or csv records,
+        converts to ProtoBuf structure and adds to records_dict
 
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
@@ -31,14 +33,17 @@ class LoadData():
             if LoadData.skip_empty_or_other(single_record):
                 continue
             if config.local_file_type == 'json' or not config.is_local_input:
-                import_mapper.parse_json_record(single_record, config.input_lbsn_type)
-            elif config.local_file_type in ('txt','csv'):
+                import_mapper.parse_json_record(
+                    single_record, config.input_lbsn_type)
+            elif config.local_file_type in ('txt', 'csv'):
                 import_mapper.parse_csv_record(single_record)
             else:
                 exit(f'Format {config.local_file_type} not supportet.')
 
             if (transferlimit and processed_records >= transferlimit) or \
-               (not config.is_local_input and config.end_with_db_row_number and db_row_number >= config.end_with_db_row_number):
+               (not config.is_local_input and
+                    config.end_with_db_row_number and
+                    db_row_number >= config.end_with_db_row_number):
                 finished = True
                 break
         return processed_records, finished
@@ -49,11 +54,14 @@ class LoadData():
            so they can be skipped.
         """
         skip = False
-        if not single_record or (isinstance(single_record,dict) and single_record.get('limit')):
+        if not single_record or \
+            (isinstance(single_record, dict) and
+             single_record.get('limit')):
             skip = True
         return skip
 
-    def fetch_json_data_from_lbsn(cursor, start_id=0, get_max=None, number_of_records_to_fetch=10000):
+    def fetch_json_data_from_lbsn(cursor, start_id=0, get_max=None,
+                                  number_of_records_to_fetch=10000):
         """Fetches records from Postgres DB
 
         Keyword arguments:
@@ -65,7 +73,8 @@ class LoadData():
         # if transferlimit is below number_of_records_to_fetch, e.g.  10000,
         # retrieve only necessary volume of records
         if get_max:
-            number_of_records_to_fetch = min(number_of_records_to_fetch, get_max)
+            number_of_records_to_fetch = min(
+                number_of_records_to_fetch, get_max)
         query_sql = '''
                 SELECT in_id,insert_time,data::json FROM public."input"
                 WHERE in_id > %s
@@ -77,21 +86,23 @@ class LoadData():
             return None
         return records
 
-    def fetch_data_from_file(loc_filelist, continue_number, is_stacked_json, format):
+    def fetch_data_from_file(loc_filelist, continue_number,
+                             is_stacked_json, format):
         """Fetches CSV or JSON data (including stacked json) from file"""
         if format == 'json':
-           records = LoadData.fetch_json_data_from_file(loc_filelist,
-                                                     continue_number,
-                                                     is_stacked_json)
+            records = LoadData.fetch_json_data_from_file(loc_filelist,
+                                                         continue_number,
+                                                         is_stacked_json)
         elif format == 'txt':
-           records = LoadData.fetch_csv_data_from_file(loc_filelist,
-                                                     continue_number)
+            records = LoadData.fetch_csv_data_from_file(loc_filelist,
+                                                        continue_number)
         else:
-           exit(f'Format {format} not supported.')
+            exit(f'Format {format} not supported.')
         return records
 
     @staticmethod
-    def fetch_json_data_from_file(loc_filelist, start_file_id=0, is_stacked_json=False):
+    def fetch_json_data_from_file(loc_filelist, start_file_id=0,
+                                  is_stacked_json=False):
         """Read json entries from file.
 
         Typical form is [{json1},{json2}], if is_stacked_json is True:
@@ -119,14 +130,17 @@ class LoadData():
     def fetch_csv_data_from_file(loc_filelist, start_file_id=0):
         """Read csv entries from file (either *.txt or *.csv).
 
-        The actual CSV formatting is not setable in config yet. There are many specifics, e.g.
-        #QUOTE_NONE is used here because media saved from Flickr does not contain any quotes ""
+        The actual CSV formatting is not setable in config yet.
+        There are many specifics, e.g.
+        #QUOTE_NONE is used here because media saved from Flickr
+        does not contain any quotes ""
         """
         records = []
         loc_file = loc_filelist[start_file_id]
         HF.log_main_debug(f'\nCurrent file: {ntpath.basename(loc_file)}')
         with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
-            reader = csv.reader(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONE)
+            reader = csv.reader(file, delimiter=',',
+                                quotechar='"', quoting=csv.QUOTE_NONE)
             next(reader, None)  # skip headerline
             records = list(reader)
         if not records:
@@ -155,21 +169,25 @@ class LoadData():
                                         config.dbNameInput,
                                         config.dbUser_Input,
                                         config.dbPassword_Input,
-                                        True # ReadOnly Mode
+                                        True  # ReadOnly Mode
                                         )
         conn_input, cursor_input = input_connection.connect()
         return cursor_input
 
     def read_local_files(config):
-        """Read Local Files according to config parameters and returns list of file-paths"""
+        """Read Local Files according to config parameters and
+        returns list of file-paths
+        """
         path = f'{config.InputPath}'
         if config.recursiveLoad:
-            excludefolderlist = ["01_DataSetHistory","02_UserData","03_ClippedData","04_MapVis"]
-            excludestartswithfile = ["log","settings","GridCoordinates"]
-            loc_filelist = LoadData.scan_rec(path,
-                                             format=config.local_file_type,
-                                             excludefolderlist=excludefolderlist,
-                                             excludestartswithfile=excludestartswithfile)
+            excludefolderlist = ["01_DataSetHistory",
+                                 "02_UserData", "03_ClippedData", "04_MapVis"]
+            excludestartswithfile = ["log", "settings", "GridCoordinates"]
+            loc_filelist = \
+                LoadData.scan_rec(path,
+                                  format=config.local_file_type,
+                                  excludefolderlist=excludefolderlist,
+                                  excludestartswithfile=excludestartswithfile)
         else:
             loc_filelist = glob(f'{path}*.{config.local_file_type}')
 
@@ -180,7 +198,9 @@ class LoadData():
             return loc_filelist
 
     def load_geocodes(geo_config):
-        """Loads coordinates-string tuples for geocoding text locations (Optional)"""
+        """Loads coordinates-string tuples for geocoding
+        text locations (Optional)
+        """
         locationsgeocode_dict = GeocodeLocations()
         locationsgeocode_dict.load_geocodelist(geo_config)
         geocode_dict = locationsgeocode_dict.geocode_dict
@@ -195,21 +215,24 @@ class LoadData():
         return ignore_source_list
 
     @staticmethod
-    def scan_rec(root, subdirlimit=2, format="csv", excludefolderlist=[], excludestartswithfile=[]):
+    def scan_rec(root, subdirlimit=2, format="csv",
+                 excludefolderlist=[], excludestartswithfile=[]):
         """Recursively scan subdir for datafiles"""
         rval = []
-        def do_scan(start_dir,output,depth=0):
+
+        def do_scan(start_dir, output, depth=0):
             for f in os.listdir(start_dir):
-                ff = os.path.join(start_dir,f)
+                ff = os.path.join(start_dir, f)
                 if os.path.isdir(ff):
-                    if depth<subdirlimit:
+                    if depth < subdirlimit:
                         efound = False
-                        for entry in excludefolderlist: #check for excludefolders
+                        # check for excludefolders:
+                        for entry in excludefolderlist:
                             if entry in ff:
                                 efound = True
                                 break
-                        if efound == False:
-                            do_scan(ff,output,depth+1)
+                        if efound is False:
+                            do_scan(ff, output, depth+1)
                 else:
                     if ff.endswith(format):
                         efound = False
@@ -217,7 +240,7 @@ class LoadData():
                             if ntpath.basename(ff).startswith(entry):
                                 efound = True
                                 break
-                        if efound == False:
+                        if efound is False:
                             output.append(ff)
-        do_scan(root,rval,0)
+        do_scan(root, rval, 0)
         return rval

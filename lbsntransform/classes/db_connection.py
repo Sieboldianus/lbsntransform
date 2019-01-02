@@ -11,8 +11,10 @@ import psycopg2
 
 LOG = logging.getLogger()
 
+
 class DBConnection():
     """ Class for connectiong to Postgres. """
+
     def __init__(self, serveradress=None, dbname=None,
                  user=None, password=0, readonly=False,
                  sslmode='prefer'):
@@ -22,17 +24,17 @@ class DBConnection():
         self.user = user
         self.password = password
         self.readonly = readonly
-        self.sslmode = sslmode # Choose 'disable' to connect without ssl
+        self.sslmode = sslmode  # Choose 'disable' to connect without ssl
 
     def connect(self):
         """Database config. """
         conf = {
-            "host":self.serveradress,
-            "dbname":self.dbname,
-            "user":self.user,
-            "sslmode":self.sslmode
+            "host": self.serveradress,
+            "dbname": self.dbname,
+            "user": self.user,
+            "sslmode": self.sslmode
         }
-        ## Connect to database
+        # Connect to database
         if self.password == 0:
             promt_txt = f"Enter the password for {conf['user']}: "
             if sys.stdin.isatty():
@@ -49,13 +51,15 @@ class DBConnection():
                       f"password='{conf['password']}'" \
                       f"sslmode='{conf['sslmode']}'" \
                       f"application_name='LBSN Batch Transfer'"
-        # get a connection, if a connect cannot be made an exception will be raised here
+        # get a connection, if a connect cannot be made an
+        # exception will be raised here
         try:
             conn = psycopg2.connect(conn_string)
         except Exception as err:
             print(err)
             sys.exit()
-        # conn.cursor will return a cursor object, you can use this cursor to perform queries
+        # conn.cursor will return a cursor object,
+        # you can use this cursor to perform queries
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
         LOG.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} '
