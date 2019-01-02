@@ -14,7 +14,8 @@ LOG = logging.getLogger()
 class DBConnection():
     """ Class for connectiong to Postgres. """
     def __init__(self, serveradress=None, dbname=None,
-                 user=None, password=0, readonly=False, sslmode='prefer'):
+                 user=None, password=0, readonly=False,
+                 sslmode='prefer'):
         """Initialize DBConnection object with attributes, if passed. """
         self.serveradress = serveradress
         self.dbname = dbname
@@ -57,5 +58,6 @@ class DBConnection():
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
-        LOG.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} - Connected to {self.dbname}')
+        LOG.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} '
+                 f'- Connected to {self.dbname}')
         return conn, cursor

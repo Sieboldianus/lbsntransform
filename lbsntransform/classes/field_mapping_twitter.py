@@ -7,7 +7,8 @@ import re
 from google.protobuf.timestamp_pb2 import Timestamp
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
+from lbsnstructure.lbsnstructure_pb2 import lbsnOrigin, \
+                                            lbsnPost, \
                                             CompositeKey, \
                                             RelationshipKey, \
                                             lbsnUser, \
@@ -17,7 +18,8 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
                                             lbsnUserGroup, \
                                             lbsnPostRelationship, \
                                             lbsnPostReaction, \
-                                            lbsnRelationship
+                                            lbsnRelationship, \
+                                            Language
 # for debugging only:
 from google.protobuf import text_format
 
@@ -387,7 +389,7 @@ class FieldMappingTwitter():
         place = postplace_json
         place_id = postplace_json.get('id')
         if not place_id:
-           log.warning(f'No PlaceGuid\n\n{postplace_json}')
+           self.log.warning(f'No PlaceGuid\n\n{postplace_json}')
            input("Press Enter to continue... (entry will be skipped)")
            return None, post_geoaccuracy, None
         lon_center = 0
@@ -414,7 +416,7 @@ class FieldMappingTwitter():
                 if not post_geoaccuracy:
                     post_geoaccuracy = lbsnPost.COUNTRY
             else:
-                log.warning(f'No country_code\n\n{postplace_json}. PlaceEntry will be skipped..')
+                self.log.warning(f'No country_code\n\n{postplace_json}. PlaceEntry will be skipped..')
                 return None, post_geoaccuracy, None
         elif place_type in ("city", "neighborhood", "admin"):
             # city_guid
@@ -435,7 +437,7 @@ class FieldMappingTwitter():
                                                             lbsnPost.CITY):
                 post_geoaccuracy = lbsnPost.PLACE
         else:
-            log.warning(f'No Place Type Detected: {postplace_json}')
+            self.log.warning(f'No Place Type Detected: {postplace_json}')
         #for some reason, twitter place entities sometimes contain linebreaks or whitespaces. We don't want this.
         place_name = postplace_json.get('name').replace('\n\r','')
         place_name = re.sub(' +', ' ', place_name) # remove multiple whitespace

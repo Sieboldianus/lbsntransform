@@ -12,9 +12,9 @@ class FieldMappingFlickr():
         protobuf lbsnstructure
     """
     def __init__(self,
-                 disableReactionPostReferencing=False,
+                 disable_reaction_post_referencing=False,
                  geocodes=False,
-                 mapFullRelations=False,
+                 map_full_relations=False,
                  map_reactions=True,
                  ignore_non_geotagged=False,
                  ignore_sources_set=set()):
@@ -60,54 +60,54 @@ class FieldMappingFlickr():
         post_guid = record[5]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        postRecord = HF.create_new_lbsn_record_with_id(lbsnPost(),
+        post_record = HF.create_new_lbsn_record_with_id(lbsnPost(),
                                                     post_guid,
                                                     self.origin)
-        postGeoaccuracy = None
-        userRecord = HF.create_new_lbsn_record_with_id(lbsnUser(),
+        post_geoaccuracy = None
+        user_record = HF.create_new_lbsn_record_with_id(lbsnUser(),
                                                     record[7],
                                                     self.origin)
-        userRecord.user_name = record[6]
-        userRecord.url = f'http://www.flickr.com/photos/{userRecord.pkey.id}/'
-        if userRecord:
-            postRecord.user_pkey.CopyFrom(userRecord.pkey)
-        self.lbsn_records.add_records_to_dict(userRecord)
-        postRecord.post_latlng = self.flickr_extract_postlatlng(record)
+        user_record.user_name = record[6]
+        user_record.url = f'http://www.flickr.com/photos/{userRecord.pkey.id}/'
+        if user_record:
+            post_record.user_pkey.CopyFrom(user_record.pkey)
+        self.lbsn_records.add_records_to_dict(user_record)
+        post_record.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingFlickr.flickr_map_geoaccuracy(record[13])
         if geoaccuracy:
-            postRecord.post_geoaccuracy = geoaccuracy
+            post_record.post_geoaccuracy = geoaccuracy
         if record[19]:
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            placeRecord = HF.create_new_lbsn_record_with_id(lbsnPlace(),
-                                                         record[19],
-                                                         self.origin)
-            self.lbsn_records.add_records_to_dict(placeRecord)
-            postRecord.place_pkey.CopyFrom(placeRecord.pkey)
-        postRecord.post_publish_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[9]))
-        postRecord.post_create_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[8]))
+            place_record = HF.create_new_lbsn_record_with_id(lbsnPlace(),
+                                                             record[19],
+                                                             self.origin)
+            self.lbsn_records.add_records_to_dict(place_record)
+            post_record.place_pkey.CopyFrom(place_record.pkey)
+        post_record.post_publish_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[9]))
+        post_record.post_create_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[8]))
         #valueCount = lambda x: 0 if x is None else x
-        valueCount = lambda x: int(x) if x.isdigit() else 0
-        postRecord.post_views_count = valueCount(record[10])
-        postRecord.post_comment_count = valueCount(record[18])
-        postRecord.post_like_count = valueCount(record[17])
-        postRecord.post_url = f'http://flickr.com/photo.gne?id={post_guid}'
-        postRecord.post_body = FieldMappingFlickr.reverse_csv_comma_replace(record[21])
-        postRecord.post_title = FieldMappingFlickr.reverse_csv_comma_replace(record[3])
-        postRecord.post_thumbnail_url = record[4]
+        value_count = lambda x: int(x) if x.isdigit() else 0
+        post_record.post_views_count = value_count(record[10])
+        post_record.post_comment_count = value_count(record[18])
+        post_record.post_like_count = value_count(record[17])
+        post_record.post_url = f'http://flickr.com/photo.gne?id={post_guid}'
+        post_record.post_body = FieldMappingFlickr.reverse_csv_comma_replace(record[21])
+        post_record.post_title = FieldMappingFlickr.reverse_csv_comma_replace(record[3])
+        post_record.post_thumbnail_url = record[4]
         record_tags_list = list(filter(None, record[11].split(";")))
         if record_tags_list:
             for tag in record_tags_list:
                 tag = FieldMappingFlickr.clean_tags_from_flickr(tag)
-                postRecord.hashtags.append(tag)
+                post_record.hashtags.append(tag)
         record_media_type = record[16]
         if record_media_type and record_media_type == "video":
-            postRecord.post_type = lbsnPost.VIDEO
+            post_record.post_type = lbsnPost.VIDEO
         else:
-            postRecord.post_type = lbsnPost.IMAGE
-        postRecord.post_content_license = valueCount(record[14])
-        self.lbsn_records.add_records_to_dict(postRecord)
+            post_record.post_type = lbsnPost.IMAGE
+        post_record.post_content_license = value_count(record[14])
+        self.lbsn_records.add_records_to_dict(post_record)
 
     @staticmethod
     def reverse_csv_comma_replace(csv_string):
@@ -173,7 +173,9 @@ class FieldMappingFlickr():
             except:
                 l_lat, l_lng = 0, 0
 
-        if (l_lat == 0 and l_lng == 0) or l_lat > 90 or l_lat < -90 or l_lng > 180 or l_lng < -180:
+        if (l_lat == 0 and l_lng == 0) \
+        or l_lat > 90 or l_lat < -90 \
+        or l_lng > 180 or l_lng < -180:
             l_lat, l_lng = 0, 0
             self.send_to_null_island(lat_entry, lng_entry, record[5])
         return FieldMappingFlickr.lat_lng_to_wkt(l_lat, l_lng)
@@ -189,5 +191,6 @@ class FieldMappingFlickr():
         """Logs entries with problematic lat/lng's,
            increases Null Island Counter by 1.
         """
-        self.log.debug(f'NULL island: Guid {record_guid} - Coordinates: {lat_entry}, {lng_entry}')
+        self.log.debug(f'NULL island: Guid {record_guid} - '
+                       f'Coordinates: {lat_entry}, {lng_entry}')
         self.null_island += 1
