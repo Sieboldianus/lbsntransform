@@ -149,7 +149,7 @@ def main():
 
     # submit remaining
     # ??
-    if import_mapper.lbsn_records.CountGlob > 0:
+    if import_mapper.lbsn_records.count_glob > 0:
         print(f'Transferring remaining {import_mapper.lbsn_records.CountGlob} to db.. '
               f'{HF.null_notice(import_mapper.null_island)})')
         output.storeLbsnRecordDicts(import_mapper)

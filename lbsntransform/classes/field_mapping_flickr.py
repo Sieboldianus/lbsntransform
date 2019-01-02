@@ -60,18 +60,18 @@ class FieldMappingFlickr():
         post_guid = record[5]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        postRecord = HF.createNewLBSNRecord_with_id(lbsnPost(),
+        postRecord = HF.create_new_lbsn_record_with_id(lbsnPost(),
                                                     post_guid,
                                                     self.origin)
         postGeoaccuracy = None
-        userRecord = HF.createNewLBSNRecord_with_id(lbsnUser(),
+        userRecord = HF.create_new_lbsn_record_with_id(lbsnUser(),
                                                     record[7],
                                                     self.origin)
         userRecord.user_name = record[6]
         userRecord.url = f'http://www.flickr.com/photos/{userRecord.pkey.id}/'
         if userRecord:
             postRecord.user_pkey.CopyFrom(userRecord.pkey)
-        self.lbsn_records.AddRecordsToDict(userRecord)
+        self.lbsn_records.add_records_to_dict(userRecord)
         postRecord.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingFlickr.flickr_map_geoaccuracy(record[13])
         if geoaccuracy:
@@ -80,10 +80,10 @@ class FieldMappingFlickr():
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            placeRecord = HF.createNewLBSNRecord_with_id(lbsnPlace(),
+            placeRecord = HF.create_new_lbsn_record_with_id(lbsnPlace(),
                                                          record[19],
                                                          self.origin)
-            self.lbsn_records.AddRecordsToDict(placeRecord)
+            self.lbsn_records.add_records_to_dict(placeRecord)
             postRecord.place_pkey.CopyFrom(placeRecord.pkey)
         postRecord.post_publish_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[9]))
         postRecord.post_create_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[8]))
@@ -107,7 +107,7 @@ class FieldMappingFlickr():
         else:
             postRecord.post_type = lbsnPost.IMAGE
         postRecord.post_content_license = valueCount(record[14])
-        self.lbsn_records.AddRecordsToDict(postRecord)
+        self.lbsn_records.add_records_to_dict(postRecord)
 
     @staticmethod
     def reverse_csv_comma_replace(csv_string):

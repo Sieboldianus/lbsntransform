@@ -31,7 +31,7 @@ class LoadData():
             if LoadData.skip_empty_or_other(single_record):
                 continue
             if config.local_file_type == 'json' or not config.is_local_input:
-                import_mapper.parseJsonRecord(single_record, config.input_lbsn_type)
+                import_mapper.parse_json_record(single_record, config.input_lbsn_type)
             elif config.local_file_type in ('txt','csv'):
                 import_mapper.parse_csv_record(single_record)
             else:

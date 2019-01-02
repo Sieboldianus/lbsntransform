@@ -76,7 +76,7 @@ class LBSNTransfer():
         recordDicts = fieldMappingTwitter.lbsn_records
         x = 0
         self.count_affected = 0
-        for recordsDict in recordDicts.allDicts:
+        for recordsDict in recordDicts.all_dicts:
             type_name = recordsDict[1]
             for record_pkey, record in recordsDict[0].items():
                 x += 1

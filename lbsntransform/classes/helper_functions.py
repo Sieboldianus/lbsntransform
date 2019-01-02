@@ -77,45 +77,50 @@ class HelperFunctions():
         return list(c for c in str if c in emoji.UNICODE_EMOJI)
 
     @staticmethod
-    def getRectangleBounds(points):
+    def get_rectangle_bounds(points):
         lats = []
         lngs = []
         for point in points:
             lngs.append(point[0])
             lats.append(point[1])
-        limYMin = min(lats)
-        limYMax = max(lats)
-        limXMin = min(lngs)
-        limXMax = max(lngs)
-        return limYMin,limYMax,limXMin,limXMax
+        lim_y_min = min(lats)
+        lim_y_max = max(lats)
+        lim_x_min = min(lngs)
+        lim_x_max = max(lngs)
+        return lim_y_min, lim_y_max, lim_x_min, lim_x_max
 
     @staticmethod
-    def createNewLBSNRecord_with_id(record,id,origin):
+    def create_new_lbsn_record_with_id(record, id, origin):
             # initializes new record with composite ID
-            c_Key = CompositeKey()
-            c_Key.origin.CopyFrom(origin)
-            c_Key.id = id
-            record.pkey.CopyFrom(c_Key)
+            c_key = CompositeKey()
+            c_key.origin.CopyFrom(origin)
+            c_key.id = id
+            record.pkey.CopyFrom(c_key)
             return record
 
     @staticmethod
-    def createNewLBSNRelationship_with_id(lbsnRelationship,relation_to_id, relation_from_id, relation_origin):
+    def create_new_lbsn_relationship_with_id(lbsn_relationship,
+                                             relation_to_id,
+                                             relation_from_id,
+                                             relation_origin):
             # initializes new relationship with 2 composite IDs for one origin
-            c_Key_to = CompositeKey()
-            c_Key_to.origin.CopyFrom(relation_origin)
-            c_Key_to.id = relation_to_id
-            c_Key_from = CompositeKey()
-            c_Key_from.origin.CopyFrom(relation_origin)
-            c_Key_from.id = relation_from_id
-            r_Key = RelationshipKey()
-            r_Key.relation_to.CopyFrom(c_Key_to)
-            r_Key.relation_from.CopyFrom(c_Key_from)
-            lbsnRelationship.pkey.CopyFrom(r_Key)
-            return lbsnRelationship
+            c_key_to = CompositeKey()
+            c_key_to.origin.CopyFrom(relation_origin)
+            c_key_to.id = relation_to_id
+            c_key_from = CompositeKey()
+            c_key_from.origin.CopyFrom(relation_origin)
+            c_key_from.id = relation_from_id
+            r_key = RelationshipKey()
+            r_key.relation_to.CopyFrom(c_key_to)
+            r_key.relation_from.CopyFrom(c_key_from)
+            lbsn_relationship.pkey.CopyFrom(r_key)
+            return lbsn_relationship
 
     @staticmethod
-    def isPostReaction(jsonString):
-        if 'quoted_status' in jsonString or 'retweeted_status' in jsonString or jsonString.get('in_reply_to_status_id_str'):
+    def is_post_reaction(jsonString):
+        if 'quoted_status' in jsonString \
+        or 'retweeted_status' in jsonString \
+        or jsonString.get('in_reply_to_status_id_str'):
             # The retweeted field will return true if a tweet _got_ retweeted
             # To detect if a tweet is a retweet of other tweet, check the retweeted_status field
             return True
@@ -123,76 +128,84 @@ class HelperFunctions():
             return False
 
     @staticmethod
-    def assignMediaPostType(jsonMediaString):
+    def assign_media_post_type(json_media_string):
         # if post, get type of first entity
-        typeString = jsonMediaString[0].get('type')
+        type_string = json_media_string[0].get('type')
         # type is either photo, video, or animated_gif
         # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
-        if typeString:
-            if typeString == "photo":
+        if type_string:
+            if type_string == "photo":
                 post_type = lbsnPost.IMAGE
-            elif typeString in ("video","animated_gif"):
+            elif type_string in ("video","animated_gif"):
                 post_type = lbsnPost.VIDEO
 
         else:
             post_type = lbsnPost.OTHER
-            logging.getLogger('__main__').debug(f'Other Post type detected: {jsonMediaString}')
+            logging.getLogger('__main__').debug(f'Other Post type detected: '
+                                                f'{json_media_string}')
         return post_type
 
     @staticmethod
-    def parseJSONDateStringToProtoBuf(jsonDateString):
+    def parseJSONDateStringToProtoBuf(json_date_string):
         # Parse String -Timestamp Format found in Twitter json
-        dateTimeRecord = datetime.datetime.strptime(jsonDateString,'%a %b %d %H:%M:%S +0000 %Y')
-        protobufTimestampRecord = Timestamp()
+        date_time_record = datetime.datetime.strptime(json_date_string,
+                                                    '%a %b %d %H:%M:%S +0000 %Y')
+        protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
-        protobufTimestampRecord.FromDatetime(dateTimeRecord)
-        return protobufTimestampRecord
+        protobuf_timestamp_record.FromDatetime(date_time_record)
+        return protobuf_timestamp_record
 
     @staticmethod
     def parse_csv_datestring_to_protobuf(csv_datestring):
         # Parse String -Timestamp Format found in Flickr csv
-        dateTimeRecord = datetime.datetime.strptime(csv_datestring,'%m/%d/%Y %H:%M:%S')
-        protobufTimestampRecord = Timestamp()
+        date_time_record = datetime.datetime.strptime(csv_datestring,
+                                                    '%m/%d/%Y %H:%M:%S')
+        protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
-        protobufTimestampRecord.FromDatetime(dateTimeRecord)
-        return protobufTimestampRecord
+        protobuf_timestamp_record.FromDatetime(date_time_record)
+        return protobuf_timestamp_record
 
     @staticmethod
-    def getMentionedUsers(userMentions_jsonString,origin):
-        mentionedUsersList = []
-        for userMention in userMentions_jsonString:    #iterate over the list
-            refUserRecord = HelperFunctions.createNewLBSNRecord_with_id(lbsnUser(),userMention.get('id_str'),origin)
-            refUserRecord.user_fullname = userMention.get('name') # Needs to be saved
-            refUserRecord.user_name = userMention.get('screen_name')
-            mentionedUsersList.append(refUserRecord)
-        return mentionedUsersList
+    def get_mentioned_users(userMentions_jsonString,origin):
+        mentioned_users_list = []
+        for user_mention in userMentions_jsonString:    #iterate over the list
+            ref_user_record = HelperFunctions.create_new_lbsn_record_with_id(lbsnUser(),
+                                                                           user_mention.get('id_str'),
+                                                                           origin)
+            ref_user_record.user_fullname = user_mention.get('name') # Needs to be saved
+            ref_user_record.user_name = user_mention.get('screen_name')
+            mentioned_users_list.append(ref_user_record)
+        return mentioned_users_list
 
     @staticmethod
-    def substituteReferencedUser(mainPost, origin, log):
+    def substitute_referenced_user(main_post, origin, log):
         # Look for mentioned userRecords
-        refUser_pkey = None
-        userMentionsJson = mainPost.get('entities').get('user_mentions')
-        if userMentionsJson:
-            refUserRecords = HelperFunctions.getMentionedUsers(userMentionsJson,origin)
+        ref_user_pkey = None
+        user_mentions_json = main_post.get('entities').get('user_mentions')
+        if user_mentions_json:
+            ref_user_records = HelperFunctions.get_mentioned_users(user_mentions_json,
+                                                                   origin)
             # if it is a retweet, and the status contains 'RT @', and the mentioned UserID is in status, we can almost be certain that it is the userid who posted the original tweet that was retweeted
-            if refUserRecords and refUserRecords[0].user_name.lower() in mainPost.get('text').lower() and  mainPost.get('text').startswith(f'RT @'):
-                refUser_pkey = refUserRecords[0].pkey
-            if refUser_pkey is None:
-                log.warning(f'No User record found for referenced post in: {mainPost}')
+            if ref_user_records \
+               and ref_user_records[0].user_name.lower() in main_post.get('text').lower() \
+               and  main_post.get('text').startswith(f'RT @'):
+                ref_user_pkey = ref_user_records[0].pkey
+            if ref_user_pkey is None:
+                log.warning(f'No User record found for referenced post in: {main_post}')
                 input("Press Enter to continue... (post will be saved without userid)")
-        return refUser_pkey
+        return ref_user_pkey
 
     @staticmethod
-    def null_check(recordAttr):
+    def null_check(record_attr):
         """Helper function to check for Null Values
         """
-        if not recordAttr:
+        if not record_attr:
             return None
         else:
             # This function will also remove Null bytes from string, which aren't supported by Postgres
-            if isinstance(recordAttr, str):
-                recordAttr = HelperFunctions.clean_null_bytes_from_str(recordAttr)
-            return recordAttr
+            if isinstance(record_attr, str):
+                record_attr = HelperFunctions.clean_null_bytes_from_str(record_attr)
+            return record_attr
 
     @staticmethod
     def null_check_datetime(recordAttr):
@@ -248,9 +261,9 @@ class HelperFunctions():
     def merge_existing_records(oldrecord, newrecord):
         # Basic Compare function for GUIDS
         # First check if length of both ProtoBuf Messages are the same
-        oldRecordString = oldrecord.SerializeToString()
-        newRecordString = newrecord.SerializeToString()
-        if not len(oldRecordString) == len(newRecordString):
+        old_record_string = oldrecord.SerializeToString()
+        new_record_string = newrecord.SerializeToString()
+        if not len(old_record_string) == len(new_record_string):
             # no need to do anything if same lengt
             oldrecord.MergeFrom(newrecord)
             #updatedrecord = self.deepCompareMergeMessages(oldrecord,newrecord)
@@ -285,7 +298,8 @@ class HelperFunctions():
     @staticmethod
     def check_notice_empty_post_guid(post_guid):
         if not post_guid:
-           logging.getLogger('__main__').warning(f'No PostGuid\n\n{jsonStringDict}')
+           logging.getLogger('__main__').warning(f'No PostGuid\n\n'
+                                                 f'{json_string_dict}')
            input("Press Enter to continue... (entry will be skipped)")
            return False
         else:
@@ -293,15 +307,15 @@ class HelperFunctions():
 
 class LBSNRecordDicts():
     def __init__(self):
-        self.lbsnCountryDict = dict()
-        self.lbsnCityDict = dict()
-        self.lbsnPlaceDict = dict()
-        self.lbsnUserGroupDict = dict()
-        self.lbsnUserDict = dict()
-        self.lbsnPostDict = dict()
-        self.lbsnPostReactionDict = dict()
-        self.lbsnRelationshipDict = dict()
-        self.KeyHashes = {lbsnPost.DESCRIPTOR.name: set(),
+        self.lbsn_country_dict = dict()
+        self.lbsn_city_dict = dict()
+        self.lbsn_place_dict = dict()
+        self.lbsn_user_group_dict = dict()
+        self.lbsn_user_dict = dict()
+        self.lbsn_post_dict = dict()
+        self.lbsn_post_reaction_dict = dict()
+        self.lbsn_relationship_dict = dict()
+        self.key_hashes = {lbsnPost.DESCRIPTOR.name: set(),
                          lbsnCountry.DESCRIPTOR.name: set(),
                          lbsnCity.DESCRIPTOR.name: set(),
                          lbsnPlace.DESCRIPTOR.name: set(),
@@ -309,42 +323,46 @@ class LBSNRecordDicts():
                          lbsnUser.DESCRIPTOR.name: set(),
                          lbsnPostReaction.DESCRIPTOR.name: set(),
                          lbsnRelationship.DESCRIPTOR.name: set()}
-        self.CountGlob = 0
+        self.count_glob = 0
         # returns all recordsDicts in correct order, with names as references (tuple)
-        self.allDicts = [
-            (self.lbsnCountryDict,lbsnCountry().DESCRIPTOR.name),
-            (self.lbsnCityDict,lbsnCity().DESCRIPTOR.name),
-            (self.lbsnPlaceDict,lbsnPlace().DESCRIPTOR.name),
-            (self.lbsnUserGroupDict,lbsnUserGroup().DESCRIPTOR.name),
-            (self.lbsnUserDict,lbsnUser().DESCRIPTOR.name),
-            (self.lbsnPostDict,lbsnPost().DESCRIPTOR.name),
-            (self.lbsnPostReactionDict,lbsnPostReaction().DESCRIPTOR.name),
-            (self.lbsnRelationshipDict,lbsnRelationship().DESCRIPTOR.name)
+        self.all_dicts = [
+            (self.lbsn_country_dict, lbsnCountry().DESCRIPTOR.name),
+            (self.lbsn_city_dict, lbsnCity().DESCRIPTOR.name),
+            (self.lbsn_place_dict, lbsnPlace().DESCRIPTOR.name),
+            (self.lbsn_user_group_dict, lbsnUserGroup().DESCRIPTOR.name),
+            (self.lbsn_user_dict, lbsnUser().DESCRIPTOR.name),
+            (self.lbsn_post_dict, lbsnPost().DESCRIPTOR.name),
+            (self.lbsn_post_reaction_dict, lbsnPostReaction().DESCRIPTOR.name),
+            (self.lbsn_relationship_dict, lbsnRelationship().DESCRIPTOR.name)
             ]
 
-    def getTypeCounts(self):
-        countList = []
-        for x, y in self.KeyHashes.items():
-            countList.append(f'{x}: {len(y)} ')
-        return ''.join(countList)
+    def get_type_counts(self):
+        count_list = []
+        for x, y in self.key_hashes.items():
+            count_list.append(f'{x}: {len(y)} ')
+        return ''.join(count_list)
 
-    def update_keyHash(self, record):
+    def update_key_hash(self, record):
         # Keep lists of pkeys for each type
         # this can be used to check for duplicates or to get a total count for each type of records (Number of unique Users, Countries, Places etc.)
         # in this case we assume that origin_id remains the same in each program iteration!
         if record.DESCRIPTOR.name == lbsnRelationship().DESCRIPTOR.name:
             # we need the complete uuid of both entities for relationships because they can span different origin_ids
-            self.KeyHashes[record.DESCRIPTOR.name].add(f'{record.pkey.relation_to.origin.origin_id}{record.pkey.relation_to.id}{record.pkey.relation_from.origin.origin_id}{record.pkey.relation_from.id}{record.relationship_type}')
+            self.key_hashes[record.DESCRIPTOR.name].add(f'{record.pkey.relation_to.origin.origin_id}'
+                                                        f'{record.pkey.relation_to.id}'
+                                                        f'{record.pkey.relation_from.origin.origin_id}'
+                                                        f'{record.pkey.relation_from.id}'
+                                                        f'{record.relationship_type}')
         else:
             # all other entities can be globally uniquely identified by their local guid
-            self.KeyHashes[record.DESCRIPTOR.name].add(record.pkey.id)
+            self.key_hashes[record.DESCRIPTOR.name].add(record.pkey.id)
 
-    def deepCompareMergeMessages(self,oldRecord,newRecord):
+    def deep_compare_merge_messages(self,old_record,new_record):
         # Do a deep compare
         # ProtoBuf MergeFrom does a fine job
         # only problem is it concatenates repeate strings, which may result in duplicate entries
         # we take care of this prior to submission (see submitData classes)
-        oldRecord.MergeFrom(newRecord)
+        old_record.MergeFrom(new_record)
         #for descriptor in oldRecord.DESCRIPTOR.fields:
         #        if descriptor.label == descriptor.LABEL_REPEATED:
         #            if value_old == value_new:
@@ -356,56 +374,60 @@ class LBSNRecordDicts():
         #                newEntries = list(set(value_new) - set(value_old))
         #            x = getattr(oldRecord, descriptor.name)
         #            x.extend(newEntries)
-        return oldRecord
+        return old_record
 
-    def AddRecordsToDict(self,records):
-        if isinstance(records,(list,)):
+    def add_records_to_dict(self, records):
+        if isinstance(records, (list,)):
             for record in records:
-                self.AddRecordToDict(record)
+                self.add_record_to_dict(record)
         else:
             record = records
-            self.AddRecordToDict(record)
+            self.add_record_to_dict(record)
 
-    def dictSelector(self, record):
+    def dict_selector(self, record):
         """ Get dictionary by type name
         """
-        dictSwitcher = {
-            lbsnPost().DESCRIPTOR.name: self.lbsnPostDict,
-            lbsnCountry().DESCRIPTOR.name: self.lbsnCountryDict,
-            lbsnCity().DESCRIPTOR.name: self.lbsnCityDict,
-            lbsnPlace().DESCRIPTOR.name: self.lbsnPlaceDict,
-            lbsnPostReaction().DESCRIPTOR.name: self.lbsnPostReactionDict,
-            lbsnUser().DESCRIPTOR.name: self.lbsnUserDict,
-            lbsnUserGroup().DESCRIPTOR.name: self.lbsnUserGroupDict
+        dict_switcher = {
+            lbsnPost().DESCRIPTOR.name: self.lbsn_post_dict,
+            lbsnCountry().DESCRIPTOR.name: self.lbsn_country_dict,
+            lbsnCity().DESCRIPTOR.name: self.lbsn_city_dict,
+            lbsnPlace().DESCRIPTOR.name: self.lbsn_place_dict,
+            lbsnPostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
+            lbsnUser().DESCRIPTOR.name: self.lbsn_user_dict,
+            lbsnUserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
         }
-        return dictSwitcher.get(record.DESCRIPTOR.name)
+        return dict_switcher.get(record.DESCRIPTOR.name)
 
-    def AddRecordToDict(self,newrecord):
-        dict = self.dictSelector(newrecord)
+    def add_record_to_dict(self,newrecord):
+        dict = self.dict_selector(newrecord)
         pkeyID = newrecord.pkey.id
         if newrecord.pkey.id in dict:
             oldrecord = dict[pkeyID]
             # oldrecord will be modified/updated
-            HelperFunctions.merge_existing_records(oldrecord,newrecord)
+            HelperFunctions.merge_existing_records(oldrecord, newrecord)
         else:
             # just count new entries
-            self.countProgressReport()
-            self.update_keyHash(newrecord) # update keyHash only necessary for new record
+            self.count_progress_report()
+            self.update_key_hash(newrecord) # update keyHash only necessary for new record
             dict[pkeyID] = newrecord
 
-    def countProgressReport(self):
-        self.CountGlob += 1
-        if self.CountGlob % 1000 == 0:
+    def count_progress_report(self):
+        self.count_glob += 1
+        if self.count_glob % 1000 == 0:
             # progress report (modulo)
-            print(f'Identified Output Records {self.CountGlob}..                                                    ', end='\r')
+            print(f'Identified Output Records {self.count_glob}..                                                    ', end='\r')
             sys.stdout.flush()
 
-    def AddRelationshipToDict(self,newrelationship):
-        pkeyID = f'{newrelationship.pkey.relation_to.origin.origin_id}{newrelationship.pkey.relation_to.id}{newrelationship.pkey.relation_from.origin.origin_id}{newrelationship.pkey.relation_from.id}{newrelationship.relationship_type}'
-        if not pkeyID in self.lbsnRelationshipDict:
-            self.countProgressReport()
-            self.lbsnRelationshipDict[pkeyID] = newrelationship
-            self.update_keyHash(newrelationship) # update keyHash only necessary for new record
+    def add_relationship_to_dict(self, newrelationship):
+        pkey_id = f'{newrelationship.pkey.relation_to.origin.origin_id}' \
+                  f'{newrelationship.pkey.relation_to.id}' \
+                  f'{newrelationship.pkey.relation_from.origin.origin_id}' \
+                  f'{newrelationship.pkey.relation_from.id}' \
+                  f'{newrelationship.relationship_type}'
+        if not pkey_id in self.lbsn_relationship_dict:
+            self.count_progress_report()
+            self.lbsn_relationship_dict[pkey_id] = newrelationship
+            self.update_key_hash(newrelationship) # update keyHash only necessary for new record
 
 class GeocodeLocations():
     """Class for geocoding of text to lat/lng values.
@@ -418,7 +440,8 @@ class GeocodeLocations():
             #next(f) #Skip Headerrow
             locationfile_list = csv.reader(f, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
             for location_geocode in locationfile_list:
-                self.geocode_dict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]),location_geocode[1]) # lat/lng
+                self.geocode_dict[location_geocode[2].replace(';',',')] = (float(location_geocode[0]), # lat
+                                                                           location_geocode[1]) # lng
         print(f'Loaded {len(self.geocode_dict)} geocodes.')
 
 class TimeMonitor():
@@ -430,8 +453,8 @@ class TimeMonitor():
         hours, rem = divmod(later-self.now, 3600)
         minutes, seconds = divmod(rem, 60)
         difference = int(later - self.now)
-        reportMsg = f'{int(hours):0>2} Hours {int(minutes):0>2} Minutes and {seconds:05.2f} Seconds passed.'
-        return reportMsg
+        report_msg = f'{int(hours):0>2} Hours {int(minutes):0>2} Minutes and {seconds:05.2f} Seconds passed.'
+        return report_msg
 
 class MemoryLeakDetec():
     # use this class to identify memory leaks
@@ -459,7 +482,8 @@ class MemoryLeakDetec():
     def report(self):
         reportStat = ""
         if self._before and self._after:
-            reportStat = [(k, self._after[k] -  self._before[k]) for k in self._after if self._after[k] -  self._before[k]]
+            reportStat = [(k, self._after[k] - self._before[k]) \
+                          for k in self._after if self._after[k] - self._before[k]]
         return reportStat
 
     def printType(self, type, max = 100):
