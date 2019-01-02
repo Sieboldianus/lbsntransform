@@ -7,10 +7,12 @@ from decimal import Decimal
 # for debugging only:
 from google.protobuf import text_format
 
+
 class FieldMappingFlickr():
     """ Provides mapping function from Flickr endpoints to
         protobuf lbsnstructure
     """
+
     def __init__(self,
                  disable_reaction_post_referencing=False,
                  geocodes=False,
@@ -25,11 +27,12 @@ class FieldMappingFlickr():
         origin.origin_id = lbsnOrigin.FLICKR
         self.origin = origin
         self.null_island = 0
-        self.lbsn_records = LBSNRecordDicts() #this is where all the data will be stored
-        self.log = logging.getLogger('__main__') #get the main logger object
-        #self.disableReactionPostReferencing = disableReactionPostReferencing
-        #self.mapFullRelations = mapFullRelations
-        #self.geocodes = geocodes
+        # this is where all the data will be stored
+        self.lbsn_records = LBSNRecordDicts()
+        self.log = logging.getLogger('__main__')  # get the main logger object
+        # self.disableReactionPostReferencing = disableReactionPostReferencing
+        # self.mapFullRelations = mapFullRelations
+        # self.geocodes = geocodes
 
     def parse_csv_record(self, record):
         """Entry point for flickr CSV data:
@@ -40,7 +43,7 @@ class FieldMappingFlickr():
         record    A single row from CSV, stored as list type.
         """
         if len(record) < 12 or not record[0].isdigit():
-            #skip
+            # skip
             skippedCount += 1
             return
         else:
@@ -53,20 +56,20 @@ class FieldMappingFlickr():
         To Do:
             - parameterize column numbers and structure
             - provide external config-file for specific CSV structures
-            - currently not included in lbsn mapping are MachineTags, 
+            - currently not included in lbsn mapping are MachineTags,
               GeoContext (indoors, outdoors), WoeId
               and some extra attributes only present for Flickr
         """
         post_guid = record[5]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        post_record = HF.create_new_lbsn_record_with_id(lbsnPost(),
-                                                    post_guid,
-                                                    self.origin)
+        post_record = HF.new_lbsn_record_with_id(lbsnPost(),
+                                                 post_guid,
+                                                 self.origin)
         post_geoaccuracy = None
-        user_record = HF.create_new_lbsn_record_with_id(lbsnUser(),
-                                                    record[7],
-                                                    self.origin)
+        user_record = HF.new_lbsn_record_with_id(lbsnUser(),
+                                                 record[7],
+                                                 self.origin)
         user_record.user_name = record[6]
         user_record.url = f'http://www.flickr.com/photos/{userRecord.pkey.id}/'
         if user_record:
@@ -80,21 +83,26 @@ class FieldMappingFlickr():
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            place_record = HF.create_new_lbsn_record_with_id(lbsnPlace(),
-                                                             record[19],
-                                                             self.origin)
+            place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
+                                                      record[19],
+                                                      self.origin)
             self.lbsn_records.add_records_to_dict(place_record)
             post_record.place_pkey.CopyFrom(place_record.pkey)
-        post_record.post_publish_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[9]))
-        post_record.post_create_date.CopyFrom(HF.parse_csv_datestring_to_protobuf(record[8]))
-        #valueCount = lambda x: 0 if x is None else x
-        value_count = lambda x: int(x) if x.isdigit() else 0
+        post_record.post_publish_date.CopyFrom(
+            HF.parse_csv_datestring_to_protobuf(record[9]))
+        post_record.post_create_date.CopyFrom(
+            HF.parse_csv_datestring_to_protobuf(record[8]))
+        # valueCount = lambda x: 0 if x is None else x
+
+        def value_count(x): return int(x) if x.isdigit() else 0
         post_record.post_views_count = value_count(record[10])
         post_record.post_comment_count = value_count(record[18])
         post_record.post_like_count = value_count(record[17])
         post_record.post_url = f'http://flickr.com/photo.gne?id={post_guid}'
-        post_record.post_body = FieldMappingFlickr.reverse_csv_comma_replace(record[21])
-        post_record.post_title = FieldMappingFlickr.reverse_csv_comma_replace(record[3])
+        post_record.post_body = FieldMappingFlickr.reverse_csv_comma_replace(
+            record[21])
+        post_record.post_title = FieldMappingFlickr.reverse_csv_comma_replace(
+            record[3])
         post_record.post_thumbnail_url = record[4]
         record_tags_list = list(filter(None, record[11].split(";")))
         if record_tags_list:
@@ -122,19 +130,22 @@ class FieldMappingFlickr():
         """
         characters_to_replace = ('{', '}')
         for char_check in characters_to_replace:
-            tag = tag.replace(char_check,'')
+            tag = tag.replace(char_check, '')
         return tag
 
     @staticmethod
     def flickr_map_geoaccuracy(flickr_geo_accuracy_level):
         """Flickr Geoaccuracy Levels (16) are mapped to four LBSNstructure levels:
-           LBSN PostGeoaccuracy: UNKNOWN = 0; LATLNG = 1; PLACE = 2; CITY = 3; COUNTRY = 4
-           Fickr: World level is 1, Country is ~3, Region ~6, City ~11, Street ~16.
+           LBSN PostGeoaccuracy: UNKNOWN = 0; LATLNG = 1; PLACE = 2; CITY = 3;
+           COUNTRY = 4
+           Fickr: World level is 1, Country is ~3, Region ~6, City ~11,
+           Street ~16.
 
            Flickr Current range is 1-16. Defaults to 16 if not specified.
 
         Attributes:
-        flickr_geo_accuracy_level   Geoaccuracy Level returned from Flickr (String, e.g.: "Level12")
+        flickr_geo_accuracy_level   Geoaccuracy Level returned from Flickr
+        (String, e.g.: "Level12")
         """
         lbsn_geoaccuracy = False
         stripped_level = flickr_geo_accuracy_level.lstrip('Level').strip()
@@ -174,8 +185,8 @@ class FieldMappingFlickr():
                 l_lat, l_lng = 0, 0
 
         if (l_lat == 0 and l_lng == 0) \
-        or l_lat > 90 or l_lat < -90 \
-        or l_lng > 180 or l_lng < -180:
+                or l_lat > 90 or l_lat < -90 \
+                or l_lng > 180 or l_lng < -180:
             l_lat, l_lng = 0, 0
             self.send_to_null_island(lat_entry, lng_entry, record[5])
         return FieldMappingFlickr.lat_lng_to_wkt(l_lat, l_lng)
