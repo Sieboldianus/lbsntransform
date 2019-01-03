@@ -189,8 +189,9 @@ def set_logger():
     so we can also print to console while logging to file
     """
 
-    logging.basicConfig(handlers=[logging.FileHandler(
-        'log.log', 'w', 'utf-8')],
+    logging.basicConfig(
+        handlers=[logging.FileHandler(
+            'log.log', 'w', 'utf-8')],
         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
         datefmt='%H:%M:%S',
         level=logging.DEBUG)

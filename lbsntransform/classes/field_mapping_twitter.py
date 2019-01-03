@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Module for mapping Twitter to common LBSN Structure.
+"""
+
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 import logging

@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+Config module for parsing input args for lbsntransform package.
+"""
+
 import argparse
 import os
 import sys
@@ -26,7 +31,7 @@ class BaseConfig():
         self.dbserveradress_output = None
         self.dbname_output = None
         self.transferlimit = None
-        self.transferCount = 50000
+        self.transfer_count = 50000
         self.number_of_records_to_fetch = 10000
         self.transfer_reactions = True
         self.disable_reactionpost_ref = False
@@ -112,13 +117,14 @@ class BaseConfig():
                                    default=self.transferlimit,
                                    help='')
         settings_args.add_argument('-tC', "--transferCount",
-                                   default=self.transferCount,
-                                   help='Default to 50k: After how many parsed '
-                                   'records should the result be transferred to '
-                                   'the DB. Larger values improve speed, because '
-                                   'duplicate check happens in Python and not in '
-                                   'Postgres Coalesce; larger values are heavier '
-                                   'on memory.')
+                                   default=self.transfer_count,
+                                   help='Default to 50k: After how many '
+                                   'parsed records should the result be '
+                                   'transferred to the DB. Larger values '
+                                   'improve speed, because duplicate '
+                                   'check happens in Python and not in '
+                                   'Postgres Coalesce; larger values are '
+                                   'heavier on memory.')
         settings_args.add_argument('-nR', "--numberOfRecordsToFetch",
                                    default=self.number_of_records_to_fetch,
                                    help='')
@@ -145,7 +151,8 @@ class BaseConfig():
         settings_args.add_argument('-rE', "--endWithDBRowNumber",
                                    default=self.endwith_db_rownumber,
                                    help='')
-        settings_args.add_argument('-d', "--debugMode", default=self.debug_mode,
+        settings_args.add_argument('-d', "--debugMode",
+                                   default=self.debug_mode,
                                    help='Needs to be implemented.')
         settings_args.add_argument('-gL', "--geocodeLocations",
                                    default=self.geocode_locations,
@@ -158,17 +165,20 @@ class BaseConfig():
                                    help='Provide a list of input_source '
                                    'types that will be ignored (e.g. to '
                                    'ignore certain bots etc.)')
-        settings_args.add_argument('-iT', "--inputType", default=self.input_lbsn_type,
+        settings_args.add_argument('-iT', "--inputType",
+                                   default=self.input_lbsn_type,
                                    help='Input type, e.g. "post", "profile", '
                                    '"friendslist", "followerslist" etc.')
-        settings_args.add_argument('-mR', "--mapFullRelations", action='store_true',
+        settings_args.add_argument('-mR', "--mapFullRelations",
+                                   action='store_true',
                                    help='Defaults to False. Set to true '
                                    'to map full relations, e.g. many-to-many '
                                    'relationships such as user_follows, '
-                                   'user_friend, user_mentions etc. are mapped '
-                                   'in a separate table')
+                                   'user_friend, user_mentions etc. are '
+                                   'mapped in a separate table')
         settings_args.add_argument('-CSV', "--CSVOutput",
-                                   action='store_true', default=self.csv_output,
+                                   action='store_true',
+                                   default=self.csv_output,
                                    help='Set to True to Output all '
                                    'Submit values to CSV')
         settings_args.add_argument('-CSVal', "--CSVallowLinebreaks",
@@ -229,7 +239,7 @@ class BaseConfig():
             if self.transferlimit == 0:
                 self.transferlimit = None
         if args.transferCount:
-            self.transferCount = int(args.transferCount)
+            self.transfer_count = int(args.transferCount)
         if args.numberOfRecordsToFetch:
             self.number_of_records_to_fetch = int(args.numberOfRecordsToFetch)
         if args.disableTransferReactions is True:

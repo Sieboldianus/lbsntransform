@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Shared structure and mapping between DB and Proto LBSN Structure.
+"""
+
 from .helper_functions import HelperFunctions as HF
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     CompositeKey, \

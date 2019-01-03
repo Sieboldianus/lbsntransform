@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Module for storing common Proto LBSN Structure to CSV.
+"""
+
 import logging
 import traceback
 import os

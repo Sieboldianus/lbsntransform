@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Collection of helper functions being used in lbsntransform package.
+"""
+
 import re
 import csv
 import sys

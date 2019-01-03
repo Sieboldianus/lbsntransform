@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+Module for mapping Flickr to common LBSN Structure.
+"""
+
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
 from lbsnstructure.lbsnstructure_pb2 import *

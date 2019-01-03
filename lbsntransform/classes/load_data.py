@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+Module for loding data from different sources (CSV, DB, JSON etc.).
+"""
+
 import sys
 import os
 import ntpath

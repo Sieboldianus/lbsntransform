@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Module for storing common Proto LBSN Structure to PG DB.
+"""
+
 import logging
 from sys import exit
 import traceback
