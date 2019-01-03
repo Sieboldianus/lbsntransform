@@ -43,13 +43,13 @@ def main():
     # load import mapper depending on lbsn origin (e.g. 1 = Instagram,
     #                                                   2 = Flickr,
     #                                                   3 = Twitter)
-    importer = HF.load_importer_mapping_module(config.Origin)
+    importer = HF.load_importer_mapping_module(config.origin)
     # establish output connection
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
     output = LBSNTransfer(db_cursor=cursor_output,
                           db_connection=conn_output,
-                          store_csv=config.CSVOutput,
-                          SUPPRESS_LINEBREAKS=config.CSVsuppressLinebreaks)
+                          store_csv=config.csv_output,
+                          SUPPRESS_LINEBREAKS=config.csv_suppress_linebreaks)
     # load from local json/csv or from PostgresDB
     if config.is_local_input:
         loc_filelist = LoadData.read_local_files(config)
@@ -64,12 +64,12 @@ def main():
     skipped_low_geoaccuracy = 0
     skipped_low_geoaccuracy_total = 0
     # Start Value, Modify to continue from last processing
-    continue_number = config.startWithdb_row_number
+    continue_number = config.startwith_db_rownumber
 
     # Optional Geocoding
     geocode_dict = False
-    if config.geocodeLocations:
-        geocode_dict = LoadData.load_geocodes(config.geocodeLocations)
+    if config.geocode_locations:
+        geocode_dict = LoadData.load_geocodes(config.geocode_locations)
     # Optional ignore input sources
     ignore_sources_set = None
     if config.ignore_input_source_list:
@@ -78,10 +78,10 @@ def main():
 
     finished = False
     # initialize field mapping structure
-    import_mapper = importer(config.disableReactionPostReferencing,
+    import_mapper = importer(config.disable_reactionpost_ref,
                              geocode_dict,
-                             config.MapRelations,
-                             config.transferReactions,
+                             config.map_relations,
+                             config.transfer_reactions,
                              config.ignore_non_geotagged,
                              ignore_sources_set,
                              config.min_geoaccuracy)
@@ -131,25 +131,25 @@ def main():
         print(f'{processed_total} input records processed (up to '
               f'{continue_number}). '
               f'Skipped {skipped_low_geoaccuracy} due to low geoaccuracy. '
-              f'Count per type: {import_mapper.lbsn_records.getTypeCounts()}'
+              f'Count per type: {import_mapper.lbsn_records.get_type_counts()}'
               f'records.', end='\n')
 
         # update console
         # On the first loop or after 500.000 processed records,
         # transfer results to DB
-        if not start_number or processed_records >= config.transferCount or \
+        if not start_number or processed_records >= config.transfer_count or \
                 finished:
             sys.stdout.flush()
-            print(f'Storing {import_mapper.lbsn_records.CountGlob} records.. '
+            print(f'Storing {import_mapper.lbsn_records.count_glob} records.. '
                   f'{HF.null_notice(import_mapper.null_island)})')
-            output.storeLbsnRecordDicts(import_mapper)
+            output.store_lbsn_record_dicts(import_mapper)
             output.commit_changes()
             processed_records = 0
             # create a new empty dict of records
-            import_mapper = importer(config.disableReactionPostReferencing,
+            import_mapper = importer(config.disable_reactionpost_ref,
                                      geocode_dict,
-                                     config.MapRelations,
-                                     config.transferReactions,
+                                     config.map_relations,
+                                     config.transfer_reactions,
                                      config.ignore_non_geotagged,
                                      ignore_sources_set,
                                      config.min_geoaccuracy)
@@ -164,9 +164,9 @@ def main():
     # ??
     if import_mapper.lbsn_records.count_glob > 0:
         print(f'Transferring remaining '
-              f'{import_mapper.lbsn_records.CountGlob} to db.. '
+              f'{import_mapper.lbsn_records.count_glob} to db.. '
               f'{HF.null_notice(import_mapper.null_island)})')
-        output.storeLbsnRecordDicts(import_mapper)
+        output.store_lbsn_record_dicts(import_mapper)
         output.commit_changes()
 
     # finalize all transactions (csv merge etc.)
@@ -175,7 +175,7 @@ def main():
     # Close connections to DBs
     if not config.is_local_input:
         cursor_input.close()
-    if config.dbUser_Output:
+    if config.dbuser_output:
         cursor_output.close()
     log.info(f'\n\nProcessed {processed_total} input records '
              f'(Input {start_number} to {continue_number}).'

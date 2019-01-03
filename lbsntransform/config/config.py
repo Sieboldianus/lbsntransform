@@ -5,76 +5,191 @@ import sys
 
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost
 
+
 class BaseConfig():
     def __init__(self):
-        ## Set Default Config options here
-        ## or define options as input args
-        self.Origin = 3 # Defaults to 3: Twitter (1 - Instagram, 2 - Flickr, 3 - Twitter)
-        self.is_local_input = False # Read from File/CSV
-        self.local_file_type = 'json' # If localread, specify filetype (json, csv etc.)
-        self.InputPath = None # optionally provide path to input folder, otherwise ./Input/ will be used
+        """Set Default Config options here
+
+        - or define options as input args
+        """
+        self.origin = 3
+        self.is_local_input = False
+        self.local_file_type = 'json'
+        self.input_path = None
         self.is_stacked_json = False
-        self.dbUser_Input = 'example-user-name'
-        self.dbPassword_Input = 'example-user-password'
-        self.dbServeradressInput = '222.22.222.22'
-        self.dbNameInput = 'test_db2'
-        self.dbUser_Output = None #'example-user-name2'
-        self.dbPassword_Output = None #'example-user-password2'
-        self.dbServeradressOutput = None #'111.11.11.11'
-        self.dbNameOutput = None #'test_db'
+        self.dbuser_Input = 'example-user-name'
+        self.dbpassword_input = 'example-user-password'
+        self.dbserveradress_input = '222.22.222.22'
+        self.db_name_input = 'test_db2'
+        self.dbuser_output = None
+        self.dbpassword_output = None
+        self.dbserveradress_output = None
+        self.dbname_output = None
         self.transferlimit = None
-        self.transferCount = 50000 #default:50k # after how many parsed records should the result be transferred to the DB. Larger values improve speed, because duplicate check happens in Python and not in Postgres Coalesce; larger values are heavier on memory.
+        self.transferCount = 50000
         self.number_of_records_to_fetch = 10000
-        self.transferReactions = True
-        # Enable this option in args to prevent empty posts stored due to Foreign Key Exists Requirement
-        self.disableReactionPostReferencing = False # 0 = Save Original Tweets of Retweets in "posts"; 1 = do not store Original Tweets of Retweets; !Not implemented: 2 = Store Original Tweets of Retweets as "post_reactions"
+        self.transfer_reactions = True
+        self.disable_reactionpost_ref = False
         self.ignore_non_geotagged = False
-        self.startWithdb_row_number = 0
-        self.end_with_db_row_number = None
-        self.debugMode = 'INFO' #needs to be implemented
-        self.geocodeLocations = False # provide path to CSV file with location geocodes (CSV Structure: lat, lng, name)
-        self.ignore_input_source_list = False # Provide a list of input_source types that will be ignored (e.g. to ignore certain bots etc.)
-        self.input_lbsn_type = None # Input type, e.g. "post", "profile", "friendslist", "followerslist" etc.
-        self.MapRelations = False # Set to true to map full relations, e.g. many-to-many relationships such as user_follows, user_friend, user_mentions etc. are mapped in a separate table
-        self.CSVOutput = False # Set to True to Output all Submit values to CSV
-        self.CSVsuppressLinebreaks = True # Set to False will not remove intext-linebreaks (\r or \n) in output CSVs
-        self.recursiveLoad = False
-        self.skip_until_file = "" # If local input, skip all files until file with name x appears (default: start immediately)
-        self.min_geoaccuracy = None # set to 'latlng', 'place', or 'city' to limit output based on min geoaccuracy
+        self.startwith_db_rownumber = 0
+        self.endwith_db_rownumber = None
+        self.debug_mode = 'INFO'
+        self.geocode_locations = False
+        self.ignore_input_source_list = False
+        self.input_lbsn_type = None
+        self.map_relations = False
+        self.csv_output = False
+        self.csv_suppress_linebreaks = True
+        self.recursive_load = False
+        self.skip_until_file = ""
+        self.min_geoaccuracy = None
 
     def parseArgs(self):
+        """Process input *args
+
+        All args are optional, but some groups need to be defined together.
+        """
         parser = argparse.ArgumentParser()
-        parser.add_argument('-sO', "--Origin", default=self.Origin)
-        parser.add_argument('-lI', "--LocalInput", action='store_true', default=False)
-        parser.add_argument('-lT', "--LocalFileType", default=self.local_file_type)
-        parser.add_argument('-iP', "--InputPath", default=self.InputPath)
-        parser.add_argument('-iS', "--isStackedJson", action='store_true', default=False)
-        parser.add_argument('-pO', "--dbPassword_Output", default=self.dbPassword_Output)
-        parser.add_argument('-uO', "--dbUser_Output", default=self.dbUser_Output)
-        parser.add_argument('-aO', "--dbServeradressOutput", default=self.dbServeradressOutput)
-        parser.add_argument('-nO', "--dbNameOutput", default=self.dbNameOutput)
-        parser.add_argument('-pI', "--dbPassword_Input", default=self.dbPassword_Input)
-        parser.add_argument('-uI', "--dbUser_Input", default=self.dbUser_Input)
-        parser.add_argument('-aI', "--dbServeradressInput", default=self.dbServeradressInput)
-        parser.add_argument('-nI', "--dbNameInput", default=self.dbNameInput)
-        parser.add_argument('-t', "--transferlimit", default=self.transferlimit)
-        parser.add_argument('-tC', "--transferCount", default=self.transferCount)
-        parser.add_argument('-nR', "--numberOfRecordsToFetch", default=self.number_of_records_to_fetch)
-        parser.add_argument('-tR', "--disableTransferReactions", action='store_true')
-        parser.add_argument('-rR', "--disableReactionPostReferencing", action='store_true', default=False)
-        parser.add_argument('-iG', "--ignoreNonGeotagged", action='store_true', default=self.ignore_non_geotagged)
-        parser.add_argument('-rS', "--startWithDBRowNumber", default=self.startWithdb_row_number)
-        parser.add_argument('-rE', "--endWithDBRowNumber", default=self.end_with_db_row_number)
-        parser.add_argument('-d', "--debugMode", default=self.debugMode)
-        parser.add_argument('-gL', "--geocodeLocations", default=self.geocodeLocations)
-        parser.add_argument('-igS', "--ignoreInputSourceList", default=self.ignore_input_source_list)
-        parser.add_argument('-iT', "--inputType", default=self.input_lbsn_type)
-        parser.add_argument('-mR', "--mapFullRelations", action='store_true')
-        parser.add_argument('-CSV', "--CSVOutput", action='store_true', default=self.CSVOutput)
-        parser.add_argument('-CSVal', "--CSVallowLinebreaks", action='store_true', default=False)
-        parser.add_argument('-rL', "--recursiveLoad", action='store_true', default=False)
-        parser.add_argument('-sF', "--skipUntilFile", default=self.skip_until_file)
-        parser.add_argument('-mGA', "--minGeoAccuracy", default=self.min_geoaccuracy)
+        parser.add_argument('-sO', "--Origin",
+                            default=self.origin,
+                            help='Type of input source. '
+                            'Defaults to 3: Twitter '
+                            '(1 - Instagram, 2 - Flickr, 3 - Twitter)')
+        # Local Input
+        local_input_args = parser.add_argument_group('Local Input')
+        local_input_args.add_argument('-lI', "--LocalInput",
+                                      action='store_true',
+                                      default=False,
+                                      help='Process local json or csv')
+        local_input_args.add_argument('-lT', "--LocalFileType",
+                                      default=self.local_file_type,
+                                      help='If localread, '
+                                      'specify filetype (json, csv etc.)')
+        local_input_args.add_argument('-iP', "--InputPath",
+                                      default=self.input_path,
+                                      help='Optionally provide path to '
+                                      'input folder, otherwise '
+                                      './Input/ will be used')
+        local_input_args.add_argument('-iS', "--isStackedJson",
+                                      action='store_true',
+                                      default=False,
+                                      help='Typical form is '
+                                      '[{json1},{json2}], '
+                                      'if is_stacked_json is True: '
+                                      'will process stacked jsons in the form '
+                                      'of {json1}{json2} (no comma)')
+        # DB Output
+        dboutput_args = parser.add_argument_group('DB Output')
+        dboutput_args.add_argument('-pO', "--dbPassword_Output",
+                                   default=self.dbpassword_output,
+                                   help='')
+        dboutput_args.add_argument('-uO', "--dbUser_Output",
+                                   default=self.dbuser_output,
+                                   help='Default: example-user-name2')
+        dboutput_args.add_argument('-aO', "--dbServeradressOutput",
+                                   default=self.dbserveradress_output,
+                                   help='e.g. 111.11.11.11')
+        dboutput_args.add_argument('-nO', "--dbNameOutput",
+                                   default=self.dbname_output,
+                                   help='e.g.: test_db')
+        # DB Input
+        dbinput_args = parser.add_argument_group('DB Input')
+        dbinput_args.add_argument('-pI', "--dbPassword_Input",
+                                  default=self.dbpassword_input,
+                                  help='')
+        dbinput_args.add_argument('-uI', "--dbUser_Input",
+                                  default=self.dbuser_Input,
+                                  help='Default: example-user-name')
+        dbinput_args.add_argument('-aI', "--dbServeradressInput",
+                                  default=self.dbserveradress_input,
+                                  help='e.g. 111.11.11.11')
+        dbinput_args.add_argument('-nI', "--dbNameInput",
+                                  default=self.db_name_input,
+                                  help='e.g.: test_db')
+        # Additional args
+        settings_args = parser.add_argument_group('Additional settings')
+        settings_args.add_argument('-t', "--transferlimit",
+                                   default=self.transferlimit,
+                                   help='')
+        settings_args.add_argument('-tC', "--transferCount",
+                                   default=self.transferCount,
+                                   help='Default to 50k: After how many parsed '
+                                   'records should the result be transferred to '
+                                   'the DB. Larger values improve speed, because '
+                                   'duplicate check happens in Python and not in '
+                                   'Postgres Coalesce; larger values are heavier '
+                                   'on memory.')
+        settings_args.add_argument('-nR', "--numberOfRecordsToFetch",
+                                   default=self.number_of_records_to_fetch,
+                                   help='')
+        settings_args.add_argument(
+            '-tR', "--disableTransferReactions",
+            action='store_true',
+            help='')
+        settings_args.add_argument(
+            '-rR', "--disableReactionPostReferencing",
+            action='store_true',
+            default=False,
+            help='Enable this option in args to prevent empty posts stored '
+            'due to Foreign Key Exists Requirement '
+            '0 = Save Original Tweets of Retweets in "posts"; 1 = do not '
+            'store Original Tweets of Retweets; !Not implemented: 2 = Store '
+            'Original Tweets of Retweets as "post_reactions"')
+        settings_args.add_argument('-iG', "--ignoreNonGeotagged",
+                                   action='store_true',
+                                   default=self.ignore_non_geotagged,
+                                   help='')
+        settings_args.add_argument('-rS', "--startWithDBRowNumber",
+                                   default=self.startwith_db_rownumber,
+                                   help='')
+        settings_args.add_argument('-rE', "--endWithDBRowNumber",
+                                   default=self.endwith_db_rownumber,
+                                   help='')
+        settings_args.add_argument('-d', "--debugMode", default=self.debug_mode,
+                                   help='Needs to be implemented.')
+        settings_args.add_argument('-gL', "--geocodeLocations",
+                                   default=self.geocode_locations,
+                                   help='Defaults to None. '
+                                   'Provide path to CSV file with '
+                                   'location geocodes (CSV Structure: '
+                                   'lat, lng, name)')
+        settings_args.add_argument('-igS', "--ignoreInputSourceList",
+                                   default=self.ignore_input_source_list,
+                                   help='Provide a list of input_source '
+                                   'types that will be ignored (e.g. to '
+                                   'ignore certain bots etc.)')
+        settings_args.add_argument('-iT', "--inputType", default=self.input_lbsn_type,
+                                   help='Input type, e.g. "post", "profile", '
+                                   '"friendslist", "followerslist" etc.')
+        settings_args.add_argument('-mR', "--mapFullRelations", action='store_true',
+                                   help='Defaults to False. Set to true '
+                                   'to map full relations, e.g. many-to-many '
+                                   'relationships such as user_follows, '
+                                   'user_friend, user_mentions etc. are mapped '
+                                   'in a separate table')
+        settings_args.add_argument('-CSV', "--CSVOutput",
+                                   action='store_true', default=self.csv_output,
+                                   help='Set to True to Output all '
+                                   'Submit values to CSV')
+        settings_args.add_argument('-CSVal', "--CSVallowLinebreaks",
+                                   action='store_true', default=False,
+                                   help='If set to False will not '
+                                   'remove intext-linebreaks (\r or \n) '
+                                   'in output CSVs')
+        settings_args.add_argument('-rL', "--recursiveLoad",
+                                   action='store_true', default=False,
+                                   help='Process Input Directories '
+                                   'recursively (depth: 2)')
+        settings_args.add_argument('-sF', "--skipUntilFile",
+                                   default=self.skip_until_file,
+                                   help='If local input, skip all files '
+                                   'until file with name x appears '
+                                   '(default: start immediately)')
+        settings_args.add_argument('-mGA', "--minGeoAccuracy",
+                                   default=self.min_geoaccuracy,
+                                   help='Set to "latlng", "place", '
+                                   'or "city" to limit output based '
+                                   'on min geoaccuracy')
 
         args = parser.parse_args()
         if args.LocalInput:
@@ -83,30 +198,32 @@ class BaseConfig():
             if args.isStackedJson:
                 self.is_stacked_json = True
             if not args.InputPath:
-                self.InputPath = f'{os.getcwd()}\\01_Input\\'
+                self.input_path = f'{os.getcwd()}\\01_Input\\'
                 print(f'Using Path: {self.InputPath}')
             else:
                 if args.InputPath.endswith("\\"):
                     input_path = args.InputPath
                 else:
                     input_path = f'{args.InputPath}\\'
-                self.InputPath = input_path
+                self.input_path = input_path
         else:
-            self.dbUser_Input = args.dbUser_Input
-            self.dbPassword_Input = args.dbPassword_Input
-            self.dbServeradressInput = args.dbServeradressInput
-            self.dbNameInput = args.dbNameInput
+            self.dbuser_Input = args.dbUser_Input
+            self.dbpassword_input = args.dbPassword_Input
+            self.dbserveradress_input = args.dbServeradressInput
+            self.db_name_input = args.dbNameInput
         if args.Origin:
-            self.Origin = int(args.Origin)
+            self.origin = int(args.Origin)
         if args.geocodeLocations:
-            self.geocodeLocations = f'{os.getcwd()}\\{args.geocodeLocations}'
+            self.geocode_locations = f'{os.getcwd()}\\' \
+                                     f'{args.geocodeLocations}'
         if args.ignoreInputSourceList:
-            self.ignore_input_source_list = f'{os.getcwd()}\\{args.ignoreInputSourceList}'
+            self.ignore_input_source_list = f'{os.getcwd()}\\' \
+                                            f'{args.ignoreInputSourceList}'
         if args.dbUser_Output:
-            self.dbUser_Output = args.dbUser_Output
-            self.dbPassword_Output = args.dbPassword_Output
-            self.dbServeradressOutput = args.dbServeradressOutput
-            self.dbNameOutput = args.dbNameOutput
+            self.dbuser_output = args.dbUser_Output
+            self.dbpassword_output = args.dbPassword_Output
+            self.dbserveradress_output = args.dbServeradressOutput
+            self.dbname_output = args.dbNameOutput
         if args.transferlimit:
             self.transferlimit = int(args.transferlimit)
             if self.transferlimit == 0:
@@ -116,33 +233,34 @@ class BaseConfig():
         if args.numberOfRecordsToFetch:
             self.number_of_records_to_fetch = int(args.numberOfRecordsToFetch)
         if args.disableTransferReactions is True:
-            self.transferReactions = False
+            self.transfer_reactions = False
         if args.disableReactionPostReferencing:
-            self.disableReactionPostReferencing = True
+            self.disable_reactionpost_ref = True
         self.ignore_non_geotagged = args.ignoreNonGeotagged
         if args.startWithDBRowNumber:
-            self.startWithdb_row_number = int(args.startWithDBRowNumber)
+            self.startwith_db_rownumber = int(args.startWithDBRowNumber)
         if args.endWithDBRowNumber:
-            self.end_with_db_row_number = int(args.endWithDBRowNumber)
-        self.debugMode = args.debugMode
+            self.endwith_db_rownumber = int(args.endWithDBRowNumber)
+        self.debug_mode = args.debugMode
         if args.inputType:
             self.input_lbsn_type = args.inputType
         if args.mapFullRelations:
-            self.MapRelations = True
+            self.map_relations = True
         if args.CSVOutput:
-            self.CSVOutput = True
+            self.csv_output = True
         if args.CSVallowLinebreaks:
-            self.CSVsuppressLinebreaks = False
+            self.csv_suppress_linebreaks = False
         if args.recursiveLoad:
-            self.recursiveLoad = True
+            self.recursive_load = True
         if args.skipUntilFile:
             self.skip_until_file = args.skipUntilFile
         if args.minGeoAccuracy:
-            self.min_geoaccuracy = self.check_geoaccuracy_input(args.minGeoAccuracy)
+            self.min_geoaccuracy = self.check_geoaccuracy_input(
+                args.minGeoAccuracy)
 
     @staticmethod
     def check_geoaccuracy_input(geoaccuracy_string):
-        """Checks geoaccuracy input string and matches 
+        """Checks geoaccuracy input string and matches
         against proto buf spec
         """
         if geoaccuracy_string == 'latlng':

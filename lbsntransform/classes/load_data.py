@@ -42,8 +42,8 @@ class LoadData():
 
             if (transferlimit and processed_records >= transferlimit) or \
                (not config.is_local_input and
-                    config.end_with_db_row_number and
-                    db_row_number >= config.end_with_db_row_number):
+                    config.endwith_db_rownumber and
+                    db_row_number >= config.endwith_db_rownumber):
                 finished = True
                 break
         return processed_records, finished
@@ -149,11 +149,11 @@ class LoadData():
 
     def initialize_output_connection(config):
         """Establishes connection to output DB (Postgres), if set in config"""
-        if config.dbUser_Output:
-            output_connection = DBConnection(config.dbServeradressOutput,
-                                             config.dbNameOutput,
-                                             config.dbUser_Output,
-                                             config.dbPassword_Output)
+        if config.dbuser_output:
+            output_connection = DBConnection(config.dbserveradress_output,
+                                             config.dbname_output,
+                                             config.dbuser_output,
+                                             config.dbpassword_output)
             conn_output, cursor_output = output_connection.connect()
         else:
             conn_output = None
@@ -165,10 +165,10 @@ class LoadData():
 
         Returns cursor
         """
-        input_connection = DBConnection(config.dbServeradressInput,
-                                        config.dbNameInput,
-                                        config.dbUser_Input,
-                                        config.dbPassword_Input,
+        input_connection = DBConnection(config.dbserveradress_input,
+                                        config.db_name_input,
+                                        config.dbuser_Input,
+                                        config.dbpassword_input,
                                         True  # ReadOnly Mode
                                         )
         conn_input, cursor_input = input_connection.connect()
@@ -179,7 +179,7 @@ class LoadData():
         returns list of file-paths
         """
         path = f'{config.InputPath}'
-        if config.recursiveLoad:
+        if config.recursive_load:
             excludefolderlist = ["01_DataSetHistory",
                                  "02_UserData", "03_ClippedData", "04_MapVis"]
             excludestartswithfile = ["log", "settings", "GridCoordinates"]

@@ -61,12 +61,12 @@ class LBSNTransfer():
             lbsnPostReaction.DESCRIPTOR.name: list(),
             lbsnRelationship.DESCRIPTOR.name: list()}
 
-        self.countRound = 0
+        self.count_round = 0
         # Records are batched and submitted in
         # one insert with x number of records
-        self.batchDBVolume = 100
+        self.batch_db_volume = 100
         self.store_csv = store_csv
-        self.headersWritten = set()
+        self.headers_written = set()
         self.db_mapping = ProtoLBSM_db_Mapping()
         # self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
 
@@ -83,23 +83,23 @@ class LBSNTransfer():
             self.csv_output.clean_csv_batches(self.batched_records)
             self.count_entries_store = 0
 
-    def storeLbsnRecordDicts(self, fieldMappingTwitter):
+    def store_lbsn_record_dicts(self, field_mapping):
         # order is important here, as PostGres will reject any
         # records where Foreign Keys are violated
         # therefore, records are processed starting from lowest
         # granularity. Order is stored in allDicts()
-        self.countRound += 1
+        self.count_round += 1
         # self.headersWritten.clear()
-        recordDicts = fieldMappingTwitter.lbsn_records
+        record_dicts = field_mapping.lbsn_records
         x = 0
         self.count_affected = 0
-        for recordsDict in recordDicts.all_dicts:
-            type_name = recordsDict[1]
-            for record_pkey, record in recordsDict[0].items():
+        for records_dict in record_dicts.all_dicts:
+            type_name = records_dict[1]
+            for record_pkey, record in records_dict[0].items():
                 x += 1
-                print(f'Storing {x} of {recordDicts.CountGlob} '
+                print(f'Storing {x} of {record_dicts.count_glob} '
                       f'output records ({type_name})..', end='\r')
-                self.prepareLbsnRecord(record, type_name)
+                self.prepare_lbsn_record(record, type_name)
                 self.count_glob += 1  # self.dbCursor.rowcount
                 self.count_entries_commit += 1  # self.dbCursor.rowcount
                 self.count_entries_store += 1
@@ -111,23 +111,23 @@ class LBSNTransfer():
                                        self.store_volume):
                     self.store_changes()
         # submit remaining rest
-        self.submitAllBatches()
+        self.submit_all_batches()
         # self.count_affected += x # monitoring
-        print(f'\nRound {self.countRound:03d}: '
+        print(f'\nRound {self.count_round:03d}: '
               f'Updated/Inserted {self.count_glob} records.')
 
-    def prepareLbsnRecord(self, record, record_type):
+    def prepare_lbsn_record(self, record, record_type):
         # clean duplicates in repeated Fields and Sort List
-        self.sortCleanProtoRepeatedField(record)
+        self.sort_clean_proto_repeated_field(record)
         # store cleaned ProtoBuf records
         self.batched_records[record_type].append(record)
-        for listType, batchList in self.batched_records.items():
+        for list_type, batch_list in self.batched_records.items():
             # if any dict contains more values than self.batchDBVolume,
             # submit/store all
-            if len(batchList) >= self.batchDBVolume:
-                self.submitAllBatches()
+            if len(batch_list) >= self.batch_db_volume:
+                self.submit_all_batches()
 
-    def submitAllBatches(self):
+    def submit_all_batches(self):
         for record_type, batch_list in self.batched_records.items():
             if batch_list:
                 # if self.storeCSV and not record_type in self.headersWritten:
@@ -150,7 +150,7 @@ class LBSNTransfer():
         if self.store_csv:
             self.csv_output.store_append_batch_to_csv(
                 self.batched_records[record_type],
-                self.countRound, record_type)
+                self.count_round, record_type)
         if self.db_cursor:
             values_str = ','.join(
                 [self.prepare_sqlescaped_values(record) for
@@ -450,7 +450,7 @@ class LBSNTransfer():
         if selectFriends:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectFriends, self.countRound, '_user_friends_user')
+                    selectFriends, self.count_round, '_user_friends_user')
             if self.db_cursor:
                 args_isFriend = ','.join(selectFriends)
                 insert_sql = \
@@ -469,7 +469,7 @@ class LBSNTransfer():
         if selectConnected:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectConnected, self.countRound, '_user_connectsto_user')
+                    selectConnected, self.count_round, '_user_connectsto_user')
             if self.db_cursor:
                 args_isConnected = ','.join(selectConnected)
                 insert_sql = \
@@ -489,7 +489,7 @@ class LBSNTransfer():
         if selectUserGroupMember:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectUserGroupMember, self.countRound,
+                    selectUserGroupMember, self.count_round,
                     '_user_memberof_group')
             if self.db_cursor:
                 args_isInGroup = ','.join(selectUserGroupMember)
@@ -509,7 +509,7 @@ class LBSNTransfer():
         if selectUserGroupMember:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectUserGroupMember, self.countRound,
+                    selectUserGroupMember, self.count_round,
                     '_user_follows_group')
             if self.db_cursor:
                 args_isInGroup = ','.join(selectUserGroupMember)
@@ -529,7 +529,7 @@ class LBSNTransfer():
         if selectUserMentions:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectUserMentions, self.countRound,
+                    selectUserMentions, self.count_round,
                     '_user_mentions_user')
             if self.db_cursor:
                 args_isInGroup = ','.join(selectUserMentions)
@@ -606,7 +606,7 @@ class LBSNTransfer():
         preparedSQLRecord = preparedSQLRecord.decode()
         return preparedSQLRecord
 
-    def sortCleanProtoRepeatedField(self, record):
+    def sort_clean_proto_repeated_field(self, record):
         """Remove duplicate values in repeated field, sort alphabetically
 
         ProtocolBuffers has no unique list field type. This function will

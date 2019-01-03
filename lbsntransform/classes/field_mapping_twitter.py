@@ -244,7 +244,7 @@ class FieldMappingTwitter():
             user_record.group_count = listed_count
         user_record.post_count = json_string_dict.get('statuses_count')
         user_record.url = f'https://twitter.com/intent/user?user_id=' \
-                          f'{userRecord.pkey.id}'
+                          f'{user_record.pkey.id}'
         ref_user_language = Language()
         ref_user_language.language_short = json_string_dict.get('lang')
         user_record.user_language.CopyFrom(ref_user_language)
@@ -375,7 +375,8 @@ class FieldMappingTwitter():
         if post_source:
             post_record.input_source = HF.cleanhtml(
                 json_string_dict.get('source'))
-            if post_record.input_source in self.ignore_sources_set:
+            if self.ignore_sources_set and \
+                    post_record.input_source in self.ignore_sources_set:
                 # skip entry if in ignore list
                 return None
         post_record.post_publish_date.CopyFrom(
