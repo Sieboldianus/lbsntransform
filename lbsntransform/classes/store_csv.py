@@ -22,7 +22,7 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnPlace, \
     lbsnCity, \
     lbsnUserGroup, \
-    lbsnPostRelationship, \
+    lbsnRelationship, \
     lbsnPostReaction, \
     lbsnRelationship
 # for debugging only:

@@ -16,7 +16,7 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnOrigin, \
     lbsnPlace, \
     lbsnCity, \
     lbsnUserGroup, \
-    lbsnPostRelationship, \
+    lbsnRelationship, \
     lbsnPostReaction, \
     lbsnRelationship, \
     Language

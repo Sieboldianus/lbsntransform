@@ -46,9 +46,9 @@ def main():
     importer = HF.load_importer_mapping_module(config.Origin)
     # establish output connection
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
-    output = LBSNTransfer(dbCursor=cursor_output,
-                          dbConnection=conn_output,
-                          storeCSV=config.CSVOutput,
+    output = LBSNTransfer(db_cursor=cursor_output,
+                          db_connection=conn_output,
+                          store_csv=config.CSVOutput,
                           SUPPRESS_LINEBREAKS=config.CSVsuppressLinebreaks)
     # load from local json/csv or from PostgresDB
     if config.is_local_input:
@@ -143,7 +143,7 @@ def main():
             print(f'Storing {import_mapper.lbsn_records.CountGlob} records.. '
                   f'{HF.null_notice(import_mapper.null_island)})')
             output.storeLbsnRecordDicts(import_mapper)
-            output.commitChanges()
+            output.commit_changes()
             processed_records = 0
             # create a new empty dict of records
             import_mapper = importer(config.disableReactionPostReferencing,
@@ -167,7 +167,7 @@ def main():
               f'{import_mapper.lbsn_records.CountGlob} to db.. '
               f'{HF.null_notice(import_mapper.null_island)})')
         output.storeLbsnRecordDicts(import_mapper)
-        output.commitChanges()
+        output.commit_changes()
 
     # finalize all transactions (csv merge etc.)
     output.finalize()

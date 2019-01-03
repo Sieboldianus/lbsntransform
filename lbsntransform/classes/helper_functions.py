@@ -19,7 +19,7 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnPlace, \
     lbsnCity, \
     lbsnUserGroup, \
-    lbsnPostRelationship, \
+    lbsnRelationship, \
     lbsnPostReaction, \
     lbsnRelationship
 
@@ -249,7 +249,7 @@ class HelperFunctions():
     #        return "%s"
 
     @staticmethod
-    def returnEWKBFromGeoTEXT(text):
+    def return_ewkb_from_geotext(text):
         if not text:
             return None
         geom = wkt.loads(text)
