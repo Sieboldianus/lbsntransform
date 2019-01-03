@@ -17,7 +17,7 @@ import io
 
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
-__version__ = "0.1.521"
+__version__ = "0.1.600"
 
 
 def main():
