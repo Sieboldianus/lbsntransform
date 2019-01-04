@@ -159,7 +159,7 @@ class LBSNTransfer():
             values_str = ','.join(
                 [self.prepare_sqlescaped_values(record) for
                  record in prepared_records])
-            insert_sql = insert_sql_selector(values_str, record_type)
+            insert_sql = self.insert_sql_selector(values_str, record_type)
             self.submitBatch(insert_sql)
 
     def insert_sql_selector(self, values_str, record_type):
