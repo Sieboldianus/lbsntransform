@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 version = {}
-with open("...lbsntransform/version.py") as fp:
+with open("lbsntransform/version.py") as fp:
     exec(fp.read(), version)
 
 # setuptools dev
