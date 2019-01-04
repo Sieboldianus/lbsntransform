@@ -15,7 +15,7 @@ except ImportError:
 
 # setuptools dev
 setup(name="lbsntransform",
-      version=lbsntransform.__version__,
+      version=lbsntransform.__main__.__version__,
       description="Location based social network (LBSN) "
                   "data structure format & transfer tool",
       long_description=long_description,
