@@ -195,6 +195,7 @@ def set_logger():
         datefmt='%H:%M:%S',
         level=logging.DEBUG)
     log = logging.getLogger(__name__)
+
     # Get Stream handler
     logging.getLogger().addHandler(logging.StreamHandler())
     return log
