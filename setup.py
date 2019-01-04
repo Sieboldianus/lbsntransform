@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import lbsntransform
 from setuptools import setup
 import sys
 
@@ -13,9 +12,13 @@ try:
 except ImportError:
     pass
 
+version = {}
+with open("...lbsntransform/version.py") as fp:
+    exec(fp.read(), version)
+
 # setuptools dev
 setup(name="lbsntransform",
-      version=lbsntransform.__main__.__version__,
+      version=version['__version__'],
       description="Location based social network (LBSN) "
                   "data structure format & transfer tool",
       long_description=long_description,
