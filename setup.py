@@ -16,7 +16,7 @@ version = {}
 with open("lbsntransform/version.py") as fp:
     exec(fp.read(), version)
 
-# test24
+# test25
 # setuptools dev
 setup(name="lbsntransform",
       version=version['__version__'],
