@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+"""Setuptools config file
+"""
+
 from setuptools import setup
 import sys
 
