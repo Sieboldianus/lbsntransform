@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import lbsntransform
 from setuptools import setup
 import sys
 
 with open('README.md') as f:
     long_description = f.read()
 
-with open('VERSION') as version_file:
-    version_var = version_file.read().strip()
+try:
+    from semantic_release import setup_hook
+    setup_hook(sys.argv)
+except ImportError:
+    pass
 
 # setuptools dev
 setup(name="lbsntransform",
-      version=version_var,
+      version=lbsntransform.__version__,
       description="Location based social network (LBSN) "
                   "data structure format & transfer tool",
       long_description=long_description,
