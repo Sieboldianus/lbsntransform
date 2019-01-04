@@ -40,9 +40,8 @@ def main():
     config.parseArgs()
     sys.stdout.flush()
     log = set_logger()
-    # load import mapper depending on lbsn origin (e.g. 1 = Instagram,
-    #                                                   2 = Flickr,
-    #                                                   3 = Twitter)
+    # load import mapper depending on lbsn origin
+    # (e.g. 1 = Instagram, 2 = Flickr, 3 = Twitter)
     importer = HF.load_importer_mapping_module(config.origin)
     # establish output connection
     conn_output, cursor_output = LoadData.initialize_output_connection(config)
