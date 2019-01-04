@@ -16,8 +16,6 @@ version = {}
 with open("lbsntransform/version.py") as fp:
     exec(fp.read(), version)
 
-# test35
-# setuptools dev
 setup(name="lbsntransform",
       version=version['__version__'],
       description="Location based social network (LBSN) "
