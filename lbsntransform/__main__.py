@@ -19,6 +19,8 @@ __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
 __version__ = '0.1.9'
 
+# test
+
 
 def main():
     """ Main function to process data from postgres db or local file input
