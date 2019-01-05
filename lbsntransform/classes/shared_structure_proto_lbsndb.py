@@ -76,6 +76,7 @@ class ProtoLBSM_db_Mapping():
         return dict_switcher.get(desc_name)
 
     def func_prepare_selector(self, record):
+        """Select correct prepare function according to record type"""
         dict_switcher = {
             lbsnCountry().DESCRIPTOR.name: self.prepare_lbsn_country,
             lbsnCity().DESCRIPTOR.name: self.prepare_lbsn_city,
