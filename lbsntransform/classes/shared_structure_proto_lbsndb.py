@@ -91,7 +91,7 @@ class ProtoLBSM_db_Mapping():
         return prepare_function(record)
 
     def prepare_lbsn_country(self, record):
-        # Get common attributes for place types Place, City and Country
+        """Get common attributes for records of type Place"""
         place_record = PlaceAttrShared(record)
         prepared_record = (place_record.origin_id,
                            place_record.guid,
@@ -104,6 +104,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_city(self, record):
+        """Get common attributes for records of type City"""
         place_record = PlaceAttrShared(record)
         country_guid = HF.null_check(record.country_pkey.id)
         sub_type = HF.null_check(record.sub_type)
