@@ -138,6 +138,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_user(self, record):
+        """Get common attributes for records of type User"""
         user_record = UserAttrShared(record)
         prepared_record = (user_record.origin_id,
                            user_record.guid,
