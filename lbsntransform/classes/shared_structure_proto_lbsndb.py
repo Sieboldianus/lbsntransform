@@ -231,6 +231,12 @@ class ProtoLBSM_db_Mapping():
 
 
 class PlaceAttrShared():
+    """Shared structure for Place Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    Note that Country, City and Place have the same structure.
+    """
+
     def __init__(self, record=None):
         if record is None:
             record = lbsnPlace()  # init empty structure
@@ -248,6 +254,11 @@ class PlaceAttrShared():
 
 
 class UserAttrShared():
+    """Shared structure for User Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    """
+
     def __init__(self, record=None):
         if record is None:
             record = lbsnUser()
@@ -276,6 +287,11 @@ class UserAttrShared():
 
 
 class UsergroupAttrShared():
+    """Shared structure for Usergroup Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    """
+
     def __init__(self, record=None):
         if record is None:
             record = lbsnUserGroup()
@@ -291,6 +307,11 @@ class UsergroupAttrShared():
 
 
 class PostAttrShared():
+    """Shared structure for Post Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    """
+
     def __init__(self, record=None):
         if record is None:
             record = lbsnPost()
@@ -328,6 +349,11 @@ class PostAttrShared():
 
 
 class PostreactionAttrShared():
+    """Shared structure for Postreaction Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    """
+
     def __init__(self, record=None):
         if record is None:
             record = lbsnPostReaction()
@@ -348,6 +374,11 @@ class PostreactionAttrShared():
 
 
 class RelationAttrShared():
+    """Shared structure for Relation Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    """
+
     def __init__(self, relationship=None):
         if relationship is None:
             relationship = lbsnRelationship()
