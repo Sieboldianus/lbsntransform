@@ -91,7 +91,7 @@ class ProtoLBSM_db_Mapping():
 
     def prepare_lbsn_country(self, record):
         # Get common attributes for place types Place, City and Country
-        place_record = place_attr_shared(record)
+        place_record = PlaceAttrShared(record)
         prepared_record = (place_record.origin_id,
                            place_record.guid,
                            place_record.name,
@@ -103,7 +103,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_city(self, record):
-        place_record = place_attr_shared(record)
+        place_record = PlaceAttrShared(record)
         country_guid = HF.null_check(record.country_pkey.id)
         sub_type = HF.null_check(record.sub_type)
         prepared_record = (place_record.origin_id,
@@ -119,7 +119,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_place(self, record):
-        place_record = place_attr_shared(record)
+        place_record = PlaceAttrShared(record)
         city_guid = HF.null_check(record.city_pkey.id)
         post_count = HF.null_check(record.post_count)
         prepared_record = (place_record.origin_id,
@@ -135,7 +135,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_user(self, record):
-        user_record = user_attr_shared(record)
+        user_record = UserAttrShared(record)
         prepared_record = (user_record.origin_id,
                            user_record.guid,
                            user_record.user_name,
@@ -162,7 +162,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_usergroup(self, record):
-        user_group_record = usergroup_attr_shared(record)
+        user_group_record = UsergroupAttrShared(record)
         prepared_record = (user_group_record.origin_id,
                            user_group_record.guid,
                            user_group_record.usergroup_name,
@@ -173,7 +173,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_post(self, record):
-        post_record = post_attr_shared(record)
+        post_record = PostAttrShared(record)
         prepared_record = (post_record.origin_id,
                            post_record.guid,
                            HF.return_ewkb_from_geotext(
@@ -205,7 +205,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_postreaction(self, record):
-        post_reaction_record = postreaction_attr_shared(record)
+        post_reaction_record = PostreactionAttrShared(record)
         prepared_record = (post_reaction_record.origin_id,
                            post_reaction_record.guid,
                            HF.return_ewkb_from_geotext(
@@ -221,7 +221,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_relation(self, record):
-        relations_record = relation_attr_shared(record)
+        relations_record = RelationAttrShared(record)
         prepared_typerecord_tuple = \
             (relations_record.rel_type,
              self.prepareRecordValues(relations_record.origin_id,
@@ -230,8 +230,10 @@ class ProtoLBSM_db_Mapping():
         return prepared_typerecord_tuple
 
 
-class place_attr_shared():
-    def __init__(self, record):
+class PlaceAttrShared():
+    def __init__(self, record=None):
+        if record is None:
+            record = lbsnPlace()  # init empty structure
         self.origin_id = record.pkey.origin.origin_id  # = 3
         self.guid = record.pkey.id
         self.name = HF.null_check(record.name)
@@ -245,8 +247,10 @@ class place_attr_shared():
         self.geom_area = HF.null_check(record.geom_area)
 
 
-class user_attr_shared():
-    def __init__(self, record):
+class UserAttrShared():
+    def __init__(self, record=None):
+        if record is None:
+            record = lbsnUser()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.user_name = HF.null_check(record.user_name)
@@ -271,8 +275,10 @@ class user_attr_shared():
         self.user_groups_follows = list(set(record.user_groups_follows))
 
 
-class usergroup_attr_shared():
-    def __init__(self, record):
+class UsergroupAttrShared():
+    def __init__(self, record=None):
+        if record is None:
+            record = lbsnUserGroup()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.usergroup_name = HF.null_check(record.usergroup_name)
@@ -284,8 +290,10 @@ class usergroup_attr_shared():
         self.user_owner = HF.null_check(record.user_owner_pkey.id)
 
 
-class post_attr_shared():
-    def __init__(self, record):
+class PostAttrShared():
+    def __init__(self, record=None):
+        if record is None:
+            record = lbsnPost()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.post_latlng = HF.null_check(record.post_latlng)
@@ -319,8 +327,10 @@ class post_attr_shared():
         self.post_content_license = HF.null_check(record.post_content_license)
 
 
-class postreaction_attr_shared():
-    def __init__(self, record):
+class PostreactionAttrShared():
+    def __init__(self, record=None):
+        if record is None:
+            record = lbsnPostReaction()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.reaction_latlng = HF.null_check(record.reaction_latlng)
@@ -337,8 +347,10 @@ class postreaction_attr_shared():
             set([pkey.id for pkey in record.user_mentions_pkey]))
 
 
-class relation_attr_shared():
-    def __init__(self, relationship):
+class RelationAttrShared():
+    def __init__(self, relationship=None):
+        if relationship is None:
+            relationship = lbsnRelationship()
         self.origin_id = relationship.pkey.relation_to.origin.origin_id
         self.guid = relationship.pkey.relation_to.id
         self.guid_rel = relationship.pkey.relation_from.id
