@@ -178,6 +178,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_post(self, record):
+        """Get common attributes for records of type Post"""
         post_record = PostAttrShared(record)
         prepared_record = (post_record.origin_id,
                            post_record.guid,
