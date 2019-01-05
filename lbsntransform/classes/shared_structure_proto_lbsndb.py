@@ -121,6 +121,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_place(self, record):
+        """Get common attributes for records of type Place"""
         place_record = PlaceAttrShared(record)
         city_guid = HF.null_check(record.city_pkey.id)
         post_count = HF.null_check(record.post_count)
