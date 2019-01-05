@@ -166,6 +166,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_usergroup(self, record):
+        """Get common attributes for records of type Userroup"""
         user_group_record = UsergroupAttrShared(record)
         prepared_record = (user_group_record.origin_id,
                            user_group_record.guid,
