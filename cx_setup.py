@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from cx_Freeze import setup, Executable
-import sys
 
 # Derive Package Paths Dynamically
 import os.path
