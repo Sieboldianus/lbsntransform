@@ -69,8 +69,17 @@ lbsntransform --Origin 3 --LocalInput --LocalFileType '*.json' --transferlimit 1
 import lbsntransform
 ```
 
+## Versioning and Changelog, and Download
+
+For the releases available, see the [tags on this repository](/../tags). 
+See [version file](VERSION) for latest available version. The latest windows build that is available for download is [0.1.4](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
+For all other systems use cx_freeze to build executable:
+```shell
+python cx_setup.py build
+```
+
 The versioning (major.minor.patch) is automated using [python-semantic-release](https://github.com/relekang/python-semantic-release).
-Commit messages that follow [Angular Commit Message Conventions](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines) are automatically interpreted. Examples:  
+Commit messages that follow the [Angular Commit Message Conventions](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines) will be automatically interpreted, followed by version bumps if necessary. Examples:  
 - `fix: hotfix for bug xy` will result in a patch version bump  
 - `feat: feature for processing xy` will result in minor version bump  
 ```git
@@ -93,14 +102,7 @@ test: Adding missing or correcting existing tests
 chore: Changes to the build process or auxiliary tools and libraries such as documentation generation
 ```
 
-## Versioning and Changelog, and Download
-
-For the releases available, see the [tags on this repository](/../tags). 
-See [version file](VERSION) for latest available version. The latest windows build that is available for download is [0.1.4](https://cloudstore.zih.tu-dresden.de/index.php/s/MqtlCyqLbxmnnxr/download).
-For all other systems use cx_freeze to build executable:
-```shell
-python cx_setup.py build
-```
+Except for feature and fixes, no version bumps will be made.
 
 ## Authors
 
