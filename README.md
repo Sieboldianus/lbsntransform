@@ -31,7 +31,104 @@ lbsntransform.exe --Origin 3 --LocalInput --LocalFileType '*.json' --transferlim
 - read local json from /01_Input/  
 - and store lbsn records as CSV and ProtoBuf in /02_Output/  
 
-For a full list of possible input args and descriptions see [config.py](/lbsntransform/config/config.py).
+A full list of possible input args is available with `lbsntransform --help` [config.py](/lbsntransform/config/config.py):
+
+```
+usage: lbsntransform [-h] [-sO ORIGIN] [-lI] [-lT LOCALFILETYPE]
+                     [-iP INPUTPATH] [-iS] [-pO DBPASSWORD_OUTPUT]
+                     [-uO DBUSER_OUTPUT] [-aO DBSERVERADRESSOUTPUT]
+                     [-nO DBNAMEOUTPUT] [-pI DBPASSWORD_INPUT]
+                     [-uI DBUSER_INPUT] [-aI DBSERVERADRESSINPUT]
+                     [-nI DBNAMEINPUT] [-t TRANSFERLIMIT] [-tC TRANSFERCOUNT]
+                     [-nR NUMBEROFRECORDSTOFETCH] [-tR] [-rR] [-iG]
+                     [-rS STARTWITHDBROWNUMBER] [-rE ENDWITHDBROWNUMBER]
+                     [-d DEBUGMODE] [-gL GEOCODELOCATIONS]
+                     [-igS IGNOREINPUTSOURCELIST] [-iT INPUTTYPE] [-mR] [-CSV]
+                     [-CSVal] [-rL] [-sF SKIPUNTILFILE] [-mGA MINGEOACCURACY]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -sO ORIGIN, --Origin ORIGIN
+                        Type of input source. Defaults to 3: Twitter (1 -
+                        Instagram, 2 - Flickr, 3 - Twitter)
+
+Local Input:
+  -lI, --LocalInput     Process local json or csv
+  -lT LOCALFILETYPE, --LocalFileType LOCALFILETYPE
+                        If localread, specify filetype (json, csv etc.)
+  -iP INPUTPATH, --InputPath INPUTPATH
+                        Optionally provide path to input folder, otherwise
+                        ./Input/ will be used
+  -iS, --isStackedJson  Typical form is [{json1},{json2}], if is_stacked_json
+                        is True: will process stacked jsons in the form of
+                        {json1}{json2} (no comma)
+
+DB Output:
+  -pO DBPASSWORD_OUTPUT, --dbPassword_Output DBPASSWORD_OUTPUT
+  -uO DBUSER_OUTPUT, --dbUser_Output DBUSER_OUTPUT
+                        Default: example-user-name2
+  -aO DBSERVERADRESSOUTPUT, --dbServeradressOutput DBSERVERADRESSOUTPUT
+                        e.g. 111.11.11.11
+  -nO DBNAMEOUTPUT, --dbNameOutput DBNAMEOUTPUT
+                        e.g.: test_db
+
+DB Input:
+  -pI DBPASSWORD_INPUT, --dbPassword_Input DBPASSWORD_INPUT
+  -uI DBUSER_INPUT, --dbUser_Input DBUSER_INPUT
+                        Default: example-user-name
+  -aI DBSERVERADRESSINPUT, --dbServeradressInput DBSERVERADRESSINPUT
+                        e.g. 111.11.11.11
+  -nI DBNAMEINPUT, --dbNameInput DBNAMEINPUT
+                        e.g.: test_db
+
+Additional settings:
+  -t TRANSFERLIMIT, --transferlimit TRANSFERLIMIT
+  -tC TRANSFERCOUNT, --transferCount TRANSFERCOUNT
+                        Default to 50k: After how many parsed records should
+                        the result be transferred to the DB. Larger values
+                        improve speed, because duplicate check happens in
+                        Python and not in Postgres Coalesce; larger values are
+                        heavier on memory.
+  -nR NUMBEROFRECORDSTOFETCH, --numberOfRecordsToFetch NUMBEROFRECORDSTOFETCH
+  -tR, --disableTransferReactions
+  -rR, --disableReactionPostReferencing
+                        Enable this option in args to prevent empty posts
+                        stored due to Foreign Key Exists Requirement 0 = Save
+                        Original Tweets of Retweets in "posts"; 1 = do not
+                        store Original Tweets of Retweets; !Not implemented: 2
+                        = Store Original Tweets of Retweets as
+                        "post_reactions"
+  -iG, --ignoreNonGeotagged
+  -rS STARTWITHDBROWNUMBER, --startWithDBRowNumber STARTWITHDBROWNUMBER
+  -rE ENDWITHDBROWNUMBER, --endWithDBRowNumber ENDWITHDBROWNUMBER
+  -d DEBUGMODE, --debugMode DEBUGMODE
+                        Needs to be implemented.
+  -gL GEOCODELOCATIONS, --geocodeLocations GEOCODELOCATIONS
+                        Defaults to None. Provide path to CSV file with
+                        location geocodes (CSV Structure: lat, lng, name)
+  -igS IGNOREINPUTSOURCELIST, --ignoreInputSourceList IGNOREINPUTSOURCELIST
+                        Provide a list of input_source types that will be
+                        ignored (e.g. to ignore certain bots etc.)
+  -iT INPUTTYPE, --inputType INPUTTYPE
+                        Input type, e.g. "post", "profile", "friendslist",
+                        "followerslist" etc.
+  -mR, --mapFullRelations
+                        Defaults to False. Set to true to map full relations,
+                        e.g. many-to-many relationships such as user_follows,
+                        user_friend, user_mentions etc. are mapped in a
+                        separate table
+  -CSV, --CSVOutput     Set to True to Output all Submit values to CSV
+  -CSVal, --CSVallowLinebreaks
+                        If set to False will not remove intext-linebreaks ( or
+                        ) in output CSVs
+  -rL, --recursiveLoad  Process Input Directories recursively (depth: 2)
+  -sF SKIPUNTILFILE, --skipUntilFile SKIPUNTILFILE
+                        If local input, skip all files until file with name x
+                        appears (default: start immediately)
+  -mGA MINGEOACCURACY, --minGeoAccuracy MINGEOACCURACY
+                        Set to "latlng", "place", or "city" to limit output
+                        based on min geoaccuracy
+```
 
 ## Built With
 
