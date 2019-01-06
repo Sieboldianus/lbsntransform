@@ -52,14 +52,14 @@ For development & testing, make a local clone of this repository
 ```shell
 git clone git@gitlab.vgiscience.de:lbsn/lbsntransform.git
 ```
-..and create package in develop mode to symlink the folder to your  
+..and (e.g.) create package in develop mode to symlink the folder to your  
 Python's site-packages folder with:  
 ```shell
 python setup.py develop
 ```
 (use `python setup.py develop --uninstall` to uninstall tool in develop mode)
 
-Now you can run tool in your shell with (Origin 3 = Twitter):  
+Now you can run the tool in your shell with (Origin 3 = Twitter):  
 ```shell
 lbsntransform --Origin 3 --LocalInput --LocalFileType '*.json' --transferlimit 1000 --CSVOutput
 ```
@@ -67,6 +67,30 @@ lbsntransform --Origin 3 --LocalInput --LocalFileType '*.json' --transferlimit 1
 ..or import the package to other python projects with:  
 ```python
 import lbsntransform
+```
+
+The versioning (major.minor.patch) is automated using [python-semantic-release](https://github.com/relekang/python-semantic-release).
+Commit messages that follow [Angular Commit Message Conventions](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines) are automatically interpreted. Examples:  
+- `fix: hotfix for bug xy` will result in a patch version bump  
+- `feat: feature for processing xy` will result in minor version bump  
+```
+perf(cluster): faster generation of alpha shapes
+
+BRAKING CHANGE: Easy buffer option removed.
+```
+.. will result in a major release bump.
+
+Some types used in this project:
+
+```
+feat: A new feature
+fix: A bug fix
+docs: Documentation only changes
+style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+refactor: A code change that neither fixes a bug nor adds a feature
+perf: A code change that improves performance
+test: Adding missing or correcting existing tests
+chore: Changes to the build process or auxiliary tools and libraries such as documentation generation
 ```
 
 ## Versioning and Changelog, and Download
