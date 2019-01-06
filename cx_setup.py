@@ -11,10 +11,6 @@ version = {}
 with open("lbsntransform/version.py") as fp:
     exec(fp.read(), version)
 
-# Dependencies are automatically detected, but it can be fine tuned
-# includes_mod = ['lbsntransform',
-#                ]
-
 excludes_mod = ['tkinter',
                 'matplotlib',
                 'IPython',
