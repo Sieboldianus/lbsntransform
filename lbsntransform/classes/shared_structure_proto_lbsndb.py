@@ -228,6 +228,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_relation(self, record):
+        """Get common attributes for records of type lbsn Relation"""
         relations_record = RelationAttrShared(record)
         prepared_typerecord_tuple = \
             (relations_record.rel_type,
