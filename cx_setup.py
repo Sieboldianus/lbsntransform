@@ -39,7 +39,8 @@ build_exe_options = {'include_files': include_folders_files,
                      "packages": packages_mod, "excludes": excludes_mod}
 base = None
 executables = [
-    Executable('lbsntransform/__main__.py', base=base)
+    Executable('lbsntransform/__main__.py', base=base,
+               targetName="lbsntransform.exe")
 ]
 setup(name="lbsntransform",
       version=version['__version__'],
