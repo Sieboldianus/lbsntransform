@@ -2,11 +2,16 @@
 
 A python package that uses the [common location based social network (LBSN) data structure concept](https://gitlab.vgiscience.de/lbsn/concept) (ProtoBuf) to import, transform and export Social Media data such as Twitter and Flickr.
 
+## Motivation
+
+The goal is to provide a common interface to handle Social Media Data, without custom adjustment to the myriad API Endpoints available. As an example, consider the ProtoBuf spec "Post", which can be a Tweet on Twitter, a Photo shared on Flickr, or a post on Reddit. This tool is based on a 4-Facet conceptual framework for LBSN, introduced in a paper by [Dunkel et al. (2018)](https://www.tandfonline.com/doi/full/10.1080/13658816.2018.1546390). In addition, the GDPR directly requests Social Media Network operators to allow users to transfer accounts and data inbetween services.
+While there are attempts by Google, Facebook etc. (see data-transfer-prject), it is not currently possible. With this structure concept, a primary motivation is to systematically characterize LBSN data aspects in a common scheme that enables privacy-by-design for connected software, data handling and database design.
+
 ## Description
 
 This tool enables data import from a Postgres database, JSON, or CSV and export to CSV, [LBSN ProtoBuf](https://gitlab.vgiscience.de/lbsn/concept) or a [LBSN prepared Postgres Database](https://gitlab.vgiscience.de/lbsn/database-setup).
-The tool will map Social Media Endpoints (e.g. Twitter tweets) to a common [LBSN Interchange Structure](https://gitlab.vgiscience.de/lbsn/concept) format in ProtoBuf. The tool can also be imported to other Python projects with `import lbsntransform` for on-the-fly conversion. 
-The goal is to provide a common interface to handle Social Media Data, without custom adjustment to the myriad API Endpoints available. As an example, consider the ProtoBuf spec "Post", which can be a Tweet on Twitter, a Photo shared on Flickr, or a post on Reddit. This tool is based on a 4-Facet conceptual framework for LBSN, introduced in a paper by [Dunkel et al. (2018)](https://www.tandfonline.com/doi/full/10.1080/13658816.2018.1546390). 
+The tool will map Social Media endpoints (e.g. Twitter tweets) to a common [LBSN Interchange Structure](https://gitlab.vgiscience.de/lbsn/concept) format in ProtoBuf. The tool can also be imported to other Python projects with `import lbsntransform` for on-the-fly conversion. 
+
 
 ## Quick Start
 
