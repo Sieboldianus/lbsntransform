@@ -73,7 +73,7 @@ The versioning (major.minor.patch) is automated using [python-semantic-release](
 Commit messages that follow [Angular Commit Message Conventions](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines) are automatically interpreted. Examples:  
 - `fix: hotfix for bug xy` will result in a patch version bump  
 - `feat: feature for processing xy` will result in minor version bump  
-```
+```git
 perf(cluster): faster generation of alpha shapes
 
 BRAKING CHANGE: Easy buffer option removed.
