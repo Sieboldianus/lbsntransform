@@ -211,6 +211,7 @@ class ProtoLBSM_db_Mapping():
         return prepared_record
 
     def prepare_lbsn_postreaction(self, record):
+        """Get common attributes for records of type PostReaction"""
         post_reaction_record = PostreactionAttrShared(record)
         prepared_record = (post_reaction_record.origin_id,
                            post_reaction_record.guid,
