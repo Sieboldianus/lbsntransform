@@ -3,7 +3,7 @@
 """
 Shared structure and mapping between DB and Proto LBSN Structure.
 """
-import sys
+
 from .helper_functions import HelperFunctions as HF
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     CompositeKey, \
@@ -14,11 +14,10 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnCity, \
     lbsnUserGroup, \
     lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship
+    lbsnPostReaction
 
 
-class ProtoLBSM_db_Mapping():
+class ProtoLBSNMapping():
     """ Methods to map ProtoBuf structure to PG SQL structure."""
 
     @staticmethod

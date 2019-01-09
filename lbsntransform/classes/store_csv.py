@@ -16,7 +16,7 @@ from heapq import merge as heapq_merge
 from contextlib import ExitStack
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
-from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
+from .shared_structure_proto_lbsndb import ProtoLBSNMapping
 from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     CompositeKey, \
@@ -60,7 +60,7 @@ class LBSNcsv():
 
     def __init__(self, SUPPRESS_LINEBREAKS=True):
         self.output_path_file = f'{os.getcwd()}\\02_Output\\'
-        self.db_mapping = ProtoLBSM_db_Mapping()
+        self.db_mapping = ProtoLBSNMapping()
         self.store_csv_part = 0
         self.SUPPRESS_LINEBREAKS = SUPPRESS_LINEBREAKS
         if not os.path.exists(self.output_path_file):

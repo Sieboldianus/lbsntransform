@@ -16,7 +16,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from .helper_functions import HelperFunctions
 from .helper_functions import LBSNRecordDicts
 from .store_csv import LBSNcsv
-from .shared_structure_proto_lbsndb import ProtoLBSM_db_Mapping
+from .shared_structure_proto_lbsndb import ProtoLBSNMapping
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     CompositeKey, \
     RelationshipKey, \
@@ -71,7 +71,7 @@ class LBSNTransfer():
         self.batch_db_volume = 100
         self.store_csv = store_csv
         self.headers_written = set()
-        self.db_mapping = ProtoLBSM_db_Mapping()
+        self.db_mapping = ProtoLBSNMapping()
         # self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
 
         if self.store_csv:
