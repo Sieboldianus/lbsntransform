@@ -232,6 +232,16 @@ class HelperFunctions():
             return record_attr
 
     @staticmethod
+    def null_geom_check(geom_attr):
+        """Helper function to check for Null Values
+        in geometry columns and replace with Null Island
+        """
+        if geom_attr is None or (isinstance(geom_attr, str) and geom_attr == ''):
+            null_island = "POINT(%s %s)" % (0, 0)
+            return null_island
+        return geom_attr
+
+    @staticmethod
     def null_check_datetime(recordAttr):
         if not recordAttr:
             return None
@@ -254,7 +264,15 @@ class HelperFunctions():
 
     @staticmethod
     def return_ewkb_from_geotext(text):
-        if not text:
+        """Generates Geometry in Well-known-Text format
+        from PostGis Format (e.g. 'POINT(0 0)')
+        with SRID for WGS1984 (4326)
+        """
+        if text == 'POINT(0 0)':
+            # WKT for Null Island in 4326
+            return '0101000020E610000000000000000000000000000000000000'
+        if text is None:
+            # keep Null geometries, e.g. for geom_area columns
             return None
         geom = wkt.loads(text)
         geos.lgeos.GEOSSetSRID(geom._geom, 4326)

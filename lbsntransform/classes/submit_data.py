@@ -179,7 +179,7 @@ class LBSNTransfer():
             lbsnPostReaction().DESCRIPTOR.name: self.postreaction_insertsql,
         }
         prepare_function = dict_switcher.get(record_type)
-        return prepare_function(self, values_str, record_type)
+        return prepare_function(values_str, record_type)
 
     def postreaction_insertsql(self, values_str, record_type):
         insert_sql = \
@@ -583,6 +583,8 @@ class LBSNTransfer():
                         insert_language_sql, (missingLanguage,))
                 else:
                     sys.exit(f'{e}')
+            except psycopg2.DataError as e:
+                sys.exit(f'{e}\nINSERT SQL WAS: {insert_sql}')
             except ValueError as e:
                 self.log.warning(f'{e}')
                 input("Press Enter to continue... (entry will be skipped)")

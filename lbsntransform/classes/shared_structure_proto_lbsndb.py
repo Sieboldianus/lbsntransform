@@ -3,7 +3,7 @@
 """
 Shared structure and mapping between DB and Proto LBSN Structure.
 """
-
+import sys
 from .helper_functions import HelperFunctions as HF
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     CompositeKey, \
@@ -114,7 +114,8 @@ class ProtoLBSM_db_Mapping():
                            place_record.name_alternatives,
                            HF.return_ewkb_from_geotext(
                                place_record.geom_center),
-                           HF.return_ewkb_from_geotext(place_record.geom_area),
+                           HF.return_ewkb_from_geotext(
+                               place_record.geom_area),
                            place_record.url,
                            country_guid,
                            sub_type)
@@ -257,7 +258,7 @@ class PlaceAttrShared():
         if self.name and self.name in self.name_alternatives:
             self.name_alternatives.remove(self.name)
         self.url = HF.null_check(record.url)
-        self.geom_center = HF.null_check(record.geom_center)
+        self.geom_center = HF.null_geom_check(record.geom_center)
         self.geom_area = HF.null_check(record.geom_area)
 
 
@@ -284,7 +285,7 @@ class UserAttrShared():
         self.is_available = HF.null_check(record.is_available)
         self.user_language = HF.null_check(record.user_language.language_short)
         self.user_location = HF.null_check(record.user_location)
-        self.user_location_geom = HF.null_check(record.user_location_geom)
+        self.user_location_geom = HF.null_geom_check(record.user_location_geom)
         self.liked_count = HF.null_check(record.liked_count)
         self.active_since = HF.null_check_datetime(record.active_since)
         self.profile_image_url = HF.null_check(record.profile_image_url)
@@ -325,7 +326,7 @@ class PostAttrShared():
             record = lbsnPost()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
-        self.post_latlng = HF.null_check(record.post_latlng)
+        self.post_latlng = HF.null_geom_check(record.post_latlng)
         self.place_guid = HF.null_check(record.place_pkey.id)
         self.city_guid = HF.null_check(record.city_pkey.id)
         self.country_guid = HF.null_check(record.country_pkey.id)
@@ -354,6 +355,9 @@ class PostAttrShared():
         self.post_share_count = HF.null_check(record.post_share_count)
         self.input_source = HF.null_check(record.input_source)
         self.post_content_license = HF.null_check(record.post_content_license)
+        # optional:
+        self.latitude = 0
+        self.longitude = 0
 
 
 class PostreactionAttrShared():
@@ -367,7 +371,7 @@ class PostreactionAttrShared():
             record = lbsnPostReaction()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
-        self.reaction_latlng = HF.null_check(record.reaction_latlng)
+        self.reaction_latlng = HF.null_geom_check(record.reaction_latlng)
         self.user_guid = HF.null_check(record.user_pkey.id)
         self.referenced_post = HF.null_check(record.referencedPost_pkey.id)
         self.referenced_postreaction = HF.null_check(
