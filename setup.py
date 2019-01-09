@@ -3,11 +3,11 @@
 """Setuptools config file
 """
 
-from setuptools import setup
 import sys
+from setuptools import setup
 
 with open('README.md') as f:
-    long_description = f.read()
+    LONG_DESCRIPTION = f.read()
 
 try:
     from semantic_release import setup_hook
@@ -23,7 +23,7 @@ setup(name="lbsntransform",
       version=version['__version__'],
       description="Location based social network (LBSN) "
                   "data structure format & transfer tool",
-      long_description=long_description,
+      long_description=LONG_DESCRIPTION,
       long_description_content_type='text/markdown',
       author='Alexander Dunkel',
       author_email='alexander.dunkel@tu-dresden.de',

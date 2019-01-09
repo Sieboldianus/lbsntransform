@@ -17,7 +17,7 @@ from .helper_functions import GeocodeLocations
 
 
 class LoadData():
-
+    @staticmethod
     def loop_input_records(records, transferlimit, import_mapper, config):
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
@@ -65,6 +65,7 @@ class LoadData():
             skip = True
         return skip
 
+    @staticmethod
     def fetch_json_data_from_lbsn(cursor, start_id=0, get_max=None,
                                   number_of_records_to_fetch=10000):
         """Fetches records from Postgres DB
@@ -91,6 +92,7 @@ class LoadData():
             return None
         return records
 
+    @staticmethod
     def fetch_data_from_file(loc_filelist, continue_number,
                              is_stacked_json, format):
         """Fetches CSV or JSON data (including stacked json) from file"""
@@ -152,49 +154,52 @@ class LoadData():
             return None
         return records
 
-    def initialize_output_connection(config):
+    @staticmethod
+    def initialize_output_connection(cfg):
         """Establishes connection to output DB (Postgres), if set in config"""
-        if config.dbuser_output:
-            output_connection = DBConnection(config.dbserveradress_output,
-                                             config.dbname_output,
-                                             config.dbuser_output,
-                                             config.dbpassword_output)
+        if cfg.dbuser_output:
+            output_connection = DBConnection(cfg.dbserveradress_output,
+                                             cfg.dbname_output,
+                                             cfg.dbuser_output,
+                                             cfg.dbpassword_output)
             conn_output, cursor_output = output_connection.connect()
         else:
             conn_output = None
             cursor_output = None
         return conn_output, cursor_output
 
-    def initialize_input_connection(config):
+    @staticmethod
+    def initialize_input_connection(cfg):
         """Establishes connection to input DB (Postgres)
 
         Returns cursor
         """
-        input_connection = DBConnection(config.dbserveradress_input,
-                                        config.db_name_input,
-                                        config.dbuser_Input,
-                                        config.dbpassword_input,
+        input_connection = DBConnection(cfg.dbserveradress_input,
+                                        cfg.db_name_input,
+                                        cfg.dbuser_Input,
+                                        cfg.dbpassword_input,
                                         True  # ReadOnly Mode
                                         )
         conn_input, cursor_input = input_connection.connect()
         return cursor_input
 
-    def read_local_files(config):
+    @staticmethod
+    def read_local_files(cfg):
         """Read Local Files according to config parameters and
         returns list of file-paths
         """
         path = f'{config.InputPath}'
-        if config.recursive_load:
+        if cfg.recursive_load:
             excludefolderlist = ["01_DataSetHistory",
                                  "02_UserData", "03_ClippedData", "04_MapVis"]
             excludestartswithfile = ["log", "settings", "GridCoordinates"]
             loc_filelist = \
                 LoadData.scan_rec(path,
-                                  format=config.local_file_type,
+                                  format=cfg.local_file_type,
                                   excludefolderlist=excludefolderlist,
                                   excludestartswithfile=excludestartswithfile)
         else:
-            loc_filelist = glob(f'{path}*.{config.local_file_type}')
+            loc_filelist = glob(f'{path}*.{cfg.local_file_type}')
 
         input_count = (len(loc_filelist))
         if input_count == 0:
@@ -202,6 +207,7 @@ class LoadData():
         else:
             return loc_filelist
 
+    @staticmethod
     def load_geocodes(geo_config):
         """Loads coordinates-string tuples for geocoding
         text locations (Optional)
@@ -211,6 +217,7 @@ class LoadData():
         geocode_dict = locationsgeocode_dict.geocode_dict
         return geocode_dict
 
+    @staticmethod
     def load_ignore_sources(list_source):
         """Loads list of source types to be ignored"""
         ignore_source_list = set()

@@ -285,7 +285,7 @@ class UserAttrShared():
         self.is_available = HF.null_check(record.is_available)
         self.user_language = HF.null_check(record.user_language.language_short)
         self.user_location = HF.null_check(record.user_location)
-        self.user_location_geom = HF.null_geom_check(record.user_location_geom)
+        self.user_location_geom = HF.null_check(record.user_location_geom)
         self.liked_count = HF.null_check(record.liked_count)
         self.active_since = HF.null_check_datetime(record.active_since)
         self.profile_image_url = HF.null_check(record.profile_image_url)

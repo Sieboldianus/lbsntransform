@@ -7,7 +7,7 @@ Config module for parsing input args for lbsntransform package.
 import argparse
 import os
 import sys
-
+from shapely import geos
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost
 
 
@@ -48,6 +48,8 @@ class BaseConfig():
         self.recursive_load = False
         self.skip_until_file = ""
         self.min_geoaccuracy = None
+
+        BaseConfig.set_options()
 
     def parseArgs(self):
         """Process input *args
@@ -209,7 +211,7 @@ class BaseConfig():
                 self.is_stacked_json = True
             if not args.InputPath:
                 self.input_path = f'{os.getcwd()}\\01_Input\\'
-                print(f'Using Path: {self.InputPath}')
+                print(f'Using Path: {self.input_path}')
             else:
                 if args.InputPath.endswith("\\"):
                     input_path = args.InputPath
@@ -282,3 +284,10 @@ class BaseConfig():
         else:
             print("Unknown geoaccuracy.")
             return None
+
+    @staticmethod
+    def set_options():
+        """Includes global options in other packages to be set
+        prior execution"""
+        # tell shapely to include the srid when generating WKBs
+        geos.WKBWriter.defaults['include_srid'] = True

@@ -235,8 +235,13 @@ class HelperFunctions():
     def null_geom_check(geom_attr):
         """Helper function to check for Null Values
         in geometry columns and replace with Null Island
+
+        Note:
+        null_geom_check is only applied to geometry columns
+        with NOT NULL Constraint
         """
-        if geom_attr is None or (isinstance(geom_attr, str) and geom_attr == ''):
+        if geom_attr is None or \
+                (isinstance(geom_attr, str) and geom_attr == ''):
             null_island = "POINT(%s %s)" % (0, 0)
             return null_island
         return geom_attr
@@ -255,26 +260,21 @@ class HelperFunctions():
             else:
                 return recordAttr.ToDatetime()
 
-    # EWKB Conversion now in-code, not server-side
-    # def geoconvertOrNone(geom):
-    #    if geom:
-    #        return "extensions.ST_GeomFromText(%s,4326)"
-    #    else:
-    #        return "%s"
-
     @staticmethod
     def return_ewkb_from_geotext(text):
         """Generates Geometry in Well-known-Text format
         from PostGis Format (e.g. 'POINT(0 0)')
         with SRID for WGS1984 (4326)
+
+        Note that:
+        geos.WKBWriter.defaults['include_srid'] = True
+        must be set (see config.py)
         """
-        if text == 'POINT(0 0)':
-            # WKT for Null Island in 4326
-            return '0101000020E610000000000000000000000000000000000000'
         if text is None:
             # keep Null geometries, e.g. for geom_area columns
             return None
         geom = wkt.loads(text)
+        # Set SRID to WGS1984
         geos.lgeos.GEOSSetSRID(geom._geom, 4326)
         geom = geom.wkb_hex
         return geom
@@ -295,6 +295,7 @@ class HelperFunctions():
                 raise
             yield obj
 
+    @staticmethod
     def clean_null_bytes_from_str(str):
         str_without_null_byte = str.replace('\x00', '')
         return str_without_null_byte
@@ -342,7 +343,7 @@ class HelperFunctions():
     def check_notice_empty_post_guid(post_guid):
         if not post_guid:
             logging.getLogger('__main__').warning(f'No PostGuid\n\n'
-                                                  f'{json_string_dict}')
+                                                  f'{post_guid}')
             input("Press Enter to continue... (entry will be skipped)")
             return False
         else:

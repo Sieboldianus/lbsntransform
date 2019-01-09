@@ -99,7 +99,7 @@ class LBSNTransfer():
         self.count_affected = 0
         for records_dict in record_dicts.all_dicts:
             type_name = records_dict[1]
-            for record_pkey, record in records_dict[0].items():
+            for record in records_dict[0].values():
                 x += 1
                 print(f'Storing {x} of {record_dicts.count_glob} '
                       f'output records ({type_name})..', end='\r')
@@ -125,7 +125,7 @@ class LBSNTransfer():
         self.sort_clean_proto_repeated_field(record)
         # store cleaned ProtoBuf records
         self.batched_records[record_type].append(record)
-        for list_type, batch_list in self.batched_records.items():
+        for batch_list in self.batched_records.values():
             # if any dict contains more values than self.batchDBVolume,
             # submit/store all
             if len(batch_list) >= self.batch_db_volume:
@@ -595,7 +595,7 @@ class LBSNTransfer():
                     "ROLLBACK TO SAVEPOINT submit_recordBatch")
                 tsuccessful = True
             except psycopg2.ProgrammingError as e:
-                sys.exit(insert_sql)
+                sys.exit(f'{e}\nINSERT SQL WAS: {insert_sql}')
             else:
                 # self.count_affected += self.dbCursor.rowcount # monitoring
                 self.db_cursor.execute("RELEASE SAVEPOINT submit_recordBatch")
