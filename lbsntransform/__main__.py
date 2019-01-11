@@ -54,8 +54,7 @@ def main():
         loc_filelist = LoadData.read_local_files(config)
     else:
         # establish input connection
-        db_input = LoadData.initialize_input_connection(config)
-        cursor_input = db_input[1]
+        cursor_input = LoadData.initialize_input_connection(config)
 
     # start settings
     processed_records = 0

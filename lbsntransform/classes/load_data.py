@@ -182,7 +182,7 @@ class LoadData():
                                         cfg.dbpassword_input,
                                         True  # ReadOnly Mode
                                         )
-        cursor_input = input_connection.connect()
+        conn_input, cursor_input = input_connection.connect()
         return cursor_input
 
     @staticmethod

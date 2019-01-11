@@ -119,7 +119,7 @@ class LBSNcsv():
                 self.sort_files(filelist)
                 if len(filelist) > 1:
                     print(
-                        f'Cleaning & merging output files..{x}'
+                        f'Cleaning & merging output files..{x_cnt}'
                         f'/{len(batched_records)}', end='\r')
                     self.merge_files(filelist, type_name)
                 else:
