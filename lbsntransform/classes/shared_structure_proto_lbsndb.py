@@ -4,10 +4,8 @@
 Shared structure and mapping between DB and Proto LBSN Structure.
 """
 
-from .helper_functions import HelperFunctions as HF
+import sys
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
     lbsnUser, \
     lbsnCountry, \
     lbsnPlace, \
@@ -15,6 +13,7 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnUserGroup, \
     lbsnRelationship, \
     lbsnPostReaction
+from .helper_functions import HelperFunctions as HF
 
 
 class ProtoLBSNMapping():

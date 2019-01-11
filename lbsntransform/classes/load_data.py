@@ -8,7 +8,6 @@ import sys
 import os
 import ntpath
 import csv
-from _csv import QUOTE_MINIMAL
 from glob import glob
 from json import loads as json_loads, decoder as json_decoder
 from .db_connection import DBConnection
@@ -17,6 +16,9 @@ from .helper_functions import GeocodeLocations
 
 
 class LoadData():
+    """
+    Class for loding data from different sources (CSV, DB, JSON etc.).
+    """
     @staticmethod
     def loop_input_records(records, transferlimit, import_mapper, config):
         """Loops input json or csv records,
@@ -47,7 +49,7 @@ class LoadData():
 
             if (transferlimit and processed_records >= transferlimit) or \
                (not config.is_local_input and
-                    config.endwith_db_rownumber and
+                config.endwith_db_rownumber and
                     db_row_number >= config.endwith_db_rownumber):
                 finished = True
                 break
@@ -94,17 +96,17 @@ class LoadData():
 
     @staticmethod
     def fetch_data_from_file(loc_filelist, continue_number,
-                             is_stacked_json, format):
+                             is_stacked_json, file_format):
         """Fetches CSV or JSON data (including stacked json) from file"""
-        if format == 'json':
+        if file_format == 'json':
             records = LoadData.fetch_json_data_from_file(loc_filelist,
                                                          continue_number,
                                                          is_stacked_json)
-        elif format == 'txt':
+        elif file_format == 'txt':
             records = LoadData.fetch_csv_data_from_file(loc_filelist,
                                                         continue_number)
         else:
-            exit(f'Format {format} not supported.')
+            exit(f'Format {file_format} not supported.')
         return records
 
     @staticmethod
@@ -180,7 +182,7 @@ class LoadData():
                                         cfg.dbpassword_input,
                                         True  # ReadOnly Mode
                                         )
-        conn_input, cursor_input = input_connection.connect()
+        cursor_input = input_connection.connect()
         return cursor_input
 
     @staticmethod
@@ -195,7 +197,7 @@ class LoadData():
             excludestartswithfile = ["log", "settings", "GridCoordinates"]
             loc_filelist = \
                 LoadData.scan_rec(path,
-                                  format=cfg.local_file_type,
+                                  file_format=cfg.local_file_type,
                                   excludefolderlist=excludefolderlist,
                                   excludestartswithfile=excludestartswithfile)
         else:
@@ -218,41 +220,48 @@ class LoadData():
         return geocode_dict
 
     @staticmethod
-    def load_ignore_sources(list_source):
+    def load_ignore_sources(list_source=None):
         """Loads list of source types to be ignored"""
+        if list_source is None:
+            return
         ignore_source_list = set()
-        with open(list_source, newline='', encoding='utf8') as f:
-            for ignore_source in f:
+        with open(list_source, newline='', encoding='utf8') as file_handle:
+            for ignore_source in file_handle:
                 ignore_source_list.add(ignore_source.strip())
         return ignore_source_list
 
     @staticmethod
-    def scan_rec(root, subdirlimit=2, format="csv",
-                 excludefolderlist=[], excludestartswithfile=[]):
+    def scan_rec(root, subdirlimit=2, file_format="csv",
+                 excludefolderlist=None, excludestartswithfile=None):
         """Recursively scan subdir for datafiles"""
         rval = []
+        if excludefolderlist is None:
+            excludefolderlist = []
+        if excludestartswithfile is None:
+            excludestartswithfile = []
 
         def do_scan(start_dir, output, depth=0):
-            for f in os.listdir(start_dir):
-                ff = os.path.join(start_dir, f)
-                if os.path.isdir(ff):
+            for file_handle in os.listdir(start_dir):
+                file_handle_path = os.path.join(start_dir, file_handle)
+                if os.path.isdir(file_handle_path):
                     if depth < subdirlimit:
                         efound = False
                         # check for excludefolders:
                         for entry in excludefolderlist:
-                            if entry in ff:
+                            if entry in file_handle_path:
                                 efound = True
                                 break
                         if efound is False:
-                            do_scan(ff, output, depth+1)
+                            do_scan(file_handle_path, output, depth+1)
                 else:
-                    if ff.endswith(format):
+                    if file_handle_path.endswith(file_format):
                         efound = False
                         for entry in excludestartswithfile:
-                            if ntpath.basename(ff).startswith(entry):
+                            if ntpath.basename(
+                                    file_handle_path).startswith(entry):
                                 efound = True
                                 break
                         if efound is False:
-                            output.append(ff)
+                            output.append(file_handle_path)
         do_scan(root, rval, 0)
         return rval

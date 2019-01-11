@@ -54,7 +54,8 @@ def main():
         loc_filelist = LoadData.read_local_files(config)
     else:
         # establish input connection
-        cursor_input = LoadData.initialize_input_connection(config)
+        db_input = LoadData.initialize_input_connection(config)
+        cursor_input = db_input[1]
 
     # start settings
     processed_records = 0
@@ -177,7 +178,7 @@ def main():
     if config.dbuser_output:
         cursor_output.close()
     log.info(f'\n\nProcessed {processed_total} input records '
-             f'(Input {start_number} to {continue_number}).'
+             f'(Input {start_number} to {continue_number}). '
              f'Skipped {skipped_low_geoaccuracy_total} '
              f'due to low geoaccuracy.')
     input(f'Done. {how_long.stop_time()}')

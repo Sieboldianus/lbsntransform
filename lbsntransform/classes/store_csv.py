@@ -54,15 +54,15 @@ class LBSNcsv():
         db_mapping          Reference to access functions
                             from ProtoLBSM_db_Mapping class
         store_csv_part      Current Number of CSV file parts
-        SUPPRESS_LINEBREAKS Usually, linebreaks will not be
+        suppress_linebreaks Usually, linebreaks will not be
                             a problem, linebreaks are nonetheless surpressed.
     """
 
-    def __init__(self, SUPPRESS_LINEBREAKS=True):
+    def __init__(self, suppress_linebreaks=True):
         self.output_path_file = f'{os.getcwd()}\\02_Output\\'
         self.db_mapping = ProtoLBSNMapping()
         self.store_csv_part = 0
-        self.SUPPRESS_LINEBREAKS = SUPPRESS_LINEBREAKS
+        self.suppress_linebreaks = suppress_linebreaks
         if not os.path.exists(self.output_path_file):
             os.makedirs(self.output_path_file)
 
@@ -71,14 +71,15 @@ class LBSNcsv():
         """ Takes proto buf lbsn record dict and appends all records
             to correct CSV (type-specific)
         """
-        filePath = f'{self.output_path_file}{type_name}_{round_nr:03d}.csv'
-        with open(filePath, 'a', encoding='utf8') as f:
+        file_path = f'{self.output_path_file}{type_name}_{round_nr:03d}.csv'
+        with open(file_path, 'a', encoding='utf8') as file_handle:
             # csvOutput = csv.writer(f, delimiter=',',
             #                       lineterminator='\n',
             #                       quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for record in records:
-                serializedRecord_b64 = self.serialize_encode_record(record)
-                f.write(f'{record.pkey.id},{serializedRecord_b64}\n')
+                serialized_record_b64 = self.serialize_encode_record(record)
+                file_handle.write(
+                    f'{record.pkey.id},{serialized_record_b64}\n')
 
     def serialize_encode_record(self, record):
         """ Serializes protobuf record as string and
@@ -108,11 +109,11 @@ class LBSNcsv():
             Keep all records in RAM while processing input data is impossible,
             therefore merge happens only once at end.
         """
-        x = 0
+        x_cnt = 0
         self.store_csv_part += 1
         print('Cleaning and merging output files..')
         for type_name in batched_records:
-            x += 1
+            x_cnt += 1
             filelist = glob(f'{self.output_path_file}{type_name}_*.csv')
             if filelist:
                 self.sort_files(filelist)
@@ -135,8 +136,8 @@ class LBSNcsv():
         """ Function for sorting files
             (precursor to remove duplicates)
         """
-        for f in filelist:
-            with open(f, 'r+', encoding='utf8') as batch_file:
+        for file_path in filelist:
+            with open(file_path, 'r+', encoding='utf8') as batch_file:
                 # skip header
                 # header = batchFile.readline()
                 lines = batch_file.readlines()
@@ -259,7 +260,7 @@ class LBSNcsv():
             # Format some types manually (e.g. arrays, null values)
             if isinstance(value, list):
                 value = '{' + ",".join(value) + '}'
-            elif self.SUPPRESS_LINEBREAKS and isinstance(value, str):
+            elif self.suppress_linebreaks and isinstance(value, str):
                 # replace linebreaks by actual string so we can use
                 # heapqMerge to merge line by line
                 value = value.replace('\n', '\\n').replace('\r', '\\r')
@@ -274,9 +275,9 @@ class LBSNcsv():
         with merged_file, cleaned_merged_file, cleaned_merged_file_copy:
             header = self.db_mapping.get_header_for_type(type_name)
             cleaned_merged_file_copy.write("%s\n" % header)
-            csvOutput = csv.writer(cleaned_merged_file_copy, delimiter=',',
-                                   lineterminator='\n', quotechar='"',
-                                   quoting=csv.QUOTE_MINIMAL)
+            csv_output = csv.writer(cleaned_merged_file_copy, delimiter=',',
+                                    lineterminator='\n', quotechar='"',
+                                    quoting=csv.QUOTE_MINIMAL)
             # start readlines/compare
             previous_record_id, previous_record_b64 = next(
                 merged_file).split(',', 1)
@@ -298,16 +299,16 @@ class LBSNcsv():
                     if duplicate_record_lines:
                         # add/overwrite new record line
                         # write merged record and continue
-                        mergedRecord_b64 = self.merge_records(
+                        merged_record_b64 = self.merge_records(
                             duplicate_record_lines, type_name)
                         dupsremoved += len(duplicate_record_lines) - 1
                         duplicate_record_lines = []
-                        previous_record_b64 = mergedRecord_b64
+                        previous_record_b64 = merged_record_b64
                 cleaned_merged_file.write(
                     f'{previous_record_id},{previous_record_b64}\n')
                 formatted_value_list = self.format_b64_encoded_record_for_csv(
                     previous_record_b64, type_name)
-                csvOutput.writerow(formatted_value_list)
+                csv_output.writerow(formatted_value_list)
                 previous_record_id = record_id
                 previous_record_b64 = record_b64
             # finally
@@ -320,7 +321,7 @@ class LBSNcsv():
                 f'{previous_record_id},{final_merged_record}\n')
             formatted_value_list = self.format_b64_encoded_record_for_csv(
                 final_merged_record, type_name)
-            csvOutput.writerow(formatted_value_list)
+            csv_output.writerow(formatted_value_list)
         print(
             f'{type_name} Duplicates Merged: {dupsremoved}'
             f'                             ')  # needed for easy overwrite

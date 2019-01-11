@@ -4,11 +4,12 @@
 Module for storing common Proto LBSN Structure to PG DB.
 """
 
-import logging
+
+import sys
 from sys import exit
+import logging
 import traceback
 import os
-import sys
 from glob import glob
 import psycopg2
 from psycopg2 import sql
@@ -95,13 +96,13 @@ class LBSNTransfer():
         self.count_round += 1
         # self.headersWritten.clear()
         record_dicts = field_mapping.lbsn_records
-        x = 0
+        r_cnt = 0
         self.count_affected = 0
         for records_dict in record_dicts.all_dicts:
             type_name = records_dict[1]
             for record in records_dict[0].values():
-                x += 1
-                print(f'Storing {x} of {record_dicts.count_glob} '
+                r_cnt += 1
+                print(f'Storing {r_cnt} of {record_dicts.count_glob} '
                       f'output records ({type_name})..', end='\r')
                 self.prepare_lbsn_record(record, type_name)
                 self.count_glob += 1  # self.dbCursor.rowcount
@@ -590,7 +591,7 @@ class LBSNTransfer():
                 input("Press Enter to continue... (entry will be skipped)")
                 self.log.warning(f'{insert_sql}')
                 input("args:... ")
-                self.log.warning(f'{args_str}')
+                # self.log.warning(f'{args_str}')
                 self.db_cursor.execute(
                     "ROLLBACK TO SAVEPOINT submit_recordBatch")
                 tsuccessful = True
@@ -636,7 +637,7 @@ class LBSNTransfer():
                     xCleaned = set(x)
                     xSorted = sorted(xCleaned)
                     # Complete clear of repeated field
-                    for key in range(0, len(x)):
+                    for _ in range(0, len(x)):
                         x.pop()
                     # add sorted list
                     x.extend(xSorted)

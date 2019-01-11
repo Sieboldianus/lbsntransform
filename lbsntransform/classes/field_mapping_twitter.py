@@ -4,6 +4,7 @@
 Module for mapping Twitter to common LBSN Structure.
 """
 
+import sys
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 import logging
@@ -359,14 +360,20 @@ class FieldMappingTwitter():
                 post_record.place_pkey.CopyFrom(place_record.pkey)
             # substitute postRecord LatLng Coordinates from placeRecord,
             # if not already set
-            if not post_record.post_latlng and post_geoacc in (lbsnPost.CITY,
-                                                               lbsnPost.PLACE):
+            if not post_record.post_latlng:
+                # Note: this will also substitute Country lat/lng in post
+                # this information is also available by query of country_guid in posts
+                # use input arg min_geoaccuracy to exclude country geo-posts
                 post_record.post_latlng = place_record.geom_center
         # if still no geoinformation, send post to Null-Island
         if not post_record.post_latlng:
             if self.ignore_non_geotagged is True:
                 return None
             else:
+                # print(
+                #     f'post_geoacc: ' \
+                #     f'{lbsnPost.PostGeoaccuracy.Name(post_geoacc)}')
+                # sys.exit(f'{json_string_dict}')
                 self.null_island += 1
                 post_record.post_latlng = "POINT(%s %s)" % (0, 0)
         if self.min_geoaccuracy:

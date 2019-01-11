@@ -222,14 +222,14 @@ class HelperFunctions():
         """Helper function to check for Null Values
         """
         if not record_attr:
+            # will catch empty and None
             return None
-        else:
-            # This function will also remove Null bytes from string,
-            # which aren't supported by Postgres
-            if isinstance(record_attr, str):
-                record_attr = HelperFunctions.clean_null_bytes_from_str(
-                    record_attr)
-            return record_attr
+        # This function will also remove Null bytes from string,
+        # which aren't supported by Postgres
+        if isinstance(record_attr, str):
+            record_attr = HelperFunctions.clean_null_bytes_from_str(
+                record_attr)
+        return record_attr
 
     @staticmethod
     def null_geom_check(geom_attr):
@@ -249,16 +249,16 @@ class HelperFunctions():
     @staticmethod
     def null_check_datetime(recordAttr):
         if not recordAttr:
+            # will catch empty and None
+            return None
+        try:
+            dt_attr = recordAttr.ToDatetime()
+        except:
+            return None
+        if dt_attr == dt.datetime(1970, 1, 1, 0, 0, 0):
             return None
         else:
-            try:
-                dt_attr = recordAttr.ToDatetime()
-            except:
-                return None
-            if dt_attr == dt.datetime(1970, 1, 1, 0, 0, 0):
-                return None
-            else:
-                return recordAttr.ToDatetime()
+            return recordAttr.ToDatetime()
 
     @staticmethod
     def return_ewkb_from_geotext(text):
