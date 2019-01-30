@@ -12,24 +12,25 @@ Output options:
     - local ProtoBuf and CSV Import (prepared for Postgres /Copy)
 """
 
-import logging
-import io
-
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
 # version: see version.py
+
+import io
+import logging
+import sys
+
+from .classes.helper_functions import HelperFunctions as HF
+from .classes.helper_functions import TimeMonitor
+from .classes.load_data import LoadData
+from .classes.submit_data import LBSNTransfer
+from .config.config import BaseConfig
 
 
 def main():
     """ Main function to process data from postgres db or local file input
         to postgres db or local file output
     """
-    import sys
-    from .classes.helper_functions import TimeMonitor
-    from .classes.helper_functions import HelperFunctions as HF
-    from .classes.submit_data import LBSNTransfer
-    from .classes.load_data import LoadData
-    from .config.config import BaseConfig
 
     # Set Output to Replace in case of encoding issues (console/windows)
     sys.stdout = io.TextIOWrapper(
