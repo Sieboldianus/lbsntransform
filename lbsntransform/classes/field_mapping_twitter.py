@@ -4,10 +4,13 @@
 Module for mapping Twitter to common LBSN Structure.
 """
 
+# pylint: disable=no-member
+
 import sys
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 import logging
+import re
 from google.protobuf.timestamp_pb2 import Timestamp
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
@@ -231,28 +234,28 @@ class FieldMappingTwitter():
     def extract_user(self, json_string_dict):
         user = json_string_dict
         user_record = HF.new_lbsn_record_with_id(lbsnUser(),
-                                                 json_string_dict.get(
+                                                 user.get(
                                                  'id_str'),
                                                  self.origin)
         # get additional information about the user, if available
-        user_record.user_fullname = json_string_dict.get('name')
-        user_record.follows = json_string_dict.get('friends_count')
-        user_record.is_private = json_string_dict.get('protected')
-        user_record.followed = json_string_dict.get('followers_count')
-        user_bio = json_string_dict.get('description')
+        user_record.user_fullname = user.get('name')
+        user_record.follows = user.get('friends_count')
+        user_record.is_private = user.get('protected')
+        user_record.followed = user.get('followers_count')
+        user_bio = user.get('description')
         if user_bio:
             user_record.biography = user_bio
-        user_record.user_name = json_string_dict.get('screen_name')
-        listed_count = json_string_dict.get('listed_count')
+        user_record.user_name = user.get('screen_name')
+        listed_count = user.get('listed_count')
         if listed_count:
             user_record.group_count = listed_count
-        user_record.post_count = json_string_dict.get('statuses_count')
+        user_record.post_count = user.get('statuses_count')
         user_record.url = f'https://twitter.com/intent/user?user_id=' \
                           f'{user_record.pkey.id}'
         ref_user_language = Language()
-        ref_user_language.language_short = json_string_dict.get('lang')
+        ref_user_language.language_short = user.get('lang')
         user_record.user_language.CopyFrom(ref_user_language)
-        user_location = json_string_dict.get('location')
+        user_location = user.get('location')
         if user_location:
             user_record.user_location = user_location
             if self.geocodes and user_record.user_location in self.geocodes:
@@ -261,18 +264,18 @@ class FieldMappingTwitter():
                 user_record.user_location_geom = "POINT(%s %s)" % (
                     l_lng, l_lat)
         # userGeoLocation = user.get('profile_location') # todo!
-        user_record.liked_count = json_string_dict.get('favourites_count')
+        user_record.liked_count = user.get('favourites_count')
         user_record.active_since.CopyFrom(
-            HF.json_date_string_to_proto(json_string_dict.get('created_at')))
-        user_profile_image_url = json_string_dict.get('profile_image_url')
+            HF.json_date_string_to_proto(user.get('created_at')))
+        user_profile_image_url = user.get('profile_image_url')
         if not user_profile_image_url == f'http://abs.twimg.com/sticky/' \
                                          f'default_profile_images/' \
                                          f'default_profile_normal.png':
             user_record.profile_image_url = user_profile_image_url
-        user_timezone = json_string_dict.get('time_zone')
+        user_timezone = user.get('time_zone')
         if user_timezone:
             user_record.user_timezone = user_timezone
-        user_utc_offset = json_string_dict.get('utc_offset')
+        user_utc_offset = user.get('utc_offset')
         if user_utc_offset:
             user_record.user_utc_offset = user_utc_offset
         # the following cannot be extracted from twitter post data
@@ -493,14 +496,14 @@ class FieldMappingTwitter():
     def extract_place(self, postplace_json,
                       post_geoaccuracy, user_language=None):
         place = postplace_json
-        place_id = postplace_json.get('id')
+        place_id = place.get('id')
         if not place_id:
-            self.log.warning(f'No PlaceGuid\n\n{postplace_json}')
+            self.log.warning(f'No PlaceGuid\n\n{place}')
             input("Press Enter to continue... (entry will be skipped)")
             return None, post_geoaccuracy, None
         lon_center = 0
         lat_center = 0
-        bounding_box = postplace_json.get('bounding_box')
+        bounding_box = place.get('bounding_box')
         if bounding_box:
             bound_coordinates = bounding_box.get('coordinates')
             if bound_coordinates:
@@ -513,29 +516,29 @@ class FieldMappingTwitter():
             # True centroid (coords may be multipoint)
             lon_center = bound_points_shapely.centroid.coords[0][0]
             lat_center = bound_points_shapely.centroid.coords[0][1]
-        place_type = postplace_json.get('place_type')
+        place_type = place.get('place_type')
         if place_type == "country":
             # country_guid
             # in case of country,
             # we do not need to save the GUID from Twitter
             # - country_code is already unique
-            country_code = postplace_json.get('country_code')
+            country_code = place.get('country_code')
             if country_code:
                 place_record = HF.new_lbsn_record_with_id(lbsnCountry(),
-                                                          postplace_json.get(
+                                                          place.get(
                     'country_code'),
                     self.origin)
                 if not post_geoaccuracy:
                     post_geoaccuracy = lbsnPost.COUNTRY
             else:
                 self.log.warning(
-                    f'No country_code\n\n{postplace_json}. '
+                    f'No country_code\n\n{place}. '
                     f'PlaceEntry will be skipped..')
                 return None, post_geoaccuracy, None
         elif place_type in ("city", "neighborhood", "admin"):
             # city_guid
             place_record = HF.new_lbsn_record_with_id(lbsnCity(),
-                                                      postplace_json.get(
+                                                      place.get(
                 'id'),
                 self.origin)
             if not place_type == "city":
@@ -546,17 +549,17 @@ class FieldMappingTwitter():
             # place_guid
             # For POIs, City is not available on Twitter
             place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
-                                                      postplace_json.get(
+                                                      place.get(
                 'id'),
                 self.origin)
             if not post_geoaccuracy or post_geoaccuracy in (lbsnPost.COUNTRY,
                                                             lbsnPost.CITY):
                 post_geoaccuracy = lbsnPost.PLACE
         else:
-            self.log.warning(f'No Place Type Detected: {postplace_json}')
+            self.log.warning(f'No Place Type Detected: {place}')
         # for some reason, twitter place entities sometimes contain
         # linebreaks or whitespaces. We don't want this.
-        place_name = postplace_json.get('name').replace('\n\r', '')
+        place_name = place.get('name').replace('\n\r', '')
         # remove multiple whitespace
         place_name = re.sub(' +', ' ', place_name)
         if place_type == "poi" or \
@@ -572,14 +575,14 @@ class FieldMappingTwitter():
             place_record.name = place_name
         else:
             place_record.name_alternatives.append(place_name)
-        place_record.url = postplace_json.get('url')
+        place_record.url = place.get('url')
         place_record.geom_center = "POINT(%s %s)" % (lon_center, lat_center)
         if bounding_box and bound_coordinates:
             # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
             place_record.geom_area = Polygon(bounding_box_points).wkt
         ref_country_record = None
         if not isinstance(place_record, lbsnCountry):
-            ref_country_code = postplace_json.get('country_code')
+            ref_country_code = place.get('country_code')
             if ref_country_code:
                 ref_country_record = \
                     HF.new_lbsn_record_with_id(lbsnCountry(),
@@ -589,10 +592,10 @@ class FieldMappingTwitter():
                 if user_language is None \
                    or not user_language.language_short \
                    or user_language.language_short in ('en', 'und'):
-                    ref_country_record.name = postplace_json.get(
+                    ref_country_record.name = place.get(
                         'country')  # Needs to be saved
                 else:
-                    alt_name = postplace_json.get('country')
+                    alt_name = place.get('country')
                     ref_country_record.name_alternatives.append(alt_name)
                 self.lbsn_records.add_records_to_dict(ref_country_record)
         if post_geoaccuracy == lbsnPost.CITY and ref_country_record:

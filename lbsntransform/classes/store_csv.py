@@ -4,6 +4,8 @@
 Module for storing common Proto LBSN Structure to CSV.
 """
 
+# pylint: disable=no-member
+
 import logging
 import traceback
 import os

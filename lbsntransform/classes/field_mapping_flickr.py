@@ -4,9 +4,23 @@
 Module for mapping Flickr to common LBSN Structure.
 """
 
+# pylint: disable=no-member
+
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
-from lbsnstructure.lbsnstructure_pb2 import *
+from lbsnstructure.lbsnstructure_pb2 import lbsnOrigin, \
+    lbsnPost, \
+    CompositeKey, \
+    RelationshipKey, \
+    lbsnUser, \
+    lbsnCountry, \
+    lbsnPlace, \
+    lbsnCity, \
+    lbsnUserGroup, \
+    lbsnRelationship, \
+    lbsnPostReaction, \
+    lbsnRelationship, \
+    Language
 import logging
 from decimal import Decimal
 # for debugging only:
@@ -35,6 +49,7 @@ class FieldMappingFlickr():
         # this is where all the data will be stored
         self.lbsn_records = LBSNRecordDicts()
         self.log = logging.getLogger('__main__')  # get the main logger object
+        self.skipped_count = 0
         # self.disableReactionPostReferencing = disableReactionPostReferencing
         # self.mapFullRelations = mapFullRelations
         # self.geocodes = geocodes
@@ -49,7 +64,7 @@ class FieldMappingFlickr():
         """
         if len(record) < 12 or not record[0].isdigit():
             # skip
-            skippedCount += 1
+            self.skipped_count += 1
             return
         else:
             self.extract_flickr_post(record)
@@ -71,12 +86,11 @@ class FieldMappingFlickr():
         post_record = HF.new_lbsn_record_with_id(lbsnPost(),
                                                  post_guid,
                                                  self.origin)
-        post_geoaccuracy = None
         user_record = HF.new_lbsn_record_with_id(lbsnUser(),
                                                  record[7],
                                                  self.origin)
         user_record.user_name = record[6]
-        user_record.url = f'http://www.flickr.com/photos/{userRecord.pkey.id}/'
+        user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
         self.lbsn_records.add_records_to_dict(user_record)

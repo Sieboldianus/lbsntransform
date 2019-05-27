@@ -4,6 +4,7 @@
 Module for storing common Proto LBSN Structure to PG DB.
 """
 
+# pylint: disable=no-member
 
 import sys
 from sys import exit
@@ -31,7 +32,10 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnRelationship
 # due to different protocol buffers implementations, import both possible types
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-from google.protobuf.pyext._message import RepeatedCompositeContainer
+try:
+    from google.protobuf.pyext._message import RepeatedCompositeContainer
+except ImportError:
+    pass
 # for debugging only:
 from google.protobuf import text_format
 

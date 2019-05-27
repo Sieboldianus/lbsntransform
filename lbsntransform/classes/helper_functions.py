@@ -4,6 +4,8 @@
 Collection of helper functions being used in lbsntransform package.
 """
 
+# pylint: disable=no-member
+
 import re
 import csv
 import sys
@@ -516,7 +518,7 @@ class TimeMonitor():
         later = time.time()
         hours, rem = divmod(later-self.now, 3600)
         minutes, seconds = divmod(rem, 60)
-        difference = int(later - self.now)
+        # difference = int(later - self.now)
         report_msg = f'{int(hours):0>2} Hours {int(minutes):0>2} ' \
                      f'Minutes and {seconds:05.2f} Seconds passed.'
         return report_msg
@@ -542,10 +544,12 @@ class MemoryLeakDetec():
         self._after = defaultdict(int)
 
     def before(self):
+        global get_objects
         for i in get_objects():
             self._before[type(i)] += 1
 
     def after(self):
+        global get_objects
         for i in get_objects():
             self._after[type(i)] += 1
 

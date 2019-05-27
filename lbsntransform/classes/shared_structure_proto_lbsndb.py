@@ -4,6 +4,8 @@
 Shared structure and mapping between DB and Proto LBSN Structure.
 """
 
+# pylint: disable=no-member
+
 import sys
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnUser, \

@@ -190,7 +190,7 @@ class LoadData():
         """Read Local Files according to config parameters and
         returns list of file-paths
         """
-        path = f'{config.InputPath}'
+        path = f'{cfg.InputPath}'
         if cfg.recursive_load:
             excludefolderlist = ["01_DataSetHistory",
                                  "02_UserData", "03_ClippedData", "04_MapVis"]
