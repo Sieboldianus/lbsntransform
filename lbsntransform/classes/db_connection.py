@@ -17,7 +17,7 @@ class DBConnection():
 
     def __init__(self, serveradress=None, dbname=None,
                  user=None, password=0, readonly=False,
-                 sslmode='prefer'):
+                 sslmode='prefer', port=5432):
         """Initialize DBConnection object with attributes, if passed. """
         self.serveradress = serveradress
         self.dbname = dbname
@@ -25,6 +25,7 @@ class DBConnection():
         self.password = password
         self.readonly = readonly
         self.sslmode = sslmode  # Choose 'disable' to connect without ssl
+        self.port = port
 
     def connect(self):
         """Database config. """
@@ -32,7 +33,8 @@ class DBConnection():
             "host": self.serveradress,
             "dbname": self.dbname,
             "user": self.user,
-            "sslmode": self.sslmode
+            "sslmode": self.sslmode,
+            "port": self.port
         }
         # Connect to database
         if self.password == 0:
@@ -50,6 +52,7 @@ class DBConnection():
                       f"user='{conf['user']}'" \
                       f"password='{conf['password']}'" \
                       f"sslmode='{conf['sslmode']}'" \
+                      f"port='{conf['port']}'" \
                       f"application_name='LBSN Batch Transfer'"
         # get a connection, if a connect cannot be made an
         # exception will be raised here

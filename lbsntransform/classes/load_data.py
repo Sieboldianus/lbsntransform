@@ -159,11 +159,14 @@ class LoadData():
     @staticmethod
     def initialize_output_connection(cfg):
         """Establishes connection to output DB (Postgres), if set in config"""
+
         if cfg.dbuser_output:
-            output_connection = DBConnection(cfg.dbserveradress_output,
-                                             cfg.dbname_output,
-                                             cfg.dbuser_output,
-                                             cfg.dbpassword_output)
+            output_connection = DBConnection(
+                serveradress=cfg.dbserveradress_output,
+                dbname=cfg.dbname_output,
+                user=cfg.dbuser_output,
+                password=cfg.dbpassword_output,
+                port=cfg.dbserverport_output)
             conn_output, cursor_output = output_connection.connect()
         else:
             conn_output = None
@@ -176,12 +179,14 @@ class LoadData():
 
         Returns cursor
         """
-        input_connection = DBConnection(cfg.dbserveradress_input,
-                                        cfg.db_name_input,
-                                        cfg.dbuser_Input,
-                                        cfg.dbpassword_input,
-                                        True  # ReadOnly Mode
-                                        )
+
+        input_connection = DBConnection(
+            serveradress=cfg.dbserveradress_input,
+            dbname=cfg.db_name_input,
+            user=cfg.dbuser_Input,
+            password=cfg.dbpassword_input,
+            readonly=True  # ReadOnly Mode
+        )
         conn_input, cursor_input = input_connection.connect()
         return cursor_input
 

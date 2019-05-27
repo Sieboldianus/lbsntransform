@@ -29,6 +29,7 @@ class BaseConfig():
         self.dbuser_output = None
         self.dbpassword_output = None
         self.dbserveradress_output = None
+        self.dbserverport_output = 5432
         self.dbname_output = None
         self.transferlimit = None
         self.transfer_count = 50000
@@ -96,6 +97,9 @@ class BaseConfig():
         dboutput_args.add_argument('-aO', "--dbServeradressOutput",
                                    default=self.dbserveradress_output,
                                    help='e.g. 111.11.11.11')
+        dboutput_args.add_argument('-oO', "--dbServerportOutput",
+                                   default=self.dbserveradress_output,
+                                   help='e.g. 5432')
         dboutput_args.add_argument('-nO', "--dbNameOutput",
                                    default=self.dbname_output,
                                    help='e.g.: test_db')
@@ -235,6 +239,7 @@ class BaseConfig():
             self.dbuser_output = args.dbUser_Output
             self.dbpassword_output = args.dbPassword_Output
             self.dbserveradress_output = args.dbServeradressOutput
+            self.dbserverport_output = args.dbServerportOutput
             self.dbname_output = args.dbNameOutput
         if args.transferlimit:
             self.transferlimit = int(args.transferlimit)
