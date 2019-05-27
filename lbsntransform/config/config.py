@@ -4,6 +4,7 @@
 Config module for parsing input args for lbsntransform package.
 """
 
+from pathlib import Path
 import argparse
 import os
 import sys
@@ -214,13 +215,10 @@ class BaseConfig():
             if args.isStackedJson:
                 self.is_stacked_json = True
             if not args.InputPath:
-                self.input_path = f'{os.getcwd()}\\01_Input\\'
+                self.input_path = Path.cwd() / "01_Input"
                 print(f'Using Path: {self.input_path}')
             else:
-                if args.InputPath.endswith("\\"):
-                    input_path = args.InputPath
-                else:
-                    input_path = f'{args.InputPath}\\'
+                input_path = Path(args.InputPath)
                 self.input_path = input_path
         else:
             self.dbuser_Input = args.dbUser_Input

@@ -8,6 +8,7 @@ import sys
 import os
 import ntpath
 import csv
+from pathlib import Path
 from glob import glob
 from json import loads as json_loads, decoder as json_decoder
 from .db_connection import DBConnection
@@ -195,18 +196,18 @@ class LoadData():
         """Read Local Files according to config parameters and
         returns list of file-paths
         """
-        path = f'{cfg.InputPath}'
+        input_path = cfg.input_path
         if cfg.recursive_load:
             excludefolderlist = ["01_DataSetHistory",
                                  "02_UserData", "03_ClippedData", "04_MapVis"]
             excludestartswithfile = ["log", "settings", "GridCoordinates"]
             loc_filelist = \
-                LoadData.scan_rec(path,
+                LoadData.scan_rec(input_path,
                                   file_format=cfg.local_file_type,
                                   excludefolderlist=excludefolderlist,
                                   excludestartswithfile=excludestartswithfile)
         else:
-            loc_filelist = glob(f'{path}*.{cfg.local_file_type}')
+            loc_filelist = glob(f'{input_path}*.{cfg.local_file_type}')
 
         input_count = (len(loc_filelist))
         if input_count == 0:
