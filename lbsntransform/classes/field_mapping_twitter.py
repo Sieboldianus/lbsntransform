@@ -8,7 +8,6 @@ import sys
 import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 import logging
-import re
 from google.protobuf.timestamp_pb2 import Timestamp
 from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
@@ -362,7 +361,8 @@ class FieldMappingTwitter():
             # if not already set
             if not post_record.post_latlng:
                 # Note: this will also substitute Country lat/lng in post
-                # this information is also available by query of country_guid in posts
+                # this information is also available by query of
+                # country_guid in posts
                 # use input arg min_geoaccuracy to exclude country geo-posts
                 post_record.post_latlng = place_record.geom_center
         # if still no geoinformation, send post to Null-Island
