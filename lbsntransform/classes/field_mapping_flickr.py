@@ -38,7 +38,8 @@ class FieldMappingFlickr():
                  map_full_relations=False,
                  map_reactions=True,
                  ignore_non_geotagged=False,
-                 ignore_sources_set=set()):
+                 ignore_sources_set=set(),
+                 min_geoaccuracy=None):
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
@@ -50,6 +51,7 @@ class FieldMappingFlickr():
         self.lbsn_records = LBSNRecordDicts()
         self.log = logging.getLogger('__main__')  # get the main logger object
         self.skipped_count = 0
+        self.skipped_low_geoaccuracy = 0
         # self.disableReactionPostReferencing = disableReactionPostReferencing
         # self.mapFullRelations = mapFullRelations
         # self.geocodes = geocodes
