@@ -28,6 +28,7 @@ class BaseConfig():
         self.dbuser_Input = 'example-user-name'
         self.dbpassword_input = 'example-user-password'
         self.dbserveradress_input = '222.22.222.22'
+        self.dbserverport_input = 5432
         self.db_name_input = 'test_db2'
         self.dbuser_output = None
         self.dbpassword_output = None
@@ -99,10 +100,9 @@ class BaseConfig():
                                    help='Default: example-user-name2')
         dboutput_args.add_argument('-aO', "--dbServeradressOutput",
                                    default=self.dbserveradress_output,
-                                   help='e.g. 111.11.11.11')
-        dboutput_args.add_argument('-oO', "--dbServerportOutput",
-                                   default=self.dbserveradress_output,
-                                   help='e.g. 5432')
+                                   help='e.g. 111.11.11.11 . Optionally add '
+                                   'port to use, e.g. 111.11.11.11:5432. '
+                                   '5432 is the default port')
         dboutput_args.add_argument('-nO', "--dbNameOutput",
                                    default=self.dbname_output,
                                    help='e.g.: test_db')
@@ -116,7 +116,9 @@ class BaseConfig():
                                   help='Default: example-user-name')
         dbinput_args.add_argument('-aI', "--dbServeradressInput",
                                   default=self.dbserveradress_input,
-                                  help='e.g. 111.11.11.11')
+                                  help='e.g. 111.11.11.11. Optionally add '
+                                  'port to use, e.g. 111.11.11.11:5432. '
+                                  '5432 is the default port')
         dbinput_args.add_argument('-nI', "--dbNameInput",
                                   default=self.db_name_input,
                                   help='e.g.: test_db')
@@ -225,7 +227,11 @@ class BaseConfig():
         else:
             self.dbuser_Input = args.dbUser_Input
             self.dbpassword_input = args.dbPassword_Input
-            self.dbserveradress_input = args.dbServeradressInput
+            input_ip, input_port = BaseConfig.get_ip_port(
+                args.dbServeradressInput)
+            self.dbserveradress_input = input_ip
+            if input_port:
+                self.dbserverport_input = input_port
             self.db_name_input = args.dbNameInput
         if args.Origin:
             self.origin = int(args.Origin)
@@ -238,8 +244,11 @@ class BaseConfig():
         if args.dbUser_Output:
             self.dbuser_output = args.dbUser_Output
             self.dbpassword_output = args.dbPassword_Output
-            self.dbserveradress_output = args.dbServeradressOutput
-            self.dbserverport_output = args.dbServerportOutput
+            output_ip, output_port = BaseConfig.get_ip_port(
+                args.dbServeradressOutput)
+            self.dbserveradress_output = output_ip
+            if output_port:
+                self.dbserverport_output = output_port
             self.dbname_output = args.dbNameOutput
         if args.transferlimit:
             self.transferlimit = int(args.transferlimit)
@@ -289,6 +298,24 @@ class BaseConfig():
         else:
             print("Unknown geoaccuracy.")
             return None
+
+    @staticmethod
+    def get_ip_port(ip_string: str):
+        """Gets IP and port, if available
+
+        Arguments:
+            ip_string {str} -- String containing IPV4 and
+            possibly port attached with : character
+        """
+        port = None
+        ip = None
+        ip_string_spl = ip_string.split(":")
+        if len(ip_string_spl) == 2:
+            ip = ip_string_spl[0]
+            port = ip_string_spl[1]
+        else:
+            ip = ip_string
+        return ip, port
 
     @staticmethod
     def set_options():
