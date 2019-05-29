@@ -15,12 +15,13 @@ try:
 except ImportError:
     pass
 
-version = {}
+VERSION_DICT = {}
 with open("lbsntransform/version.py") as fp:
-    exec(fp.read(), version)
+    exec(fp.read(), VERSION_DICT)  # pylint: disable=W0122
+VERSION = VERSION_DICT['__version__']
 
 setup(name="lbsntransform",
-      version=version['__version__'],
+      version=VERSION,
       description="Location based social network (LBSN) "
                   "data structure format & transfer tool",
       long_description=LONG_DESCRIPTION,
