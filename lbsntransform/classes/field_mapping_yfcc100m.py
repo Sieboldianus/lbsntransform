@@ -4,25 +4,23 @@
 Module for mapping Flickr YFCC100M dataset to common LBSN Structure.
 """
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
-from lbsnstructure.lbsnstructure_pb2 import lbsnOrigin, \
-    lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship, \
-    Language
 import logging
+import re
+from urllib.parse import unquote
 from decimal import Decimal
+
 # for debugging only:
 from google.protobuf import text_format
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
+                                             RelationshipKey, lbsnCity,
+                                             lbsnCountry, lbsnOrigin,
+                                             lbsnPlace, lbsnPost,
+                                             lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
+
+from .helper_functions import HelperFunctions as HF
+from .helper_functions import LBSNRecordDicts
 
 # pylint: disable=no-member
 
@@ -55,6 +53,19 @@ class FieldMappingYFCC100M():
         # self.disableReactionPostReferencing = disableReactionPostReferencing
         # self.mapFullRelations = mapFullRelations
         # self.geocodes = geocodes
+        self.lic_dict = {
+            "All Rights Reserved": 0,
+            "Attribution-NonCommercial-ShareAlike License": 1,
+            "Attribution-NonCommercial License": 2,
+            "Attribution-NonCommercial-NoDerivs License": 3,
+            "Attribution License": 4,
+            "Attribution-ShareAlike License": 5,
+            "Attribution-NoDerivs License": 6,
+            "No known copyright restrictions": 7,
+            "United States Government Work": 8,
+            "Public Domain Dedication (CC0)": 9,
+            "Public Domain Mark": 10
+        }
 
     def parse_csv_record(self, record):
         """Entry point for flickr CSV data:
@@ -72,7 +83,7 @@ class FieldMappingYFCC100M():
             self.extract_flickr_post(record)
 
     def extract_flickr_post(self, record):
-        """Main function for processing Flickr CSV entry.
+        """Main function for processing Flickr YFCC100M CSV entry.
            This mothod is adapted to a special structure, adapt if needed.
 
         To Do:
@@ -81,70 +92,91 @@ class FieldMappingYFCC100M():
             - currently not included in lbsn mapping are MachineTags,
               GeoContext (indoors, outdoors), WoeId
               and some extra attributes only present for Flickr
+
+        Overview of available columns and examples:
+        0 row-number    -   0
+        1 unknown - 4e2f7a26a1dfbf165a7e30bdabf7e72a
+        2 Photo/video identifier    -   6985418911
+        3 User NSID     -   4e2f7a26a1dfbf165a7e30bdabf7e72a
+        4 User nickname     -   39089491@N00
+        5 Date taken    -   2012-02-16 09:56:37.0
+        6 Date uploaded     -   1331840483
+        7 Capture device    -   Canon+PowerShot+ELPH+310+HS
+        8 Title     -   IMG_0520
+        9 Description      -     My vacation
+        10 User tags (comma-separated)   -   canon,canon+powershot+hs+310
+        11 Machine tags (comma-separated)   - landscape, hills, water
+        12 Longitude    -   -81.804885
+        13 Latitude     -   24.550558
+        14 Accuracy -   12
+        15 Photo/video page URL -   http://www.flickr.com/photos/39089491@N00/6985418911/
+        16 Photo/video download URL -   http://farm8.staticflickr.com/7205/6985418911_df7747990d.jpg
+        17 License name -   Attribution-NonCommercial-NoDerivs License
+        18 License URL  -   http://creativecommons.org/licenses/by-nc-nd/2.0/
+        19 Photo/video server identifier    -   7205
+        20 Photo/video farm identifier  -   8
+        21 Photo/video secret   -   df7747990d
+        22 Photo/video secret original  -   692d7e0a7f
+        23 Extension of the original photo  -   jpg
+        24 Marker (0 ¼ photo, 1 ¼ video)    -   0
         """
-        post_guid = record[5]
+        post_guid = record[1]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
         post_record = HF.new_lbsn_record_with_id(lbsnPost(),
                                                  post_guid,
                                                  self.origin)
         user_record = HF.new_lbsn_record_with_id(lbsnUser(),
-                                                 record[7],
+                                                 record[3],
                                                  self.origin)
-        user_record.user_name = record[6]
+        user_record.user_name = record[4]
         user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
         self.lbsn_records.add_records_to_dict(user_record)
         post_record.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingYFCC100M.flickr_map_geoaccuracy(
-            record[13])
+            record[14])
         if geoaccuracy:
             post_record.post_geoaccuracy = geoaccuracy
-        if record[19]:
-            # we need some information from postRecord to create placeRecord
-            # (e.g.  user language, geoaccuracy, post_latlng)
-            # some of the information from place will also modify postRecord
-            place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
-                                                      record[19],
-                                                      self.origin)
-            self.lbsn_records.add_records_to_dict(place_record)
-            post_record.place_pkey.CopyFrom(place_record.pkey)
+        # place record not provided in YFCCM directly
+        # if record[19]:
+        #     # we need some information from postRecord to create placeRecord
+        #     # (e.g.  user language, geoaccuracy, post_latlng)
+        #     # some of the information from place will also modify postRecord
+        #     place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
+        #                                               record[19],
+        #                                               self.origin)
+        #     self.lbsn_records.add_records_to_dict(place_record)
+        #     post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
-            HF.parse_csv_datestring_to_protobuf(record[9]))
+            HF.parse_timestamp_string_to_protobuf(record[6]))
         post_record.post_create_date.CopyFrom(
-            HF.parse_csv_datestring_to_protobuf(record[8]))
-        # valueCount = lambda x: 0 if x is None else x
-
-        def value_count(x): return int(x) if x.isdigit() else 0
-        post_record.post_views_count = value_count(record[10])
-        post_record.post_comment_count = value_count(record[18])
-        post_record.post_like_count = value_count(record[17])
-        post_record.post_url = f'http://flickr.com/photo.gne?id={post_guid}'
-        post_record.post_body = FieldMappingYFCC100M.reverse_csv_comma_replace(
-            record[21])
-        post_record.post_title = FieldMappingYFCC100M.reverse_csv_comma_replace(
-            record[3])
-        post_record.post_thumbnail_url = record[4]
-        record_tags_list = list(filter(None, record[11].split(";")))
+            HF.parse_csv_datestring_to_protobuf(
+                record[5], t_format='%Y-%m-%d %H:%M:%S.%f')
+        )
+        post_record.post_views_count = 0
+        post_record.post_comment_count = 0
+        post_record.post_like_count = 0
+        post_record.post_url = record[15]
+        post_record.post_body = unquote(record[9]).replace('+', ' ')
+        post_record.post_title = unquote(record[8]).replace('+', ' ')
+        post_record.post_thumbnail_url = record[16]  # note: original!
+        # split tags by , and + - by lbsn-spec, tags are limited to single word
+        record_tags_list = list(filter(None, re.split("[,+]+", record[10])))
         if record_tags_list:
             for tag in record_tags_list:
                 tag = FieldMappingYFCC100M.clean_tags_from_flickr(tag)
                 post_record.hashtags.append(tag)
-        record_media_type = record[16]
-        if record_media_type and record_media_type == "video":
+        record_machine_tags = list(filter(None, re.split("[,+]+", record[11])))
+        if 'video' in record_machine_tags:
             post_record.post_type = lbsnPost.VIDEO
         else:
             post_record.post_type = lbsnPost.IMAGE
-        post_record.post_content_license = value_count(record[14])
-        self.lbsn_records.add_records_to_dict(post_record)
 
-    @staticmethod
-    def reverse_csv_comma_replace(csv_string):
-        """Flickr CSV data is stored without quotes by replacing commas with semicolon.
-        This functon will reverse replacement.
-        """
-        return csv_string.replace(";", ",")
+        post_record.post_content_license = \
+            self.get_license_number_from_license_name(record[17])
+        self.lbsn_records.add_records_to_dict(post_record)
 
     @staticmethod
     def clean_tags_from_flickr(tag):
@@ -154,6 +186,18 @@ class FieldMappingYFCC100M():
         for char_check in characters_to_replace:
             tag = tag.replace(char_check, '')
         return tag
+
+    def get_license_number_from_license_name(self, license_name: str):
+        """Flickr YFCC100M contains only full string names of licenses
+        This function converts names to ids.
+
+        Arguments:
+            license_name {str} -- YFCC100M license name
+        see:
+        https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html
+        """
+        lic_number = self.lic_dict.get(license_name)
+        return lic_number
 
     @staticmethod
     def flickr_map_geoaccuracy(flickr_geo_accuracy_level):
@@ -195,8 +239,8 @@ class FieldMappingYFCC100M():
            - checks for consistency and errors
            - in case of any issue, entry is submitted to Null island (0, 0)
         """
-        lat_entry = record[1]
-        lng_entry = record[2]
+        lat_entry = record[13]
+        lng_entry = record[12]
         if lat_entry == "" and lng_entry == "":
             l_lat, l_lng = 0, 0
         else:
@@ -206,9 +250,9 @@ class FieldMappingYFCC100M():
             except:
                 l_lat, l_lng = 0, 0
 
-        if (l_lat == 0 and l_lng == 0) \
-                or l_lat > 90 or l_lat < -90 \
-                or l_lng > 180 or l_lng < -180:
+        if ((l_lat == 0 and l_lng == 0)
+                or l_lat > 90 or l_lat < -90
+                or l_lng > 180 or l_lng < -180):
             l_lat, l_lng = 0, 0
             self.send_to_null_island(lat_entry, lng_entry, record[5])
         return FieldMappingYFCC100M.lat_lng_to_wkt(l_lat, l_lng)
@@ -224,6 +268,6 @@ class FieldMappingYFCC100M():
         """Logs entries with problematic lat/lng's,
            increases Null Island Counter by 1.
         """
-        self.log.debug(f'NULL island: Guid {record_guid} - '
-                       f'Coordinates: {lat_entry}, {lng_entry}')
+        # self.log.debug(f'NULL island: Guid {record_guid} - '
+        #               f'Coordinates: {lat_entry}, {lng_entry}')
         self.null_island += 1

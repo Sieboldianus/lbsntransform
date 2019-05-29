@@ -98,10 +98,12 @@ def main():
         if config.is_local_input:
             if continue_number > len(loc_filelist) - 1:
                 break
-            records = LoadData.fetch_data_from_file(loc_filelist,
-                                                    continue_number,
-                                                    config.is_stacked_json,
-                                                    config.local_file_type)
+            records = LoadData.fetch_data_from_file(
+                loc_filelist,
+                continue_number,
+                config.is_stacked_json,
+                config.local_file_type,
+                config.csv_delim)
             # skip empty files
             if not records:
                 continue_number += 1

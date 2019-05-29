@@ -97,15 +97,16 @@ class LoadData():
 
     @staticmethod
     def fetch_data_from_file(loc_filelist, continue_number,
-                             is_stacked_json, file_format):
+                             is_stacked_json, file_format, csv_delim=None):
         """Fetches CSV or JSON data (including stacked json) from file"""
         if file_format == 'json':
             records = LoadData.fetch_json_data_from_file(loc_filelist,
                                                          continue_number,
                                                          is_stacked_json)
-        elif file_format == 'txt':
+        elif file_format in ['txt', 'csv']:
             records = LoadData.fetch_csv_data_from_file(loc_filelist,
-                                                        continue_number)
+                                                        continue_number,
+                                                        csv_delim)
         else:
             exit(f'Format {file_format} not supported.')
         return records
@@ -137,7 +138,8 @@ class LoadData():
         return None
 
     @staticmethod
-    def fetch_csv_data_from_file(loc_filelist, start_file_id=0):
+    def fetch_csv_data_from_file(
+            loc_filelist, start_file_id=0, csv_delim=None):
         """Read csv entries from file (either *.txt or *.csv).
 
         The actual CSV formatting is not setable in config yet.
@@ -145,11 +147,13 @@ class LoadData():
         #QUOTE_NONE is used here because media saved from Flickr
         does not contain any quotes ""
         """
+        if csv_delim is None:
+            csv_delim = ','
         records = []
         loc_file = loc_filelist[start_file_id]
         HF.log_main_debug(f'\nCurrent file: {ntpath.basename(loc_file)}')
         with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
-            reader = csv.reader(file, delimiter=',',
+            reader = csv.reader(file, delimiter=csv_delim,
                                 quotechar='"', quoting=csv.QUOTE_NONE)
             next(reader, None)  # skip headerline
             records = list(reader)

@@ -50,6 +50,7 @@ class BaseConfig():
         self.map_relations = False
         self.csv_output = False
         self.csv_suppress_linebreaks = True
+        self.csv_delim = None
         self.recursive_load = False
         self.skip_until_file = ""
         self.min_geoaccuracy = None
@@ -197,6 +198,12 @@ class BaseConfig():
                                    help='If set to False will not '
                                    'remove intext-linebreaks (\r or \n) '
                                    'in output CSVs')
+        settings_args.add_argument('-CSVdelim', "--CSVdelimitor",
+                                   default=None,
+                                   help=repr(
+                                       'Provide CSV delimitor to use. '
+                                       'Default is comma(,). Note: to pass tab, '
+                                       'use variable substitution ($"\t")'))
         settings_args.add_argument('-rL', "--recursiveLoad",
                                    action='store_true', default=False,
                                    help='Process Input Directories '
@@ -236,11 +243,11 @@ class BaseConfig():
         if args.Origin:
             self.origin = int(args.Origin)
         if args.geocodeLocations:
-            self.geocode_locations = f'{os.getcwd()}\\' \
-                                     f'{args.geocodeLocations}'
+            self.geocode_locations = f'{os.getcwd()}\\'
+            f'{args.geocodeLocations}'
         if args.ignoreInputSourceList:
-            self.ignore_input_source_list = f'{os.getcwd()}\\' \
-                                            f'{args.ignoreInputSourceList}'
+            self.ignore_input_source_list = f'{os.getcwd()}\\'
+            f'{args.ignoreInputSourceList}'
         if args.dbUser_Output:
             self.dbuser_output = args.dbUser_Output
             self.dbpassword_output = args.dbPassword_Output
@@ -276,6 +283,8 @@ class BaseConfig():
             self.csv_output = True
         if args.CSVallowLinebreaks:
             self.csv_suppress_linebreaks = False
+        if args.CSVdelimitor:
+            self.csv_delim = args.CSVdelimitor
         if args.recursiveLoad:
             self.recursive_load = True
         if args.skipUntilFile:

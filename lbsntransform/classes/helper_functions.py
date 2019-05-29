@@ -170,13 +170,27 @@ class HelperFunctions():
         return protobuf_timestamp_record
 
     @staticmethod
-    def parse_csv_datestring_to_protobuf(csv_datestring):
-        # Parse String -Timestamp Format found in Flickr csv
-        date_time_record = dt.datetime.strptime(csv_datestring,
-                                                '%m/%d/%Y %H:%M:%S')
+    def parse_csv_datestring_to_protobuf(csv_datestring, t_format=None):
+        """Parse String -Timestamp Format found in Flickr csv
+
+        e.g. 2012-02-16 09:56:37.0
+        """
+        if t_format is None:
+            t_format = '%m/%d/%Y %H:%M:%S'
+        date_time_record = dt.datetime.strptime(
+            csv_datestring, t_format)
         protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
         protobuf_timestamp_record.FromDatetime(date_time_record)
+        return protobuf_timestamp_record
+
+    @staticmethod
+    def parse_timestamp_string_to_protobuf(timestamp_string):
+        """Converts timestamp string to protobuf object"""
+        # Parse from RFC 3339 date string to Timestamp.
+        time_date = dt.datetime.fromtimestamp(int(timestamp_string))
+        protobuf_timestamp_record = Timestamp()
+        protobuf_timestamp_record.FromDatetime(time_date)
         return protobuf_timestamp_record
 
     @staticmethod
