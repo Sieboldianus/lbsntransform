@@ -4,6 +4,8 @@
 Config module for parsing input args for lbsntransform package.
 """
 
+# pylint: disable=no-member
+
 from pathlib import Path
 import argparse
 import os

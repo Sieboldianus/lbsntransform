@@ -4,7 +4,6 @@
 Collection of helper functions being used in lbsntransform package.
 """
 
-# pylint: disable=no-member
 
 import re
 import csv
@@ -28,6 +27,8 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
     lbsnRelationship, \
     lbsnPostReaction, \
     lbsnRelationship
+
+# pylint: disable=no-member
 
 
 class HelperFunctions():
@@ -545,12 +546,12 @@ class MemoryLeakDetec():
 
     def before(self):
         global get_objects
-        for i in get_objects():
+        for i in get_objects():  # pylint: disable=undefined-variable
             self._before[type(i)] += 1
 
     def after(self):
         global get_objects
-        for i in get_objects():
+        for i in get_objects():  # pylint: disable=undefined-variable
             self._after[type(i)] += 1
 
     def report(self):
@@ -564,7 +565,7 @@ class MemoryLeakDetec():
     def printType(self, type, max=100):
         x = 0
         toplist = []
-        for obj in get_objects():
+        for obj in get_objects():  # pylint: disable=undefined-variable
             if isinstance(obj, type):
                 x += 1
                 if x < max:
