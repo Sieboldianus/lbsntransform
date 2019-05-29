@@ -83,20 +83,31 @@ class LBSNTransfer():
             self.csv_output = LBSNcsv(SUPPRESS_LINEBREAKS)
 
     def commit_changes(self):
+        """Commit Changes to DB"""
         if self.db_cursor:
-            self.db_connection.commit()  # commit changes to db
+            self.db_connection.commit()  #
             self.count_entries_commit = 0
 
     def store_changes(self):
+        """Write changes to CSV"""
         if self.store_csv:
-            self.csv_output.clean_csv_batches(self.batched_records)
+            self.csv_output.clean_csv_batches(
+                self.batched_records)
             self.count_entries_store = 0
 
     def store_lbsn_record_dicts(self, field_mapping):
-        # order is important here, as PostGres will reject any
-        # records where Foreign Keys are violated
-        # therefore, records are processed starting from lowest
-        # granularity. Order is stored in allDicts()
+        """Main loop for strong lbsn records to CSV or DB
+
+        Arguments:
+            field_mapping {field mapping class} -- Import Field mapping class
+            with attached data
+
+        order is important here, as PostGres will reject any
+        records where Foreign Keys are violated
+        therefore, records are processed starting from lowest
+        granularity. Order is stored in allDicts()
+        """
+
         self.count_round += 1
         # self.headersWritten.clear()
         record_dicts = field_mapping.lbsn_records
