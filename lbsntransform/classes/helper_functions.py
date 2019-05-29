@@ -322,6 +322,9 @@ class HelperFunctions():
         """
         if origin == 2:
             from .field_mapping_flickr import FieldMappingFlickr as importer
+        if origin == 21:
+            # Flickr YFCC100M dataset
+            from .field_mapping_yfcc100m import FieldMappingYFCC100M as importer
         elif origin == 3:
             from .field_mapping_twitter import FieldMappingTwitter as importer
         return importer
@@ -526,31 +529,33 @@ class TimeMonitor():
 
 
 class MemoryLeakDetec():
-    # use this class to identify memory leaks
-    # execute .before() and .after() to see the difference
-    # in new objects being added
-    # execute report to list
-    # if there are high numbers of specific types of objects,
-    # use printType to print these, e.g. .printType(list)
-    # see also http://tech.labs.oliverwyman.com/blog/
-    # 2008/11/14/tracing-python-memory-leaks/
+    """Identifies memory leaks
+
+    execute .before() and .after() to see the difference
+    in new objects being added
+    execute report to list
+    if there are high numbers of specific types of objects,
+    use printType to print these, e.g. .printType(list)
+    see also http://tech.labs.oliverwyman.com/blog/
+    2008/11/14/tracing-python-memory-leaks/
+    """
     os = __import__('os')
 
     def __init__(self):
-        global defaultdict
-        global get_objects
+        global defaultdict  # pylint: disable=global-variable-not-assigned
+        global get_objects  # pylint: disable=global-variable-not-assigned
         from collections import defaultdict
         from gc import get_objects
         self._before = defaultdict(int)
         self._after = defaultdict(int)
 
     def before(self):
-        global get_objects
+        global get_objects  # pylint: disable=global-variable-not-assigned
         for i in get_objects():  # pylint: disable=undefined-variable
             self._before[type(i)] += 1
 
     def after(self):
-        global get_objects
+        global get_objects  # pylint: disable=global-variable-not-assigned
         for i in get_objects():  # pylint: disable=undefined-variable
             self._after[type(i)] += 1
 
