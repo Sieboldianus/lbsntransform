@@ -121,12 +121,11 @@ class FieldMappingYFCC100M():
         23 Extension of the original photo  -   jpg
         24 Marker (0 ¼ photo, 1 ¼ video)    -   0
         """
-        # this is where all the converted data will be stored
         # note that one input record may contain many lbsn records
-        lbsn_records = LBSNRecordDicts()
+        # therefore, return list of processed records
         lbsn_records = []
         # start mapping input to lbsn_records
-        post_guid = record[1]
+        post_guid = record[2]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
         post_record = HF.new_lbsn_record_with_id(lbsnPost(),
@@ -146,16 +145,16 @@ class FieldMappingYFCC100M():
             record[14])
         if geoaccuracy:
             post_record.post_geoaccuracy = geoaccuracy
-        # place record not provided in YFCCM directly
-        # if record[19]:
-        #     # we need some information from postRecord to create placeRecord
-        #     # (e.g.  user language, geoaccuracy, post_latlng)
-        #     # some of the information from place will also modify postRecord
-        #     place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
-        #                                               record[19],
-        #                                               self.origin)
-        #     lbsn_records.add_records_to_dict(place_record)
-        #     post_record.place_pkey.CopyFrom(place_record.pkey)
+        # place record not completely provided in YFCCM directly
+        if record[1]:
+            # we need some information from postRecord to create placeRecord
+            # (e.g.  user language, geoaccuracy, post_latlng)
+            # some of the information from place will also modify postRecord
+            place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
+                                                      record[1],
+                                                      self.origin)
+            lbsn_records.add_records_to_dict(place_record)
+            post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
             HF.parse_timestamp_string_to_protobuf(record[6]))
         post_created_date = HF.parse_csv_datestring_to_protobuf(
