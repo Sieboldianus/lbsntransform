@@ -56,6 +56,7 @@ class BaseConfig():
         self.skip_until_file = None
         self.min_geoaccuracy = None
         self.logging_level = logging.INFO
+        self.source_web = False
 
         BaseConfig.set_options()
 
@@ -84,7 +85,8 @@ class BaseConfig():
                                       default=self.input_path,
                                       help='Optionally provide path to '
                                       'input folder, otherwise '
-                                      './Input/ will be used')
+                                      './Input/ will be used. You can also '
+                                      'provide a web-url starting with http')
         local_input_args.add_argument('-iS', "--isStackedJson",
                                       action='store_true',
                                       default=False,
@@ -231,8 +233,12 @@ class BaseConfig():
                 self.input_path = Path.cwd() / "01_Input"
                 print(f'Using Path: {self.input_path}')
             else:
-                input_path = Path(args.InputPath)
-                self.input_path = input_path
+                if str(args.InputPath).startswith('http'):
+                    self.input_path = str(args.InputPath)
+                    self.source_web = True
+                else:
+                    input_path = Path(args.InputPath)
+                    self.input_path = input_path
         else:
             self.dbuser_input = args.dbUser_Input
             self.dbpassword_input = args.dbPassword_Input

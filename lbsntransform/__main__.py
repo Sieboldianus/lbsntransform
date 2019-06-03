@@ -84,7 +84,8 @@ def main():
         map_relations=config.map_relations,
         transfer_reactions=config.transfer_reactions,
         ignore_non_geotagged=config.ignore_non_geotagged,
-        min_geoaccuracy=config.min_geoaccuracy)
+        min_geoaccuracy=config.min_geoaccuracy,
+        source_web=config.source_web)
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)

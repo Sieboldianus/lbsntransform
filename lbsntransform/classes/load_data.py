@@ -8,6 +8,9 @@ import sys
 import os
 import ntpath
 import csv
+import requests
+import codecs
+from contextlib import closing
 from pathlib import Path
 from glob import glob
 from json import loads as json_loads, decoder as json_decoder
@@ -30,7 +33,7 @@ class LoadData():
             input_lbsn_type=None, geocode_locations=None,
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
-            ignore_non_geotagged=None, min_geoaccuracy=None):
+            ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None):
         self.is_local_input = is_local_input
         self.start_number = None
         if not self.is_local_input:
@@ -40,12 +43,16 @@ class LoadData():
         else:
             self.continue_number = skip_until_file
             self.start_number = 1
-        if self.is_local_input:
+        self.source_web = source_web
+        self.cursor_input = None
+        if self.is_local_input and not self.source_web:
             self.filelist = LoadData._read_local_files(
                 input_path=input_path, recursive_load=recursive_load,
                 local_file_type=local_file_type,
                 skip_until_file=skip_until_file)
             self.cursor_input = cursor_input
+        elif self.is_local_input and self.source_web:
+            self.filelist = [input_path]
         else:
             self.filelist = None
             # self.cursor_input = LoadData.initialize_connection(
@@ -102,7 +109,7 @@ class LoadData():
         """Loops input input filelist and
         returns opened file handles
         """
-        if self.cursor_input:
+        if self.cursor_input or self.source_web:
             return None
         # process localfiles
         for file_name in self.filelist:
@@ -114,11 +121,21 @@ class LoadData():
 
         Output: produces a list of post that can be parsed
         """
-        if self.is_local_input:
+        if self.is_local_input and not self.source_web:
             while file_handle:
                 record = self.fetch_record_from_file(
                     file_handle)
                 yield record
+        elif self.is_local_input and self.source_web:
+            url = self.filelist[0]
+            with closing(requests.get(url, stream=True)) as file_handle:
+                record_reader = csv.reader(
+                    codecs.iterdecode(
+                        file_handle.iter_lines(), 'utf-8'),
+                    delimiter=self.csv_delim,
+                    quotechar='"', quoting=csv.QUOTE_NONE)
+                for record in record_reader:
+                    yield record
         else:
             while self.cursor:
                 record = self.fetch_json_data_from_lbsn(
