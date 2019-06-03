@@ -7,6 +7,7 @@ Module for mapping Flickr YFCC100M dataset to common LBSN Structure.
 import logging
 import re
 import sys
+import csv
 from urllib.parse import unquote
 from codecs import escape_decode
 from decimal import Decimal
@@ -50,6 +51,9 @@ class FieldMappingYFCC100M():
         self.log = logging.getLogger('__main__')  # get the main logger object
         self.skipped_count = 0
         self.skipped_low_geoaccuracy = 0
+        # some records in YFCC100m are larger than the default csv limit in python
+        # of 131072
+        csv.field_size_limit(500000)
         # self.disableReactionPostReferencing = disableReactionPostReferencing
         # self.mapFullRelations = mapFullRelations
         # self.geocodes = geocodes
