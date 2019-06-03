@@ -32,11 +32,14 @@ class LoadData():
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None):
         self.is_local_input = is_local_input
+        self.start_number = None
         if not self.is_local_input:
             # Start Value, Modify to continue from last processing
             self.continue_number = startwith_db_rownumber
+            self.start_number = startwith_db_rownumber
         else:
             self.continue_number = skip_until_file
+            self.start_number = 1
         if self.is_local_input:
             self.filelist = LoadData._read_local_files(
                 input_path=input_path, recursive_load=recursive_load,
@@ -120,7 +123,7 @@ class LoadData():
         else:
             while self.cursor:
                 record = self.fetch_json_data_from_lbsn(
-                    self.cursor, self.start_id)
+                    self.cursor, self.continue_number)
                 yield record
 
     def convert_records(self, record_pipe):
@@ -129,9 +132,6 @@ class LoadData():
 
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
-        finished = False
-        processed_records = 0
-        db_row_number = 0
         for record in record_pipe:
             processed_records += 1
             if self.is_local_input:
@@ -151,19 +151,8 @@ class LoadData():
                     single_record)
             else:
                 exit(f'Format {self.local_file_type} not supportet.')
-
-            # if (self.transferlimit and self.processed_records >= self.transferlimit) or \
-            #    (not self.is_local_input and
-            #     self.endwith_db_rownumber and
-            #         self.db_row_number >= self.endwith_db_rownumber):
-            #     self.finished = True
-            #     break
+            # return record as pipe
             yield lbsn_records
-            # for records_dict in lbsn_records.all_dicts:
-            #     type_name = records_dict[1]
-            #     for lbsn_record in records_dict[0].values():
-            #         yield lbsn_record, type_name
-            # return self.processed_records, finished
 
     @staticmethod
     def skip_empty_or_other(single_record):
@@ -201,6 +190,11 @@ class LoadData():
         records = cursor.fetchall()
         if cursor.rowcount == 0:
             return None
+        # update last returned db_row_number
+        self.continue_number = records[-1][0]
+        if not self.start_number:
+            # first returned db_row_number
+            self.start_number = records[0][0]
         for record in records:
             return record
 
