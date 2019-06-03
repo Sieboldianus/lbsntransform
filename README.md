@@ -1,4 +1,4 @@
-![PyPI version](https://ad.vgiscience.org/lbsntransform/pypi.svg) ![pylint](https://ad.vgiscience.org/lbsntransform/pylint.svg) ![pipeline](https://ad.vgiscience.org/lbsntransform/pipeline.svg)
+![PyPI version](https://lbsn.vgiscience.org/lbsntransform/pypi.svg) ![pylint](https://lbsn.vgiscience.org/lbsntransform/pylint.svg) ![pipeline](https://lbsn.vgiscience.org/lbsntransform/pipeline.svg)
 
 # LBSNTransform
 
