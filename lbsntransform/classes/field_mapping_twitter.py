@@ -63,6 +63,10 @@ class FieldMappingTwitter():
         self.min_geoaccuracy = min_geoaccuracy
         self.skipped_low_geoaccuracy = 0
 
+    def get_skipped_geoaccuracy(self):
+        """Get count of records skipped due to low geoaccuracy"""
+        return self.skipped_low_geoaccuracy
+
     def parse_json_record(self, json_string_dict, input_lbsn_type=None):
         # decide if main object is post or user json
         if input_lbsn_type and input_lbsn_type in ('friendslist',

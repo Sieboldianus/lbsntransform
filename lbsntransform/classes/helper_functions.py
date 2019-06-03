@@ -34,6 +34,24 @@ from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
 class HelperFunctions():
 
     @staticmethod
+    def set_logger():
+        """ Set logging handler manually,
+        so we can also print to console while logging to file
+        """
+
+        logging.basicConfig(
+            handlers=[logging.FileHandler(
+                'log.log', 'w', 'utf-8')],
+            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+            datefmt='%H:%M:%S',
+            level=logging.DEBUG)
+        log = logging.getLogger(__name__)
+
+        # Get Stream handler
+        logging.getLogger().addHandler(logging.StreamHandler())
+        return log
+
+    @staticmethod
     def geoacc_within_threshold(post_geoaccuracy, min_geoaccuracy):
         """Checks if geoaccuracy is within or below threshhold defined"""
         if min_geoaccuracy == lbsnPost.LATLNG:
@@ -177,8 +195,11 @@ class HelperFunctions():
         """
         if t_format is None:
             t_format = '%m/%d/%Y %H:%M:%S'
-        date_time_record = dt.datetime.strptime(
-            csv_datestring, t_format)
+        try:
+            date_time_record = dt.datetime.strptime(
+                csv_datestring, t_format)
+        except ValueError:
+            return None
         protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
         protobuf_timestamp_record.FromDatetime(date_time_record)
@@ -428,6 +449,13 @@ class LBSNRecordDicts():
             # all other entities can be globally uniquely
             # identified by their local guid
             self.key_hashes[record.DESCRIPTOR.name].add(record.pkey.id)
+
+    def clear(self):
+        """Clears all records from all dicts
+        """
+        for lbsn_dict, __ in self.all_dicts:
+            lbsn_dict.clear()
+        self.count_glob = 0
 
     def deep_compare_merge_messages(self, old_record, new_record):
         # Do a deep compare

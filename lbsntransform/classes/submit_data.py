@@ -95,8 +95,8 @@ class LBSNTransfer():
                 self.batched_records)
             self.count_entries_store = 0
 
-    def store_lbsn_record_dicts(self, field_mapping):
-        """Main loop for strong lbsn records to CSV or DB
+    def store_lbsn_record_dicts(self, lbsn_record_dicts):
+        """Main loop for storing lbsn records to CSV or DB
 
         Arguments:
             field_mapping {field mapping class} -- Import Field mapping class
@@ -110,14 +110,13 @@ class LBSNTransfer():
 
         self.count_round += 1
         # self.headersWritten.clear()
-        record_dicts = field_mapping.lbsn_records
         r_cnt = 0
         self.count_affected = 0
-        for records_dict in record_dicts.all_dicts:
+        for records_dict in lbsn_record_dicts.all_dicts:
             type_name = records_dict[1]
             for record in records_dict[0].values():
                 r_cnt += 1
-                print(f'Storing {r_cnt} of {record_dicts.count_glob} '
+                print(f'Storing {r_cnt} of {lbsn_record_dicts.count_glob} '
                       f'output records ({type_name})..', end='\r')
                 self.prepare_lbsn_record(record, type_name)
                 self.count_glob += 1  # self.dbCursor.rowcount

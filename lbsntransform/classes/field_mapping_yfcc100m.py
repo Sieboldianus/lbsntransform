@@ -6,7 +6,9 @@ Module for mapping Flickr YFCC100M dataset to common LBSN Structure.
 
 import logging
 import re
+import sys
 from urllib.parse import unquote
+from codecs import escape_decode
 from decimal import Decimal
 
 # for debugging only:
@@ -45,8 +47,6 @@ class FieldMappingYFCC100M():
         origin.origin_id = lbsnOrigin.FLICKR
         self.origin = origin
         self.null_island = 0
-        # this is where all the data will be stored
-        self.lbsn_records = LBSNRecordDicts()
         self.log = logging.getLogger('__main__')  # get the main logger object
         self.skipped_count = 0
         self.skipped_low_geoaccuracy = 0
@@ -80,7 +80,8 @@ class FieldMappingYFCC100M():
             self.skipped_count += 1
             return
         else:
-            self.extract_flickr_post(record)
+            lbsn_records = self.extract_flickr_post(record)
+            return lbsn_records
 
     def extract_flickr_post(self, record):
         """Main function for processing Flickr YFCC100M CSV entry.
@@ -120,6 +121,11 @@ class FieldMappingYFCC100M():
         23 Extension of the original photo  -   jpg
         24 Marker (0 ¼ photo, 1 ¼ video)    -   0
         """
+        # this is where all the converted data will be stored
+        # note that one input record may contain many lbsn records
+        lbsn_records = LBSNRecordDicts()
+        lbsn_records = []
+        # start mapping input to lbsn_records
         post_guid = record[1]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
@@ -133,7 +139,8 @@ class FieldMappingYFCC100M():
         user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
-        self.lbsn_records.add_records_to_dict(user_record)
+        # lbsn_records.add_records_to_dict(user_record)
+        lbsn_records.append(user_record)
         post_record.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingYFCC100M.flickr_map_geoaccuracy(
             record[14])
@@ -147,36 +154,52 @@ class FieldMappingYFCC100M():
         #     place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
         #                                               record[19],
         #                                               self.origin)
-        #     self.lbsn_records.add_records_to_dict(place_record)
+        #     lbsn_records.add_records_to_dict(place_record)
         #     post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
             HF.parse_timestamp_string_to_protobuf(record[6]))
-        post_record.post_create_date.CopyFrom(
-            HF.parse_csv_datestring_to_protobuf(
-                record[5], t_format='%Y-%m-%d %H:%M:%S.%f')
-        )
+        post_created_date = HF.parse_csv_datestring_to_protobuf(
+            record[5], t_format='%Y-%m-%d %H:%M:%S.%f')
+        if post_created_date:
+            post_record.post_create_date.CopyFrom(
+                post_created_date
+            )
         post_record.post_views_count = 0
         post_record.post_comment_count = 0
         post_record.post_like_count = 0
         post_record.post_url = record[15]
-        post_record.post_body = unquote(record[9]).replace('+', ' ')
-        post_record.post_title = unquote(record[8]).replace('+', ' ')
-        post_record.post_thumbnail_url = record[16]  # note: original!
-        # split tags by , and + - by lbsn-spec, tags are limited to single word
-        record_tags_list = list(filter(None, re.split("[,+]+", record[10])))
+        # YFCC100M dataset contains HTML codes (%20) and
+        # space character is replaced by +
+        post_record.post_body = unquote(record[9]).replace(
+            '+', ' ')
+        post_record.post_title = unquote(record[8]).replace(
+            '+', ' ')
+        post_record.post_thumbnail_url = record[16]  # note: fullsize url!
+        # split tags by , and + because by lbsn-spec,
+        # tags are limited to single word
+        record_tags_list = list(
+            set(filter(
+                None,
+                [unquote(tag)
+                 for tag in re.split("[,+]+", record[10])]
+            )))
         if record_tags_list:
             for tag in record_tags_list:
                 tag = FieldMappingYFCC100M.clean_tags_from_flickr(tag)
                 post_record.hashtags.append(tag)
-        record_machine_tags = list(filter(None, re.split("[,+]+", record[11])))
+        record_machine_tags = list(
+            set(filter(None, re.split("[,+]+", record[11]))))
         if 'video' in record_machine_tags:
+            # all videos appear to have 'video' in machine tags
             post_record.post_type = lbsnPost.VIDEO
         else:
             post_record.post_type = lbsnPost.IMAGE
-
-        post_record.post_content_license = \
-            self.get_license_number_from_license_name(record[17])
-        self.lbsn_records.add_records_to_dict(post_record)
+        # replace text-string of content license by integer-id
+        post_record.post_content_license = self.get_license_number_from_license_name(
+            record[17])
+        # lbsn_records.add_records_to_dict(post_record)
+        lbsn_records.append(post_record)
+        return lbsn_records
 
     @staticmethod
     def clean_tags_from_flickr(tag):

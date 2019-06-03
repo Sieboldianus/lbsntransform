@@ -11,6 +11,7 @@ import argparse
 import os
 import sys
 from shapely import geos
+import logging
 from lbsnstructure.lbsnstructure_pb2 import lbsnPost
 
 
@@ -25,14 +26,14 @@ class BaseConfig():
         self.local_file_type = 'json'
         self.input_path = None
         self.is_stacked_json = False
-        self.dbuser_Input = 'example-user-name'
+        self.dbuser_input = 'example-user-name'
         self.dbpassword_input = 'example-user-password'
-        self.dbserveradress_input = '222.22.222.22'
+        self.dbserveraddress_input = '222.22.222.22'
         self.dbserverport_input = 5432
-        self.db_name_input = 'test_db2'
+        self.dbname_input = 'test_db2'
         self.dbuser_output = None
         self.dbpassword_output = None
-        self.dbserveradress_output = None
+        self.dbserveraddress_output = None
         self.dbserverport_output = 5432
         self.dbname_output = None
         self.transferlimit = None
@@ -52,8 +53,9 @@ class BaseConfig():
         self.csv_suppress_linebreaks = True
         self.csv_delim = None
         self.recursive_load = False
-        self.skip_until_file = ""
+        self.skip_until_file = None
         self.min_geoaccuracy = None
+        self.logging_level = logging.INFO
 
         BaseConfig.set_options()
 
@@ -99,8 +101,8 @@ class BaseConfig():
         dboutput_args.add_argument('-uO', "--dbUser_Output",
                                    default=self.dbuser_output,
                                    help='Default: example-user-name2')
-        dboutput_args.add_argument('-aO', "--dbServeradressOutput",
-                                   default=self.dbserveradress_output,
+        dboutput_args.add_argument('-aO', "--dbServeraddressOutput",
+                                   default=self.dbserveraddress_output,
                                    help='e.g. 111.11.11.11 . Optionally add '
                                    'port to use, e.g. 111.11.11.11:5432. '
                                    '5432 is the default port')
@@ -113,15 +115,15 @@ class BaseConfig():
                                   default=self.dbpassword_input,
                                   help='')
         dbinput_args.add_argument('-uI', "--dbUser_Input",
-                                  default=self.dbuser_Input,
+                                  default=self.dbuser_input,
                                   help='Default: example-user-name')
-        dbinput_args.add_argument('-aI', "--dbServeradressInput",
-                                  default=self.dbserveradress_input,
+        dbinput_args.add_argument('-aI', "--dbServeraddressInput",
+                                  default=self.dbserveraddress_input,
                                   help='e.g. 111.11.11.11. Optionally add '
                                   'port to use, e.g. 111.11.11.11:5432. '
                                   '5432 is the default port')
         dbinput_args.add_argument('-nI', "--dbNameInput",
-                                  default=self.db_name_input,
+                                  default=self.dbname_input,
                                   help='e.g.: test_db')
         # Additional args
         settings_args = parser.add_argument_group('Additional settings')
@@ -232,14 +234,14 @@ class BaseConfig():
                 input_path = Path(args.InputPath)
                 self.input_path = input_path
         else:
-            self.dbuser_Input = args.dbUser_Input
+            self.dbuser_input = args.dbUser_Input
             self.dbpassword_input = args.dbPassword_Input
             input_ip, input_port = BaseConfig.get_ip_port(
-                args.dbServeradressInput)
-            self.dbserveradress_input = input_ip
+                args.dbServeraddressInput)
+            self.dbserveraddress_input = input_ip
             if input_port:
                 self.dbserverport_input = input_port
-            self.db_name_input = args.dbNameInput
+            self.dbname_input = args.dbNameInput
         if args.Origin:
             self.origin = int(args.Origin)
         if args.geocodeLocations:
@@ -252,8 +254,8 @@ class BaseConfig():
             self.dbuser_output = args.dbUser_Output
             self.dbpassword_output = args.dbPassword_Output
             output_ip, output_port = BaseConfig.get_ip_port(
-                args.dbServeradressOutput)
-            self.dbserveradress_output = output_ip
+                args.dbServeraddressOutput)
+            self.dbserveraddress_output = output_ip
             if output_port:
                 self.dbserverport_output = output_port
             self.dbname_output = args.dbNameOutput

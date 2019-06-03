@@ -15,11 +15,11 @@ LOG = logging.getLogger()
 class DBConnection():
     """ Class for connectiong to Postgres. """
 
-    def __init__(self, serveradress=None, dbname=None,
+    def __init__(self, serveraddress=None, dbname=None,
                  user=None, password=0, readonly=False,
                  sslmode='prefer', port=5432):
         """Initialize DBConnection object with attributes, if passed. """
-        self.serveradress = serveradress
+        self.serveraddress = serveraddress
         self.dbname = dbname
         self.user = user
         self.password = password
@@ -30,7 +30,7 @@ class DBConnection():
     def connect(self):
         """Database config. """
         conf = {
-            "host": self.serveradress,
+            "host": self.serveraddress,
             "dbname": self.dbname,
             "user": self.user,
             "sslmode": self.sslmode,

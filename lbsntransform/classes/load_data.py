@@ -20,41 +20,150 @@ class LoadData():
     """
     Class for loding data from different sources (CSV, DB, JSON etc.).
     """
-    @staticmethod
-    def loop_input_records(records, transferlimit, import_mapper, config):
+
+    def __init__(
+            self, importer=None, is_local_input=None,
+            startwith_db_rownumber=None,
+            skip_until_file=None, cursor_input=None, input_path=None,
+            recursive_load=None, local_file_type=None,
+            endwith_db_rownumber=None, is_stacked_json=None, csv_delim=None,
+            input_lbsn_type=None, geocode_locations=None,
+            ignore_input_source_list=None, disable_reactionpost_ref=None,
+            map_relations=None, transfer_reactions=None,
+            ignore_non_geotagged=None, min_geoaccuracy=None):
+        self.is_local_input = is_local_input
+        if not self.is_local_input:
+            # Start Value, Modify to continue from last processing
+            self.continue_number = startwith_db_rownumber
+        else:
+            self.continue_number = skip_until_file
+        if self.is_local_input:
+            self.filelist = LoadData._read_local_files(
+                input_path=input_path, recursive_load=recursive_load,
+                local_file_type=local_file_type,
+                skip_until_file=skip_until_file)
+            self.cursor_input = cursor_input
+        else:
+            self.filelist = None
+            # self.cursor_input = LoadData.initialize_connection(
+            #    cfg)
+        self.finished = False
+        self.processed_records = 0
+        self.db_row_number = 0
+        self.endwith_db_rownumber = endwith_db_rownumber
+        self.is_stacked_json = is_stacked_json
+        self.local_file_type = local_file_type
+        self.csv_delim = csv_delim
+        self.file_format = local_file_type
+        self.input_lbsn_type = input_lbsn_type
+        self.cursor = None
+        self.start_id = None
+        #self.transferlimit = cfg.transferlimit
+        # Optional Geocoding
+        self.geocode_dict = None
+        if geocode_locations:
+            self.geocode_dict = LoadData.load_geocodes(
+                geocode_locations)
+        # Optional ignore input sources
+        self.ignore_sources_set = None
+        if ignore_input_source_list:
+            self.ignore_sources_set = LoadData.load_ignore_sources(
+                ignore_input_source_list)
+
+        # initialize field mapping structure
+        self.import_mapper = importer(
+            disable_reactionpost_ref,
+            self.geocode_dict,
+            map_relations,
+            transfer_reactions,
+            ignore_non_geotagged,
+            self.ignore_sources_set,
+            min_geoaccuracy)
+        self.finished = False
+
+    def __enter__(self):
+        """Main pipeline for reading input data
+
+        Combine multiple generators to single pipeline,
+        returned for being processed by with-statement
+        """
+        record_pipeline = self.convert_records(self._process_input(
+            self._open_input_files()))
+        return record_pipeline
+        # return record_pipeline
+
+    def __exit__(self, c_type, value, traceback):
+        """Contextmanager exit: nothing to do here"""
+        return False
+
+    def _open_input_files(self, count: bool = None):
+        """Loops input input filelist and
+        returns opened file handles
+        """
+        if self.cursor_input:
+            return None
+        # process localfiles
+        for file_name in self.filelist:
+            HF.log_main_debug(f'\nCurrent file: {ntpath.basename(file_name)}')
+            return open(file_name, 'r', encoding="utf-8", errors='replace')
+
+    def _process_input(self, file_handle):
+        """File parse for CSV or JSON from open file handle
+
+        Output: produces a list of post that can be parsed
+        """
+        if self.is_local_input:
+            while file_handle:
+                record = self.fetch_record_from_file(
+                    file_handle)
+                yield record
+        else:
+            while self.cursor:
+                record = self.fetch_json_data_from_lbsn(
+                    self.cursor, self.start_id)
+                yield record
+
+    def convert_records(self, record_pipe):
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
-
         finished = False
         processed_records = 0
         db_row_number = 0
-        for record in records:
+        for record in record_pipe:
             processed_records += 1
-            if config.is_local_input:
+            if self.is_local_input:
                 single_record = record
             else:
-                db_row_number = record[0]
+                self.db_row_number = record[0]
                 single_record = record[2]
+            # test for empty or malformed records
             if LoadData.skip_empty_or_other(single_record):
-                continue
-            if config.local_file_type == 'json' or not config.is_local_input:
-                import_mapper.parse_json_record(
-                    single_record, config.input_lbsn_type)
-            elif config.local_file_type in ('txt', 'csv'):
-                import_mapper.parse_csv_record(single_record)
+                return None
+            if self.local_file_type == 'json' or not self.is_local_input:
+                # note: db-records always returned as json
+                self.import_mapper.parse_json_record(
+                    single_record, self.input_lbsn_type)
+            elif self.local_file_type in ('txt', 'csv'):
+                lbsn_records = self.import_mapper.parse_csv_record(
+                    single_record)
             else:
-                exit(f'Format {config.local_file_type} not supportet.')
+                exit(f'Format {self.local_file_type} not supportet.')
 
-            if (transferlimit and processed_records >= transferlimit) or \
-               (not config.is_local_input and
-                config.endwith_db_rownumber and
-                    db_row_number >= config.endwith_db_rownumber):
-                finished = True
-                break
-        return processed_records, finished
+            # if (self.transferlimit and self.processed_records >= self.transferlimit) or \
+            #    (not self.is_local_input and
+            #     self.endwith_db_rownumber and
+            #         self.db_row_number >= self.endwith_db_rownumber):
+            #     self.finished = True
+            #     break
+            yield lbsn_records
+            # for records_dict in lbsn_records.all_dicts:
+            #     type_name = records_dict[1]
+            #     for lbsn_record in records_dict[0].values():
+            #         yield lbsn_record, type_name
+            # return self.processed_records, finished
 
     @staticmethod
     def skip_empty_or_other(single_record):
@@ -68,8 +177,7 @@ class LoadData():
             skip = True
         return skip
 
-    @staticmethod
-    def fetch_json_data_from_lbsn(cursor, start_id=0, get_max=None,
+    def fetch_json_data_from_lbsn(self, cursor, start_id=0, get_max=None,
                                   number_of_records_to_fetch=10000):
         """Fetches records from Postgres DB
 
@@ -93,53 +201,47 @@ class LoadData():
         records = cursor.fetchall()
         if cursor.rowcount == 0:
             return None
-        return records
+        for record in records:
+            return record
 
-    @staticmethod
-    def fetch_data_from_file(loc_filelist, continue_number,
-                             is_stacked_json, file_format, csv_delim=None):
+    def fetch_record_from_file(self, file_handle):
         """Fetches CSV or JSON data (including stacked json) from file"""
-        if file_format == 'json':
-            records = LoadData.fetch_json_data_from_file(loc_filelist,
-                                                         continue_number,
-                                                         is_stacked_json)
-        elif file_format in ['txt', 'csv']:
-            records = LoadData.fetch_csv_data_from_file(loc_filelist,
-                                                        continue_number,
-                                                        csv_delim)
-        else:
-            exit(f'Format {file_format} not supported.')
-        return records
 
-    @staticmethod
-    def fetch_json_data_from_file(loc_filelist, start_file_id=0,
-                                  is_stacked_json=False):
+        if self.file_format == 'json':
+            record_reader = self.fetch_json_data_from_file(
+                file_handle)
+        elif self.file_format in ['txt', 'csv']:
+            record_reader = self.fetch_csv_data_from_file(
+                file_handle)
+        else:
+            exit(f'Format {self.file_format} not supported.')
+        # return record pipeline
+        for record in record_reader:
+            return record
+
+    def fetch_json_data_from_file(self, file_handle, start_file_id=0):
         """Read json entries from file.
 
         Typical form is [{json1},{json2}], if is_stacked_json is True:
         will process stacked jsons in the form of {json1}{json2}
         """
         records = []
-        loc_file = loc_filelist[start_file_id]
-        with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
-            # Stacked JSON is a simple file with many concatenated jsons, e.g.
-            # {json1}{json2} etc.
-            if is_stacked_json:
-                try:
-                    for obj in HF.decode_stacked(file.read()):
-                        records.append(obj)
-                except json_decoder.JSONDecodeError:
-                    pass
-            else:
-                # normal json nesting, e.g.  {{record1},{record2}}
-                records = json_loads(file.read())
+        # Stacked JSON is a simple file with many concatenated jsons, e.g.
+        # {json1}{json2} etc.
+        if self.is_stacked_json:
+            try:
+                for obj in HF.decode_stacked(file_handle.read()):
+                    records.append(obj)
+            except json_decoder.JSONDecodeError:
+                pass
+        else:
+            # normal json nesting, e.g.  {{record1},{record2}}
+            records = json_loads(file_handle.read())
         if records:
             return records
         return None
 
-    @staticmethod
-    def fetch_csv_data_from_file(
-            loc_filelist, start_file_id=0, csv_delim=None):
+    def fetch_csv_data_from_file(self, file_handle):
         """Read csv entries from file (either *.txt or *.csv).
 
         The actual CSV formatting is not setable in config yet.
@@ -147,72 +249,58 @@ class LoadData():
         #QUOTE_NONE is used here because media saved from Flickr
         does not contain any quotes ""
         """
-        if csv_delim is None:
-            csv_delim = ','
-        records = []
-        loc_file = loc_filelist[start_file_id]
-        HF.log_main_debug(f'\nCurrent file: {ntpath.basename(loc_file)}')
-        with open(loc_file, 'r', encoding="utf-8", errors='replace') as file:
-            reader = csv.reader(file, delimiter=csv_delim,
-                                quotechar='"', quoting=csv.QUOTE_NONE)
-            next(reader, None)  # skip headerline
-            records = list(reader)
-        if not records:
-            return None
-        return records
+        if self.csv_delim is None:
+            self.csv_delim = ','
+        #records = []
+        record_reader = csv.reader(file_handle, delimiter=self.csv_delim,
+                                   quotechar='"', quoting=csv.QUOTE_NONE)
+        return record_reader
+        #   next(reader, None)  # skip headerline
+        #   records = list(reader)
+        #   if not records:
+        #       return None
+        #   return records
 
     @staticmethod
-    def initialize_output_connection(cfg):
-        """Establishes connection to output DB (Postgres), if set in config"""
+    def initialize_connection(
+            dbuser_output, dbserveraddress_output,
+            dbname_output, dbpassword_output, dbserverport_output,
+            readonly: bool = True):
+        """Establishes connection to DB (Postgres)"""
 
-        if cfg.dbuser_output:
-            output_connection = DBConnection(
-                serveradress=cfg.dbserveradress_output,
-                dbname=cfg.dbname_output,
-                user=cfg.dbuser_output,
-                password=cfg.dbpassword_output,
-                port=cfg.dbserverport_output)
-            conn_output, cursor_output = output_connection.connect()
+        if dbuser_output:
+            connection = DBConnection(
+                serveraddress=dbserveraddress_output,
+                dbname=dbname_output,
+                user=dbuser_output,
+                password=dbpassword_output,
+                port=dbserverport_output,
+                readonly=readonly)
+            conn, cursor = connection.connect()
         else:
-            conn_output = None
-            cursor_output = None
-        return conn_output, cursor_output
+            conn = None
+            cursor = None
+        return conn, cursor
 
     @staticmethod
-    def initialize_input_connection(cfg):
-        """Establishes connection to input DB (Postgres)
-
-        Returns cursor
-        """
-
-        input_connection = DBConnection(
-            serveradress=cfg.dbserveradress_input,
-            dbname=cfg.db_name_input,
-            user=cfg.dbuser_Input,
-            password=cfg.dbpassword_input,
-            readonly=True  # ReadOnly Mode
-        )
-        conn_input, cursor_input = input_connection.connect()
-        return cursor_input
-
-    @staticmethod
-    def read_local_files(cfg):
+    def _read_local_files(input_path=None, recursive_load=None,
+                          local_file_type=None, skip_until_file=None):
         """Read Local Files according to config parameters and
         returns list of file-paths
         """
-        input_path = cfg.input_path
-        if cfg.recursive_load:
+        if recursive_load:
             excludefolderlist = ["01_DataSetHistory",
                                  "02_UserData", "03_ClippedData", "04_MapVis"]
             excludestartswithfile = ["log", "settings", "GridCoordinates"]
             loc_filelist = \
                 LoadData.scan_rec(input_path,
-                                  file_format=cfg.local_file_type,
+                                  file_format=local_file_type,
                                   excludefolderlist=excludefolderlist,
                                   excludestartswithfile=excludestartswithfile)
         else:
-            loc_filelist = glob(f'{input_path}*.{cfg.local_file_type}')
-
+            loc_filelist = glob(f'{input_path}*.{local_file_type}')
+        if skip_until_file:
+            print("Implement skip until file")
         input_count = (len(loc_filelist))
         if input_count == 0:
             sys.exit("No location files found.")
