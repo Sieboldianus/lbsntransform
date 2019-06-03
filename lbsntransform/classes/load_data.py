@@ -290,7 +290,10 @@ class LoadData():
                                   excludefolderlist=excludefolderlist,
                                   excludestartswithfile=excludestartswithfile)
         else:
-            loc_filelist = glob(f'{input_path}*.{local_file_type}')
+            loc_filelist_gen = input_path.glob(f'*.{local_file_type}')
+            loc_filelist = []
+            for file_path in loc_filelist_gen:
+                loc_filelist.append(file_path)
         if skip_until_file:
             print("Implement skip until file")
         input_count = (len(loc_filelist))
