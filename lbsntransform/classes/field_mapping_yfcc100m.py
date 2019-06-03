@@ -146,6 +146,7 @@ class FieldMappingYFCC100M():
         if geoaccuracy:
             post_record.post_geoaccuracy = geoaccuracy
         # place record not completely provided in YFCCM directly
+        # only place_guid available
         if record[1]:
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
