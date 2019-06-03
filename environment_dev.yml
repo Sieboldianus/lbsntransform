@@ -14,5 +14,7 @@ dependencies:
   - pylint
   - shapely
   - pip:
+    - anybadge
+    - pylint-exit
     - ppygis3
 
