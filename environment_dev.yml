@@ -14,6 +14,5 @@ dependencies:
   - pylint
   - shapely
   - pip:
-    - lbsnstructure
     - ppygis3
 
