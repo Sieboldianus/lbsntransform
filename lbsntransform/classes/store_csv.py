@@ -212,7 +212,7 @@ class LBSNcsv():
         record = self.get_record_from_base64_encoded_string(line)
         return record.pkey.id
 
-    def get_record_from_base64_encoded_string(self, line, type_name):
+    def get_record_from_base64_encoded_string(self, line, type_name=None):
         """ Gets ProtoBuf record from base 64 encoded string.
         """
         record = self.create_proto_by_descriptor_name(type_name)
