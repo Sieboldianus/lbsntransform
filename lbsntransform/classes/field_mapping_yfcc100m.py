@@ -138,7 +138,6 @@ class FieldMappingYFCC100M():
         user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
-        # lbsn_records.add_records_to_dict(user_record)
         lbsn_records.append(user_record)
         post_record.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingYFCC100M.flickr_map_geoaccuracy(
@@ -154,7 +153,7 @@ class FieldMappingYFCC100M():
             place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
                                                       record[1],
                                                       self.origin)
-            lbsn_records.add_records_to_dict(place_record)
+            lbsn_records.append(place_record)
             post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
             HF.parse_timestamp_string_to_protobuf(record[6]))
@@ -197,7 +196,6 @@ class FieldMappingYFCC100M():
         # replace text-string of content license by integer-id
         post_record.post_content_license = self.get_license_number_from_license_name(
             record[17])
-        # lbsn_records.add_records_to_dict(post_record)
         lbsn_records.append(post_record)
         return lbsn_records
 

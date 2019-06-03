@@ -51,7 +51,6 @@ class LoadData():
             # self.cursor_input = LoadData.initialize_connection(
             #    cfg)
         self.finished = False
-        self.processed_records = 0
         self.db_row_number = 0
         self.endwith_db_rownumber = endwith_db_rownumber
         self.is_stacked_json = is_stacked_json
@@ -133,7 +132,6 @@ class LoadData():
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
         for record in record_pipe:
-            processed_records += 1
             if self.is_local_input:
                 single_record = record
             else:
