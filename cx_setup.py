@@ -32,7 +32,8 @@ PACKAGES_MOD = [
     'psycopg2',
     'ppygis3',
     'shapely',
-    'emoji'
+    'emoji',
+    'requests'
 ]
 INCLUDE_FOLDERS_FILES = [('scripts/00_TransferAll_Default.sh')
                          ]

@@ -38,7 +38,8 @@ setup(name="lbsntransform",
           'psycopg2',
           'ppygis3',
           'shapely',
-          'emoji'
+          'emoji',
+          'requests'
       ],
       entry_points={
           'console_scripts': [

@@ -13,9 +13,11 @@ dependencies:
   - psycopg2
   - pylint
   - shapely
+  - requests
   - bitarray
   - pip:
     - anybadge
     - pylint-exit
     - ppygis3
+    - lbsnstructure
 
