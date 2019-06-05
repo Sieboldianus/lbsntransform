@@ -4,13 +4,13 @@
 Module for mapping Flickr YFCC100M dataset to common LBSN Structure.
 """
 
+import csv
 import logging
 import re
 import sys
-import csv
-from urllib.parse import unquote
 from codecs import escape_decode
 from decimal import Decimal
+from urllib.parse import unquote
 
 # for debugging only:
 from google.protobuf import text_format

@@ -6,33 +6,28 @@ Module for storing common Proto LBSN Structure to CSV.
 
 # pylint: disable=no-member
 
-import logging
-import traceback
-import os
-import sys
 import base64
 import csv
-from sys import exit
+import logging
+import os
+import sys
+import traceback
+from contextlib import ExitStack
 from glob import glob
 from heapq import merge as heapq_merge
-from contextlib import ExitStack
-from .helper_functions import HelperFunctions
-from .helper_functions import LBSNRecordDicts
-from .shared_structure_proto_lbsndb import ProtoLBSNMapping
-from google.protobuf.timestamp_pb2 import Timestamp
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship
+from sys import exit
+
 # for debugging only:
 from google.protobuf import text_format
+from google.protobuf.timestamp_pb2 import Timestamp
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
+                                             lbsnCity, lbsnCountry, lbsnPlace,
+                                             lbsnPost, lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
+
+from .helper_functions import HelperFunctions, LBSNRecordDicts
+from .shared_structure_proto_lbsndb import ProtoLBSNMapping
 
 
 class LBSNcsv():

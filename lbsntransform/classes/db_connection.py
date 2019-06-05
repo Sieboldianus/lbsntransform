@@ -3,10 +3,11 @@
 
 """
 
+import datetime
 import getpass
 import logging
 import sys
-import datetime
+
 import psycopg2
 
 LOG = logging.getLogger()

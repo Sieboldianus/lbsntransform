@@ -4,19 +4,22 @@
 Module for loding data from different sources (CSV, DB, JSON etc.).
 """
 
-import sys
-import os
-import ntpath
-import csv
-import requests
 import codecs
+import csv
+import os
+import sys
 from contextlib import closing
-from pathlib import Path
 from glob import glob
-from json import loads as json_loads, decoder as json_decoder
+from json import decoder as json_decoder
+from json import loads as json_loads
+from pathlib import Path
+
+import ntpath
+import requests
+
 from .db_connection import DBConnection
-from .helper_functions import HelperFunctions as HF
 from .helper_functions import GeocodeLocations
+from .helper_functions import HelperFunctions as HF
 
 
 class LoadData():

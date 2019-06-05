@@ -6,38 +6,35 @@ Module for storing common Proto LBSN Structure to PG DB.
 
 # pylint: disable=no-member
 
-import sys
-from sys import exit
 import logging
-import traceback
 import os
+import sys
+import traceback
 from glob import glob
+from sys import exit
 import psycopg2
+
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
+                                             lbsnCity, lbsnCountry, lbsnPlace,
+                                             lbsnPost, lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
 from psycopg2 import sql
-from google.protobuf.timestamp_pb2 import Timestamp
-from .helper_functions import HelperFunctions
-from .helper_functions import LBSNRecordDicts
-from .store_csv import LBSNcsv
+
+from .helper_functions import HelperFunctions, LBSNRecordDicts
 from .shared_structure_proto_lbsndb import ProtoLBSNMapping
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship
+from .store_csv import LBSNcsv
+
+# for debugging only:
+from google.protobuf import text_format
+from google.protobuf.timestamp_pb2 import Timestamp
+
 # due to different protocol buffers implementations, import both possible types
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 try:
     from google.protobuf.pyext._message import RepeatedCompositeContainer
 except ImportError:
     pass
-# for debugging only:
-from google.protobuf import text_format
 
 
 class LBSNTransfer():

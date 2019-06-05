@@ -5,28 +5,23 @@ Collection of helper functions being used in lbsntransform package.
 """
 
 
-import re
 import csv
-import sys
-import logging
-import time
 import datetime as dt
+import logging
+import re
+import sys
+import time
 from datetime import timezone
+from json import JSONDecodeError, JSONDecoder
+
 import emoji
-from json import JSONDecoder, JSONDecodeError
-from shapely import wkt, geos
 from google.protobuf.timestamp_pb2 import Timestamp
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
+                                             lbsnCity, lbsnCountry, lbsnPlace,
+                                             lbsnPost, lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
+from shapely import geos, wkt
 
 # pylint: disable=no-member
 

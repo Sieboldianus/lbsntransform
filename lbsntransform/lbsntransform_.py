@@ -6,6 +6,9 @@ LBSNTransform: Convert Raw Social Media data
 
 from __future__ import absolute_import
 
+__author__ = "Alexander Dunkel"
+__license__ = "GNU GPLv3"
+
 import io
 import logging
 import sys
@@ -15,9 +18,6 @@ from .classes.helper_functions import LBSNRecordDicts
 from .classes.load_data import LoadData
 from .classes.submit_data import LBSNTransfer
 from .config.config import BaseConfig
-
-__author__ = "Alexander Dunkel"
-__license__ = "GNU GPLv3"
 
 
 class LBSNTransform():

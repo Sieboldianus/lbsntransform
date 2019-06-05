@@ -6,25 +6,21 @@ Module for mapping Flickr to common LBSN Structure.
 
 # pylint: disable=no-member
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
-from lbsnstructure.lbsnstructure_pb2 import lbsnOrigin, \
-    lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship, \
-    Language
 import logging
 from decimal import Decimal
+
 # for debugging only:
 from google.protobuf import text_format
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
+                                             RelationshipKey, lbsnCity,
+                                             lbsnCountry, lbsnOrigin,
+                                             lbsnPlace, lbsnPost,
+                                             lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
+
+from .helper_functions import HelperFunctions as HF
+from .helper_functions import LBSNRecordDicts
 
 
 class FieldMappingFlickr():

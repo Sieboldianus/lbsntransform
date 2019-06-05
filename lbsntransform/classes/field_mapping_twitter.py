@@ -6,29 +6,25 @@ Module for mapping Twitter to common LBSN Structure.
 
 # pylint: disable=no-member
 
-import sys
-import shapely.geometry as geometry
-from shapely.geometry.polygon import Polygon
 import logging
 import re
-from google.protobuf.timestamp_pb2 import Timestamp
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
-from lbsnstructure.lbsnstructure_pb2 import lbsnOrigin, \
-    lbsnPost, \
-    CompositeKey, \
-    RelationshipKey, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction, \
-    lbsnRelationship, \
-    Language
+import sys
+
+import shapely.geometry as geometry
 # for debugging only:
 from google.protobuf import text_format
+from google.protobuf.timestamp_pb2 import Timestamp
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
+                                             RelationshipKey, lbsnCity,
+                                             lbsnCountry, lbsnOrigin,
+                                             lbsnPlace, lbsnPost,
+                                             lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
+from shapely.geometry.polygon import Polygon
+
+from .helper_functions import HelperFunctions as HF
+from .helper_functions import LBSNRecordDicts
 
 
 class FieldMappingTwitter():

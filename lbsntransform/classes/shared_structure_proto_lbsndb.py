@@ -7,14 +7,12 @@ Shared structure and mapping between DB and Proto LBSN Structure.
 # pylint: disable=no-member
 
 import sys
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost, \
-    lbsnUser, \
-    lbsnCountry, \
-    lbsnPlace, \
-    lbsnCity, \
-    lbsnUserGroup, \
-    lbsnRelationship, \
-    lbsnPostReaction
+
+from lbsnstructure.lbsnstructure_pb2 import (lbsnCity, lbsnCountry, lbsnPlace,
+                                             lbsnPost, lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
+
 from .helper_functions import HelperFunctions as HF
 
 

@@ -20,12 +20,12 @@ import io
 import logging
 import sys
 
-from lbsntransform.lbsntransform_ import LBSNTransform
 from lbsntransform.classes.helper_functions import HelperFunctions as HF
 from lbsntransform.classes.helper_functions import TimeMonitor
 from lbsntransform.classes.load_data import LoadData
 from lbsntransform.classes.submit_data import LBSNTransfer
 from lbsntransform.config.config import BaseConfig
+from lbsntransform.lbsntransform_ import LBSNTransform
 
 
 def main():
