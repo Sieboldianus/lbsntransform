@@ -130,7 +130,7 @@ class FieldMappingYFCC100M():
         # therefore, return list of processed records
         lbsn_records = []
         # start mapping input to lbsn_records
-        post_guid = record[2]
+        post_guid = record[1]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
         post_record = HF.new_lbsn_record_with_id(lbsnPost(),
@@ -139,7 +139,7 @@ class FieldMappingYFCC100M():
         user_record = HF.new_lbsn_record_with_id(lbsnUser(),
                                                  record[3],
                                                  self.origin)
-        user_record.user_name = record[4]
+        user_record.user_name = unquote(record[4])
         user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
@@ -149,17 +149,16 @@ class FieldMappingYFCC100M():
             record[14])
         if geoaccuracy:
             post_record.post_geoaccuracy = geoaccuracy
-        # place record not completely provided in YFCCM directly
-        # only place_guid available
-        if record[1]:
+        # place record available in separate yfcc100m dataset
+        # if record[1]:
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
-                                                      record[1],
-                                                      self.origin)
-            lbsn_records.append(place_record)
-            post_record.place_pkey.CopyFrom(place_record.pkey)
+            # place_record = HF.new_lbsn_record_with_id(lbsnPlace(),
+            #                                           record[1],
+            #                                           self.origin)
+            # lbsn_records.append(place_record)
+            # post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
             HF.parse_timestamp_string_to_protobuf(record[6]))
         post_created_date = HF.parse_csv_datestring_to_protobuf(
@@ -192,7 +191,7 @@ class FieldMappingYFCC100M():
                 tag = FieldMappingYFCC100M.clean_tags_from_flickr(tag)
                 post_record.hashtags.append(tag)
         record_machine_tags = list(
-            set(filter(None, re.split("[,+]+", record[11]))))
+            set(filter(None, [unquote(mtag) for mtag in re.split("[,+]+", record[11])])))
         if 'video' in record_machine_tags:
             # all videos appear to have 'video' in machine tags
             post_record.post_type = lbsnPost.VIDEO
