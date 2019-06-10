@@ -265,6 +265,24 @@ class HelperFunctions():
         return record_attr
 
     @staticmethod
+    def null_geoaccuracy(record_attr):
+        """Checks for 'Unknown' Geoaccuracy and sets null"""
+        if record_attr and isinstance(record_attr, str) and \
+                record_attr == 'UNKNOWN':
+            return None
+        else:
+            return record_attr
+
+    @staticmethod
+    def null_type(record_attr):
+        """Checks for 'TEXT' Type and sets null"""
+        if record_attr and isinstance(record_attr, str) and \
+                record_attr == 'TEXT':
+            return None
+        else:
+            return record_attr
+
+    @staticmethod
     def null_geom_check(geom_attr):
         """Helper function to check for Null Values
         in geometry columns and replace with Null Island
@@ -332,6 +350,25 @@ class HelperFunctions():
     def clean_null_bytes_from_str(str):
         str_without_null_byte = str.replace('\x00', '')
         return str_without_null_byte
+
+    @staticmethod
+    def turn_lower(str):
+        """Returns lower but keeps none values"""
+        if str:
+            return (str.lower())
+        else:
+            return str
+
+    @staticmethod
+    def empty_list(list):
+        """Returns lower but keeps none values"""
+        if list:
+            if len(list) == 0:
+                return None
+            else:
+                return list
+        else:
+            return None
 
     @staticmethod
     def merge_existing_records(oldrecord, newrecord):
