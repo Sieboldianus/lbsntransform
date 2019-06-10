@@ -80,11 +80,17 @@ class FieldMappingYFCC100M():
         Attributes:
         record    A single row from CSV, stored as list type.
         """
-        if len(record) < 12 or not record[0].isdigit():
-            # skip
+        if len(record) == 2:
+            # Flickr place record dirty detection
+            lbsn_records = self.extract_flickr_place(
+                record)
+            return lbsn_records
+        elif len(record) < 12 or not record[0].isdigit():
+            # skip erroneous entries + log
             self.skipped_count += 1
             return
         else:
+            # process regular Flickr yfcc100m record
             lbsn_records = self.extract_flickr_post(record)
             return lbsn_records
 
@@ -202,6 +208,111 @@ class FieldMappingYFCC100M():
             record[17])
         lbsn_records.append(post_record)
         return lbsn_records
+
+    def extract_flickr_place(self, record):
+        """Main function for processing Flickr YFCC100M Place CSV entry
+        Place records are available from a separate yfcc100m dataset
+        and are joined based on photo guid
+        """
+        # note that one input record may contain many lbsn records
+        # therefore, return list of processed records
+        lbsn_records = []
+        # start mapping input to lbsn_records
+        post_guid = record[0]
+        if record[1]:
+            # place records in yfcc100m contain multiple entries, e.g.
+            # 24703176:Admiralty:Suburb,24703128:Central+and+Western:Territory,24865698:Hong+Kong:Special Administrative Region,28350827:Asia%2FHong_Kong:Timezone
+            place_records = record[1].split(",")
+            for place_record in place_records:
+                lbsn_place_record = \
+                    FieldMappingYFCC100M.process_place_record(
+                        place_record, self.origin)
+                lbsn_records.append(lbsn_place_record)
+        # update post record with entries from place record
+        post_record = HF.new_lbsn_record_with_id(
+            lbsnPost(), post_guid, self.origin)
+        for place_record in lbsn_records:
+            if isinstance(place_record, lbsnCountry):
+                post_record.country_pkey.CopyFrom(place_record.pkey)
+            if isinstance(place_record, lbsnCity):
+                post_record.city_pkey.CopyFrom(place_record.pkey)
+            # either city or place, Twitter user cannot attach both (?)
+            elif isinstance(place_record, lbsnPlace):
+                post_record.place_pkey.CopyFrom(place_record.pkey)
+        lbsn_records.append(post_record)
+        return lbsn_records
+
+    @staticmethod
+    def process_place_record(place_record, origin):
+        """Assignment of Flickr place types to lbsnstructure
+        hierarchy: Country, City, Place
+        Original Flickr place types, which are more detailed,
+        are stored in sub_type field
+        """
+        FLICKR_COUNTRY_MATCH = set([
+            "country", "timezone", "state", "territory",
+            "state/territory", "land", "arrondissement", "prefecture",
+            "island", "disputed territory", "overseas collectivity",
+            "overseas region", "island group"
+        ])
+        FLICKR_CITY_MATCH = set([
+            "city", "town", "region", "special administrative region",
+            "county", "district", "zip", "province", "suburb",
+            "district/county", "autonomous community", "municipality",
+            "department", "district/town/township", "township",
+            "historical town", "governorate", "commune", "canton",
+            "muhafazah", "local government area", "division", "periphery",
+            "zone", "sub-region", "district/town/county", "sub-district",
+            "parish", "federal district", "neighborhood", "chome", "ward",
+            "sub-division", "community", "autonomous region",
+            "municipal region", "emirate", "autonomous province",
+            "historical county", "constituency", "entity", "colloquial",
+            "circle", "quarter", "dependency", "sub-prefecture"
+        ])
+        FLICKR_PLACE_MATCH = set([
+            "poi", "land feature", "estate", "airport", "drainage",
+            "miscellaneous"
+        ])
+        place_record_split = place_record.split(":")
+        if not len(place_record_split) == 3:
+            raise ValueError(
+                f'Malformed place entry:\n'
+                f'place_record: {place_record}')
+        place_guid = unquote(place_record_split[0])
+        place_name = unquote(place_record_split[1])
+        place_type = unquote(place_record_split[2])
+        place_type_lw = place_type.lower()
+        place_type_lw_split = place_type_lw.split("/")
+        # assignment
+        if any(ptls in FLICKR_COUNTRY_MATCH for ptls in place_type_lw_split):
+            lbsn_place_record = HF.new_lbsn_record_with_id(
+                lbsnCountry(), place_guid, origin)
+        elif any(ptls in FLICKR_CITY_MATCH for ptls in place_type_lw_split):
+            lbsn_place_record = HF.new_lbsn_record_with_id(
+                lbsnCity(), place_guid, origin)
+        elif any(ptls in FLICKR_PLACE_MATCH for ptls in place_type_lw_split):
+            lbsn_place_record = HF.new_lbsn_record_with_id(
+                lbsnPlace(), place_guid, origin)
+        else:
+            input(f'Could not assign place type {place_type_lw}\n'
+                  f'place_record: {place_record}\n'
+                  f'place_type_lw_split: {place_type_lw_split}')
+            lbsn_place_record = HF.new_lbsn_record_with_id(
+                lbsnPlace(), place_guid, origin)
+            # raise ValueError(
+            #     f'Could not assign place type {place_type_lw}\n'
+            #     f'place_record: {place_record}')
+        lbsn_place_record.name = place_name
+        if isinstance(lbsn_place_record, lbsnCity):
+            # record sub types only for city and place
+            lbsn_place_record.sub_type = place_type
+        elif isinstance(lbsn_place_record, lbsnPlace):
+            lbsn_place_record.place_description = place_type
+        # place_record.url (not provided)
+        # need to consult post data for lat/lng coordinates
+        # set to null island first
+        lbsn_place_record.geom_center = "POINT(%s %s)" % (0, 0)
+        return lbsn_place_record
 
     @staticmethod
     def clean_tags_from_flickr(tag):
