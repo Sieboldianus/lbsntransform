@@ -40,7 +40,7 @@ def main():
 
     # initialize lbsntransform
     lbsntransform = LBSNTransform(
-        origin=config.origin,
+        origin_id=config.origin,
         logging_level=config.logging_level,
         is_local_input=config.is_local_input,
         csv_output=config.csv_output,

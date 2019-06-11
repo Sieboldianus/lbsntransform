@@ -47,7 +47,7 @@ class LBSNTransform():
     """
 
     def __init__(
-            self, origin=3, logging_level=None,
+            self, origin_id=3, logging_level=None,
             is_local_input: bool = False, transfer_count: int = 50000,
             transferlimit: int = None,
             csv_output: bool = True, csv_suppress_linebreaks: bool = True,
@@ -73,7 +73,12 @@ class LBSNTransform():
         if transferlimit:
             self.transferlimit = transferlimit
         self.importer = HF.load_importer_mapping_module(
-            origin)
+            origin_id)
+        # get origin name and id from importer
+        # e.g. yfcc100m dataset has origin id 21,
+        # but is specified as general Flickr origin (2) in importer
+        self.origin_id = self.importer.ORIGIN_ID
+        self.origin_name = self.importer.ORIGIN_NAME
         # establish output connection
         self.dbuser_output = dbuser_output
         conn_output, cursor_output = LoadData.initialize_connection(
@@ -126,6 +131,7 @@ class LBSNTransform():
         # store results
         if (self.initial_loop or
                 self.processed_records >= self.transfer_count):
+            self.output.store_origin(self.origin_id, self.origin_name)
             self.store_lbsn_records()
         if self.initial_loop:
             self.initial_loop = False

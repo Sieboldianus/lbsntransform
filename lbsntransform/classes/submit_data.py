@@ -92,6 +92,17 @@ class LBSNTransfer():
                 self.batched_records)
             self.count_entries_store = 0
 
+    def store_origin(self, origin_id, name):
+        insert_sql = \
+            f'''
+            INSERT INTO data."origin" (
+                origin_id, name)
+            VALUES ({origin_id},'{name}')
+            ON CONFLICT (origin_id)
+            DO NOTHING
+            '''
+        self.db_cursor.execute(insert_sql)
+
     def store_lbsn_record_dicts(self, lbsn_record_dicts):
         """Main loop for storing lbsn records to CSV or DB
 

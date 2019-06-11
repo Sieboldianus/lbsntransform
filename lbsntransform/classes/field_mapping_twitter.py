@@ -31,6 +31,8 @@ class FieldMappingTwitter():
     """ Provides mapping function from Twitter endpoints to
         protobuf lbsnstructure
     """
+    ORIGIN_NAME = "Twitter"
+    ORIGIN_ID = 3
 
     def __init__(self,
                  disableReactionPostReferencing=False,

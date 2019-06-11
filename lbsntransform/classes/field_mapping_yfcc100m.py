@@ -32,6 +32,8 @@ class FieldMappingYFCC100M():
     """ Provides mapping function from Flickr endpoints to
         protobuf lbsnstructure
     """
+    ORIGIN_NAME = "Flickr yfcc100m"
+    ORIGIN_ID = 2
 
     def __init__(self,
                  disable_reaction_post_referencing=False,
@@ -145,7 +147,8 @@ class FieldMappingYFCC100M():
         user_record = HF.new_lbsn_record_with_id(lbsnUser(),
                                                  record[3],
                                                  self.origin)
-        user_record.user_name = unquote(record[4])
+        user_record.user_name = unquote(record[4]).replace(
+            '+', ' ')
         user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
@@ -279,7 +282,8 @@ class FieldMappingYFCC100M():
                 f'Malformed place entry:\n'
                 f'place_record: {place_record}')
         place_guid = unquote(place_record_split[0])
-        place_name = unquote(place_record_split[1])
+        place_name = unquote(place_record_split[1]).replace(
+            '+', ' ')
         place_type = unquote(place_record_split[2])
         place_type_lw = place_type.lower()
         place_type_lw_split = place_type_lw.split("/")
@@ -294,14 +298,12 @@ class FieldMappingYFCC100M():
             lbsn_place_record = HF.new_lbsn_record_with_id(
                 lbsnPlace(), place_guid, origin)
         else:
-            input(f'Could not assign place type {place_type_lw}\n'
-                  f'place_record: {place_record}\n'
-                  f'place_type_lw_split: {place_type_lw_split}')
+            logging.getLogger('__main__').WARNING(
+                f'Could not assign place type {place_type_lw}\n'
+                f'found in place_record: {place_record}\n'
+                f'Will assign default "Place"')
             lbsn_place_record = HF.new_lbsn_record_with_id(
                 lbsnPlace(), place_guid, origin)
-            # raise ValueError(
-            #     f'Could not assign place type {place_type_lw}\n'
-            #     f'place_record: {place_record}')
         lbsn_place_record.name = place_name
         if isinstance(lbsn_place_record, lbsnCity):
             # record sub types only for city and place

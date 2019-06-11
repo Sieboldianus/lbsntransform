@@ -27,6 +27,8 @@ class FieldMappingFlickr():
     """ Provides mapping function from Flickr endpoints to
         protobuf lbsnstructure
     """
+    ORIGIN_NAME = "Flickr"
+    ORIGIN_ID = 2
 
     def __init__(self,
                  disable_reaction_post_referencing=False,
