@@ -212,8 +212,10 @@ class LBSNTransfer():
             VALUES {values_str}
             ON CONFLICT (origin_id, reaction_guid)
             DO UPDATE SET
-                reaction_latlng = COALESCE(EXCLUDED.reaction_latlng,
-                    data."post_reaction".reaction_latlng),
+                reaction_latlng = COALESCE(
+                    NULLIF(EXCLUDED.reaction_latlng,'0101000020E610000000000000000000000000000000000000'),
+                    data."post_reaction".reaction_latlng,
+                    '0101000020E610000000000000000000000000000000000000'),
                 user_guid = COALESCE(EXCLUDED.user_guid,
                     data."post_reaction".user_guid),
                 referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid,
@@ -221,8 +223,8 @@ class LBSNTransfer():
                 referencedPostreaction_guid = COALESCE(
                     EXCLUDED.referencedPostreaction_guid,
                     data."post_reaction".referencedPostreaction_guid),
-                reaction_type = COALESCE(EXCLUDED.reaction_type,
-                    data."post_reaction".reaction_type),
+                reaction_type = COALESCE(NULLIF(EXCLUDED.reaction_type, 'unknown'),
+                    data."post_reaction".reaction_type, 'unknown'),
                 reaction_date = COALESCE(EXCLUDED.reaction_date,
                     data."post_reaction".reaction_date),
                 reaction_content = COALESCE(EXCLUDED.reaction_content,
@@ -236,6 +238,20 @@ class LBSNTransfer():
         return insert_sql
 
     def post_insertsql(self, values_str, record_type):
+        """Insert SQL for post values
+
+        Note COALESCE:
+        - coalesce will return the first value that is not Null
+        - NULLIF(value1, value2) returns null if value1 and value2 match,
+            otherwise returns value1
+        - combining these allows to prevent overwriting of existing
+            with default values
+        - if existing values are also Null, a 3rd value can be added to
+            specify the final default value (e.g. the one define in
+            pgtable default)
+        - "default" values in postgres table are only used on insert,
+            never on update (upsert)
+        """
         insert_sql = \
             f'''
             INSERT INTO data."post" (
@@ -243,15 +259,16 @@ class LBSNTransfer():
             VALUES {values_str}
             ON CONFLICT (origin_id, post_guid)
             DO UPDATE SET
-                post_latlng = COALESCE(EXCLUDED.post_latlng,
-                    data."post".post_latlng),
+                post_latlng = COALESCE(
+                    NULLIF(EXCLUDED.post_latlng,'0101000020E610000000000000000000000000000000000000'),
+                    data."post".post_latlng, '0101000020E610000000000000000000000000000000000000'),
                 place_guid = COALESCE(EXCLUDED.place_guid,
                     data."post".place_guid),
                 city_guid = COALESCE(EXCLUDED.city_guid,
                     data."post".city_guid),
                 country_guid = COALESCE(EXCLUDED.country_guid,
                     data."post".country_guid),
-                post_geoaccuracy = COALESCE(EXCLUDED.post_geoaccuracy,
+                post_geoaccuracy = COALESCE(NULLIF(EXCLUDED.post_geoaccuracy,'unknown'),
                     data."post".post_geoaccuracy, 'unknown'),
                 user_guid = COALESCE(EXCLUDED.user_guid,
                     data."post".user_guid),
@@ -282,7 +299,7 @@ class LBSNTransfer():
                     data."post".post_thumbnail_url),
                 post_url = COALESCE(EXCLUDED.post_url,
                     data."post".post_url),
-                post_type = COALESCE(EXCLUDED.post_type,
+                post_type = COALESCE(NULLIF(EXCLUDED.post_type, 'text'),
                     data."post".post_type, 'text'),
                 post_filter = COALESCE(EXCLUDED.post_filter,
                     data."post".post_filter),

@@ -222,15 +222,17 @@ class FieldMappingYFCC100M():
         lbsn_records = []
         # start mapping input to lbsn_records
         post_guid = record[0]
-        if record[1]:
-            # place records in yfcc100m contain multiple entries, e.g.
-            # 24703176:Admiralty:Suburb,24703128:Central+and+Western:Territory,24865698:Hong+Kong:Special Administrative Region,28350827:Asia%2FHong_Kong:Timezone
-            place_records = record[1].split(",")
-            for place_record in place_records:
-                lbsn_place_record = \
-                    FieldMappingYFCC100M.process_place_record(
-                        place_record, self.origin)
-                lbsn_records.append(lbsn_place_record)
+        if not record[1]:
+            # skip empty records
+            return None
+        # place records in yfcc100m contain multiple entries, e.g.
+        # 24703176:Admiralty:Suburb,24703128:Central+and+Western:Territory,24865698:Hong+Kong:Special Administrative Region,28350827:Asia%2FHong_Kong:Timezone
+        place_records = record[1].split(",")
+        for place_record in place_records:
+            lbsn_place_record = \
+                FieldMappingYFCC100M.process_place_record(
+                    place_record, self.origin)
+            lbsn_records.append(lbsn_place_record)
         # update post record with entries from place record
         post_record = HF.new_lbsn_record_with_id(
             lbsnPost(), post_guid, self.origin)

@@ -326,12 +326,12 @@ class PostAttrShared():
 
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
-        self.post_latlng = HF.null_check(record.post_latlng)
+        self.post_latlng = HF.null_geom_check(record.post_latlng)
         self.place_guid = HF.null_check(record.place_pkey.id)
         self.city_guid = HF.null_check(record.city_pkey.id)
         self.country_guid = HF.null_check(record.country_pkey.id)
-        self.post_geoaccuracy = HF.turn_lower(HF.null_geoaccuracy(HF.null_check(
-            lbsnPost().PostGeoaccuracy.Name(record.post_geoaccuracy))))
+        self.post_geoaccuracy = HF.turn_lower(HF.null_check(
+            lbsnPost().PostGeoaccuracy.Name(record.post_geoaccuracy)))
         self.user_guid = HF.null_check(record.user_pkey.id)
         self.post_create_date = HF.null_check_datetime(record.post_create_date)
         self.post_publish_date = HF.null_check_datetime(
@@ -348,8 +348,8 @@ class PostAttrShared():
         self.post_title = HF.null_check(record.post_title)
         self.post_thumbnail_url = HF.null_check(record.post_thumbnail_url)
         self.post_url = HF.null_check(record.post_url)
-        self.post_type = HF.turn_lower(HF.null_type(HF.null_check(
-            lbsnPost().PostType.Name(record.post_type))))
+        self.post_type = HF.turn_lower(HF.null_check(
+            lbsnPost().PostType.Name(record.post_type)))
         self.post_filter = HF.null_check(record.post_filter)
         self.post_quote_count = HF.null_check(record.post_quote_count)
         self.post_share_count = HF.null_check(record.post_share_count)
@@ -371,13 +371,13 @@ class PostreactionAttrShared():
             record = lbsnPostReaction()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
-        self.reaction_latlng = HF.null_check(record.reaction_latlng)
+        self.reaction_latlng = HF.null_geom_check(record.reaction_latlng)
         self.user_guid = HF.null_check(record.user_pkey.id)
         self.referenced_post = HF.null_check(record.referencedPost_pkey.id)
         self.referenced_postreaction = HF.null_check(
             record.referencedPostreaction_pkey.id)
-        self.reaction_type = HF.null_check(
-            lbsnPostReaction().ReactionType.Name(record.reaction_type)).lower()
+        self.reaction_type = HF.turn_lower(HF.null_check(
+            lbsnPostReaction().ReactionType.Name(record.reaction_type)))
         self.reaction_date = HF.null_check_datetime(record.reaction_date)
         self.reaction_content = HF.null_check(record.reaction_content)
         self.reaction_like_count = HF.null_check(record.reaction_like_count)

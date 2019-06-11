@@ -265,24 +265,6 @@ class HelperFunctions():
         return record_attr
 
     @staticmethod
-    def null_geoaccuracy(record_attr):
-        """Checks for 'Unknown' Geoaccuracy and sets null"""
-        if record_attr and isinstance(record_attr, str) and \
-                record_attr == 'UNKNOWN':
-            return None
-        else:
-            return record_attr
-
-    @staticmethod
-    def null_type(record_attr):
-        """Checks for 'TEXT' Type and sets null"""
-        if record_attr and isinstance(record_attr, str) and \
-                record_attr == 'TEXT':
-            return None
-        else:
-            return record_attr
-
-    @staticmethod
     def null_geom_check(geom_attr):
         """Helper function to check for Null Values
         in geometry columns and replace with Null Island
@@ -510,7 +492,9 @@ class LBSNRecordDicts():
         return old_record
 
     def add_records_to_dict(self, records):
-        if isinstance(records, (list,)):
+        if not records:
+            return
+        elif isinstance(records, (list,)):
             for record in records:
                 self.add_record_to_dict(record)
         else:
