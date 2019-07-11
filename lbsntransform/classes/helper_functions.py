@@ -183,6 +183,15 @@ class HelperFunctions():
         return protobuf_timestamp_record
 
     @staticmethod
+    def json_date_timestamp_to_proto(json_date_timestamp):
+        # Parse String -Timestamp Format found in Twitter json
+        date_time_record = dt.datetime.fromtimestamp(json_date_timestamp)
+        protobuf_timestamp_record = Timestamp()
+        # Convert to ProtoBuf Timestamp Recommendation
+        protobuf_timestamp_record.FromDatetime(date_time_record)
+        return protobuf_timestamp_record
+
+    @staticmethod
     def parse_csv_datestring_to_protobuf(csv_datestring, t_format=None):
         """Parse String -Timestamp Format found in Flickr csv
 
