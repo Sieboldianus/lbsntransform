@@ -129,12 +129,12 @@ class LBSNTransform():
         # On the first loop
         # or after 50.000 (default) processed records,
         # store results
-        if (self.initial_loop or
-                self.processed_records >= self.transfer_count):
+        if self.initial_loop:
             self.output.store_origin(self.origin_id, self.origin_name)
             self.store_lbsn_records()
-        if self.initial_loop:
             self.initial_loop = False
+        if self.processed_records >= self.transfer_count:
+            self.store_lbsn_records()
 
     def store_lbsn_records(self):
         """Stores processed LBSN Records to chosen outpur format
@@ -154,6 +154,7 @@ class LBSNTransform():
     def finalize_output(self):
         """finalize all transactions (csv merge etc.)
         """
+        self.store_lbsn_records()
         self.output.finalize()
         # Close connections to DBs
         if not self.is_local_input:
