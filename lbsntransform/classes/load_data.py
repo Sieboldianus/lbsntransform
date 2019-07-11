@@ -6,12 +6,11 @@ Module for loding data from different sources (CSV, DB, JSON etc.).
 
 import codecs
 import csv
+import json
 import os
 import sys
 from contextlib import closing
 from glob import glob
-from json import decoder as json_decoder
-from json import loads as json_loads
 from pathlib import Path
 
 import ntpath
@@ -124,10 +123,16 @@ class LoadData():
 
         Output: produces a list of post that can be parsed
         """
-        if self.is_local_input and not self.source_web:
+        if self.is_local_input and not self.source_web and not \
+                self.file_format == 'json':
             while file_handle:
                 record = self.fetch_record_from_file(
                     file_handle)
+                yield record
+        elif self.is_local_input and self.file_format == 'json':
+            records = self.fetch_json_data_from_file(
+                file_handle)
+            for record in records:
                 yield record
         elif self.is_local_input and self.source_web:
             url = self.filelist[0]
@@ -162,7 +167,7 @@ class LoadData():
                 return None
             if self.local_file_type == 'json' or not self.is_local_input:
                 # note: db-records always returned as json
-                self.import_mapper.parse_json_record(
+                lbsn_records = self.import_mapper.parse_json_record(
                     single_record, self.input_lbsn_type)
             elif self.local_file_type in ('txt', 'csv'):
                 lbsn_records = self.import_mapper.parse_csv_record(
@@ -219,10 +224,7 @@ class LoadData():
     def fetch_record_from_file(self, file_handle):
         """Fetches CSV or JSON data (including stacked json) from file"""
 
-        if self.file_format == 'json':
-            record_reader = self.fetch_json_data_from_file(
-                file_handle)
-        elif self.file_format in ['txt', 'csv']:
+        if self.file_format in ['txt', 'csv']:
             record_reader = self.fetch_csv_data_from_file(
                 file_handle)
         else:
@@ -244,11 +246,11 @@ class LoadData():
             try:
                 for obj in HF.decode_stacked(file_handle.read()):
                     records.append(obj)
-            except json_decoder.JSONDecodeError:
+            except json.decoder.JSONDecodeError:
                 pass
         else:
             # normal json nesting, e.g.  {{record1},{record2}}
-            records = json_loads(file_handle.read())
+            records = json.load(file_handle)
         if records:
             return records
         return None
