@@ -525,10 +525,10 @@ class LBSNRecordDicts():
         return dict_switcher.get(record.DESCRIPTOR.name)
 
     def add_record_to_dict(self, newrecord):
-        dict = self.dict_selector(newrecord)
+        sel_dict = self.dict_selector(newrecord)
         pkeyID = newrecord.pkey.id
-        if newrecord.pkey.id in dict:
-            oldrecord = dict[pkeyID]
+        if newrecord.pkey.id in sel_dict:
+            oldrecord = sel_dict[pkeyID]
             # oldrecord will be modified/updated
             HelperFunctions.merge_existing_records(oldrecord, newrecord)
         else:
@@ -536,7 +536,7 @@ class LBSNRecordDicts():
             self.count_progress_report()
             # update keyHash only necessary for new record
             self.update_key_hash(newrecord)
-            dict[pkeyID] = newrecord
+            sel_dict[pkeyID] = newrecord
 
     def count_progress_report(self):
         self.count_glob += 1
