@@ -95,9 +95,9 @@ def main():
 
     # read and process unfiltered input records from csv
     # start settings
-    with input_data as records_list:
-        for lbsn_record in records_list:
-            lbsntransform.add_processed_records(lbsn_record)
+    with input_data as records:
+        for record in records:
+            lbsntransform.add_processed_records(record)
             # report progress
             if lbsntransform.processed_total % 1000 == 0:
                 print(
