@@ -132,7 +132,7 @@ class LoadData():
         # process localfiles
         for file_name in self.filelist:
             self.continue_number += 1
-            HF.log_main_debug(f'\nCurrent file: {ntpath.basename(file_name)}')
+            # HF.log_main_debug(f'\nCurrent file: {ntpath.basename(file_name)}')
             yield open(file_name, 'r', encoding="utf-8", errors='replace')
 
     def _process_input(self, file_handles: Iterator[TextIO]) -> Iterator[Dict[
