@@ -145,8 +145,6 @@ class LBSNTransform():
         # update statistics
         self.processed_total += self.processed_records
         self.processed_records = 0
-        self.continue_number = 0
-        self.start_number = 0
 
         if self.transferlimit:
             self.max_records = self.transferlimit - self.processed_total
