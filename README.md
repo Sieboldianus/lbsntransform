@@ -132,8 +132,8 @@ Additional settings:
   -CSVal, --CSVallowLinebreaks
                         If set to False will not remove intext-linebreaks ( or
                         ) in output CSVs
-  -CSVdelim CSVDELIMITOR, --CSVdelimitor CSVDELIMITOR
-                        'Provide CSV delimitor to use. Default is comma(,).
+  -CSVdelim CSVDELIMITER, --CSVdelimitor CSVDELIMITER
+                        'Provide CSV delimiter to use. Default is comma(,).
                         Note: to pass tab, use variable substitution ($"\t")'
   -rL, --recursiveLoad  Process Input Directories recursively (depth: 2)
   -sF SKIPUNTILFILE, --skipUntilFile SKIPUNTILFILE
