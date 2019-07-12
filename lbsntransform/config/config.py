@@ -202,10 +202,10 @@ class BaseConfig():
                                    help='If set to False will not '
                                    'remove intext-linebreaks (\r or \n) '
                                    'in output CSVs')
-        settings_args.add_argument('-CSVdelim', "--CSVdelimitor",
+        settings_args.add_argument('-CSVdelim', "--CSVdelimiter",
                                    default=None,
                                    help=repr(
-                                       'Provide CSV delimitor to use. '
+                                       'Provide CSV delimiter to use. '
                                        'Default is comma(,). Note: to pass tab, '
                                        'use variable substitution ($"\t")'))
         settings_args.add_argument('-rL', "--recursiveLoad",
@@ -291,8 +291,8 @@ class BaseConfig():
             self.csv_output = True
         if args.CSVallowLinebreaks:
             self.csv_suppress_linebreaks = False
-        if args.CSVdelimitor:
-            self.csv_delim = args.CSVdelimitor
+        if args.CSVdelimiter:
+            self.csv_delim = args.CSVdelimiter
         if args.recursiveLoad:
             self.recursive_load = True
         if args.skipUntilFile:
