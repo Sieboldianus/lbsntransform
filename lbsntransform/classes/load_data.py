@@ -12,9 +12,17 @@ import sys
 from contextlib import closing
 from glob import glob
 from pathlib import Path
+from typing import Dict, TextIO, List, Union, Any, Generator, Iterator
 
 import ntpath
 import requests
+from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
+                                             RelationshipKey, lbsnCity,
+                                             lbsnCountry, lbsnOrigin,
+                                             lbsnPlace, lbsnPost,
+                                             lbsnPostReaction,
+                                             lbsnRelationship, lbsnUser,
+                                             lbsnUserGroup)
 
 from .db_connection import DBConnection
 from .helper_functions import GeocodeLocations
@@ -38,12 +46,16 @@ class LoadData():
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None):
         self.is_local_input = is_local_input
         self.start_number = None
+
         if not self.is_local_input:
             # Start Value, Modify to continue from last processing
             self.continue_number = startwith_db_rownumber
             self.start_number = startwith_db_rownumber
         else:
-            self.continue_number = skip_until_file
+            if skip_until_file is None:
+                self.continue_number = 0
+            else:
+                self.continue_number = skip_until_file
             self.start_number = 1
         self.source_web = source_web
         self.cursor_input = None
@@ -92,7 +104,11 @@ class LoadData():
             min_geoaccuracy)
         self.finished = False
 
-    def __enter__(self):
+    def __enter__(self) -> Iterator[Union[
+            CompositeKey, Language, RelationshipKey, lbsnCity,
+            lbsnCountry, lbsnOrigin, lbsnPlace, lbsnPost,
+            lbsnPostReaction, lbsnRelationship, lbsnUser,
+            lbsnUserGroup]]:
         """Main pipeline for reading input data
 
         Combine multiple generators to single pipeline,
@@ -115,48 +131,56 @@ class LoadData():
             return None
         # process localfiles
         for file_name in self.filelist:
+            self.continue_number += 1
             HF.log_main_debug(f'\nCurrent file: {ntpath.basename(file_name)}')
-            return open(file_name, 'r', encoding="utf-8", errors='replace')
+            yield open(file_name, 'r', encoding="utf-8", errors='replace')
 
-    def _process_input(self, file_handle):
+    def _process_input(self, file_handles: Iterator[TextIO]) -> Iterator[Dict[
+            str, Any]]:
         """File parse for CSV or JSON from open file handle
 
         Output: produces a list of post that can be parsed
         """
-        if self.is_local_input and not self.source_web and not \
-                self.file_format == 'json':
-            while file_handle:
-                record = self.fetch_record_from_file(
-                    file_handle)
-                yield record
-        elif self.is_local_input and self.file_format == 'json':
-            records = self.fetch_json_data_from_file(
-                file_handle)
-            for record in records:
-                yield record
-        elif self.is_local_input and self.source_web:
-            url = self.filelist[0]
-            with closing(requests.get(url, stream=True)) as file_handle:
-                record_reader = csv.reader(
-                    codecs.iterdecode(
-                        file_handle.iter_lines(), 'utf-8'),
-                    delimiter=self.csv_delim,
-                    quotechar='"', quoting=csv.QUOTE_NONE)
-                for record in record_reader:
+        for file_handle in file_handles:
+            if self.is_local_input and not self.source_web and not \
+                    self.file_format == 'json':
+                while file_handle:
+                    record = self.fetch_record_from_file(
+                        file_handle)
                     yield record
-        else:
-            while self.cursor:
-                record = self.fetch_json_data_from_lbsn(
-                    self.cursor, self.continue_number)
-                yield record
+            elif self.is_local_input and self.file_format == 'json':
+                records = self.fetch_json_data_from_file(
+                    file_handle)
+                if records is not None:
+                    for record in records:
+                        yield record
+            elif self.is_local_input and self.source_web:
+                url = self.filelist[0]
+                with closing(requests.get(url, stream=True)) as file_handle:
+                    record_reader = csv.reader(
+                        codecs.iterdecode(
+                            file_handle.iter_lines(), 'utf-8'),
+                        delimiter=self.csv_delim,
+                        quotechar='"', quoting=csv.QUOTE_NONE)
+                    for record in record_reader:
+                        yield record
+            else:
+                while self.cursor:
+                    record = self.fetch_json_data_from_lbsn(
+                        self.cursor, self.continue_number)
+                    yield record
 
-    def convert_records(self, record_pipe):
+    def convert_records(self, records: Dict[str, Any]) -> Iterator[Union[
+            CompositeKey, Language, RelationshipKey, lbsnCity,
+            lbsnCountry, lbsnOrigin, lbsnPlace, lbsnPost,
+            lbsnPostReaction, lbsnRelationship, lbsnUser,
+            lbsnUserGroup]]:
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
-        for record in record_pipe:
+        for record in records:
             if self.is_local_input:
                 single_record = record
             else:
@@ -164,7 +188,7 @@ class LoadData():
                 single_record = record[2]
             # test for empty or malformed records
             if LoadData.skip_empty_or_other(single_record):
-                return None
+                yield None
             if self.local_file_type == 'json' or not self.is_local_input:
                 # note: db-records always returned as json
                 lbsn_records = self.import_mapper.parse_json_record(
@@ -250,7 +274,10 @@ class LoadData():
                 pass
         else:
             # normal json nesting, e.g.  {{record1},{record2}}
-            records = json.load(file_handle)
+            try:
+                records = json.load(file_handle)
+            except json.decoder.JSONDecodeError:
+                pass
         if records:
             return records
         return None
