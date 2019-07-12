@@ -43,15 +43,16 @@ A full list of possible input args is available with `lbsntransform --help` [con
 ```
 usage: lbsntransform [-h] [-sO ORIGIN] [-lI] [-lT LOCALFILETYPE]
                      [-iP INPUTPATH] [-iS] [-pO DBPASSWORD_OUTPUT]
-                     [-uO DBUSER_OUTPUT] [-aO DBSERVERADRESSOUTPUT]
+                     [-uO DBUSER_OUTPUT] [-aO DBSERVERADDRESSOUTPUT]
                      [-nO DBNAMEOUTPUT] [-pI DBPASSWORD_INPUT]
-                     [-uI DBUSER_INPUT] [-aI DBSERVERADRESSINPUT]
+                     [-uI DBUSER_INPUT] [-aI DBSERVERADDRESSINPUT]
                      [-nI DBNAMEINPUT] [-t TRANSFERLIMIT] [-tC TRANSFERCOUNT]
                      [-nR NUMBEROFRECORDSTOFETCH] [-tR] [-rR] [-iG]
                      [-rS STARTWITHDBROWNUMBER] [-rE ENDWITHDBROWNUMBER]
                      [-d DEBUGMODE] [-gL GEOCODELOCATIONS]
                      [-igS IGNOREINPUTSOURCELIST] [-iT INPUTTYPE] [-mR] [-CSV]
-                     [-CSVal] [-rL] [-sF SKIPUNTILFILE] [-mGA MINGEOACCURACY]
+                     [-CSVal] [-CSVdelim CSVDELIMITOR] [-rL]
+                     [-sF SKIPUNTILFILE] [-mGA MINGEOACCURACY]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -65,7 +66,8 @@ Local Input:
                         If localread, specify filetype (json, csv etc.)
   -iP INPUTPATH, --InputPath INPUTPATH
                         Optionally provide path to input folder, otherwise
-                        ./Input/ will be used
+                        ./Input/ will be used. You can also provide a web-url
+                        starting with http
   -iS, --isStackedJson  Typical form is [{json1},{json2}], if is_stacked_json
                         is True: will process stacked jsons in the form of
                         {json1}{json2} (no comma)
@@ -74,8 +76,9 @@ DB Output:
   -pO DBPASSWORD_OUTPUT, --dbPassword_Output DBPASSWORD_OUTPUT
   -uO DBUSER_OUTPUT, --dbUser_Output DBUSER_OUTPUT
                         Default: example-user-name2
-  -aO DBSERVERADRESSOUTPUT, --dbServeradressOutput DBSERVERADRESSOUTPUT
-                        e.g. 111.11.11.11
+  -aO DBSERVERADDRESSOUTPUT, --dbServeraddressOutput DBSERVERADDRESSOUTPUT
+                        e.g. 111.11.11.11 . Optionally add port to use, e.g.
+                        111.11.11.11:5432. 5432 is the default port
   -nO DBNAMEOUTPUT, --dbNameOutput DBNAMEOUTPUT
                         e.g.: test_db
 
@@ -83,8 +86,9 @@ DB Input:
   -pI DBPASSWORD_INPUT, --dbPassword_Input DBPASSWORD_INPUT
   -uI DBUSER_INPUT, --dbUser_Input DBUSER_INPUT
                         Default: example-user-name
-  -aI DBSERVERADRESSINPUT, --dbServeradressInput DBSERVERADRESSINPUT
-                        e.g. 111.11.11.11
+  -aI DBSERVERADDRESSINPUT, --dbServeraddressInput DBSERVERADDRESSINPUT
+                        e.g. 111.11.11.11. Optionally add port to use, e.g.
+                        111.11.11.11:5432. 5432 is the default port
   -nI DBNAMEINPUT, --dbNameInput DBNAMEINPUT
                         e.g.: test_db
 
@@ -128,6 +132,9 @@ Additional settings:
   -CSVal, --CSVallowLinebreaks
                         If set to False will not remove intext-linebreaks ( or
                         ) in output CSVs
+  -CSVdelim CSVDELIMITOR, --CSVdelimitor CSVDELIMITOR
+                        'Provide CSV delimitor to use. Default is comma(,).
+                        Note: to pass tab, use variable substitution ($"\t")'
   -rL, --recursiveLoad  Process Input Directories recursively (depth: 2)
   -sF SKIPUNTILFILE, --skipUntilFile SKIPUNTILFILE
                         If local input, skip all files until file with name x
