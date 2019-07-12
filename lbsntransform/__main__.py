@@ -119,8 +119,8 @@ def main():
 
     # final report
     print(f'\n\nProcessed {lbsntransform.processed_total} input records '
-          f'(Input {lbsntransform.start_number} to '
-          f'{lbsntransform.continue_number}). '
+          f'(Input {input_data.start_number} to '
+          f'{input_data.continue_number}). '
           f'Skipped {input_data.import_mapper.skipped_low_geoaccuracy} '
           f'due to low geoaccuracy.')
 
