@@ -141,34 +141,37 @@ class LoadData():
 
         Output: produces a list of post that can be parsed
         """
-        for file_handle in file_handles:
-            if self.is_local_input and not self.source_web and not \
-                    self.file_format == 'json':
-                while file_handle:
-                    record = self.fetch_record_from_file(
+        if self.source_web:
+            # single web file query
+            url = self.filelist[0]
+            with closing(requests.get(url, stream=True)) as file_handle:
+                record_reader = csv.reader(
+                    codecs.iterdecode(
+                        file_handle.iter_lines(), 'utf-8'),  # pylint: disable=maybe-no-member
+                    delimiter=self.csv_delim,
+                    quotechar='"', quoting=csv.QUOTE_NONE)
+                for record in record_reader:
+                    yield record
+        elif self.is_local_input:
+            # local file loop
+            for file_handle in file_handles:
+                if not self.file_format == 'json':
+                    while file_handle:
+                        record = self.fetch_record_from_file(
+                            file_handle)
+                        yield record
+                else:
+                    records = self.fetch_json_data_from_file(
                         file_handle)
-                    yield record
-            elif self.is_local_input and self.file_format == 'json':
-                records = self.fetch_json_data_from_file(
-                    file_handle)
-                if records is not None:
-                    for record in records:
-                        yield record
-            elif self.is_local_input and self.source_web:
-                url = self.filelist[0]
-                with closing(requests.get(url, stream=True)) as file_handle:
-                    record_reader = csv.reader(
-                        codecs.iterdecode(
-                            file_handle.iter_lines(), 'utf-8'),
-                        delimiter=self.csv_delim,
-                        quotechar='"', quoting=csv.QUOTE_NONE)
-                    for record in record_reader:
-                        yield record
-            else:
-                while self.cursor:
-                    record = self.fetch_json_data_from_lbsn(
-                        self.cursor, self.continue_number)
-                    yield record
+                    if records is not None:
+                        for record in records:
+                            yield record
+        else:
+            # db query
+            while self.cursor:
+                record = self.fetch_json_data_from_lbsn(
+                    self.cursor, self.continue_number)
+                yield record
 
     def convert_records(self, records: Dict[str, Any]) -> Iterator[Union[
             CompositeKey, Language, RelationshipKey, lbsnCity,
