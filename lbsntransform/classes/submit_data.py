@@ -213,7 +213,8 @@ class LBSNTransfer():
             ON CONFLICT (origin_id, reaction_guid)
             DO UPDATE SET
                 reaction_latlng = COALESCE(
-                    NULLIF(EXCLUDED.reaction_latlng,'0101000020E610000000000000000000000000000000000000'),
+                    NULLIF(EXCLUDED.reaction_latlng,
+                    '0101000020E610000000000000000000000000000000000000'),
                     data."post_reaction".reaction_latlng,
                     '0101000020E610000000000000000000000000000000000000'),
                 user_guid = COALESCE(EXCLUDED.user_guid,
@@ -260,8 +261,10 @@ class LBSNTransfer():
             ON CONFLICT (origin_id, post_guid)
             DO UPDATE SET
                 post_latlng = COALESCE(
-                    NULLIF(EXCLUDED.post_latlng,'0101000020E610000000000000000000000000000000000000'),
-                    data."post".post_latlng, '0101000020E610000000000000000000000000000000000000'),
+                    NULLIF(EXCLUDED.post_latlng,
+                    '0101000020E610000000000000000000000000000000000000'),
+                    data."post".post_latlng,
+                    '0101000020E610000000000000000000000000000000000000'),
                 place_guid = COALESCE(EXCLUDED.place_guid,
                     data."post".place_guid),
                 city_guid = COALESCE(EXCLUDED.city_guid,
@@ -413,8 +416,11 @@ class LBSNTransfer():
                     from extensions.mergeArrays(EXCLUDED.name_alternatives,
                     data."place".name_alternatives) AS altNamesNewArray),
                     ARRAY[]::text[]),
-                geom_center = COALESCE(EXCLUDED.geom_center,
-                    data."place".geom_center),
+                geom_center = COALESCE(
+                    NULLIF(EXCLUDED.geom_center,
+                    '0101000020E610000000000000000000000000000000000000'),
+                    data."place".geom_center,
+                    '0101000020E610000000000000000000000000000000000000'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
                     data."place".geom_area),
                 url = COALESCE(EXCLUDED.url, data."place".url),
@@ -440,8 +446,11 @@ class LBSNTransfer():
                     from extensions.mergeArrays(EXCLUDED.name_alternatives,
                     data."city".name_alternatives) AS altNamesNewArray),
                     ARRAY[]::text[]),
-                geom_center = COALESCE(EXCLUDED.geom_center,
-                    data."city".geom_center),
+                geom_center = COALESCE(
+                    NULLIF(EXCLUDED.geom_center,
+                    '0101000020E610000000000000000000000000000000000000'),
+                    data."city".geom_center,
+                    '0101000020E610000000000000000000000000000000000000'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
                     data."city".geom_area),
                 url = COALESCE(EXCLUDED.url, data."city".url),
@@ -465,8 +474,11 @@ class LBSNTransfer():
                     from extensions.mergeArrays(EXCLUDED.name_alternatives,
                     data."country".name_alternatives) AS altNamesNewArray),
                     ARRAY[]::text[]),
-                geom_center = COALESCE(EXCLUDED.geom_center,
-                    data."country".geom_center),
+                geom_center = COALESCE(
+                    NULLIF(EXCLUDED.geom_center,
+                    '0101000020E610000000000000000000000000000000000000'),
+                    data."country".geom_center,
+                    '0101000020E610000000000000000000000000000000000000'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
                     data."country".geom_area),
                 url = COALESCE(EXCLUDED.url, data."country".url);
