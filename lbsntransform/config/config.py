@@ -211,7 +211,7 @@ class BaseConfig():
         settings_args.add_argument('-rL', "--recursiveLoad",
                                    action='store_true', default=False,
                                    help='Process Input Directories '
-                                   'recursively (depth: 2)')
+                                   'recursively (default depth: 2)')
         settings_args.add_argument('-sF', "--skipUntilFile",
                                    default=self.skip_until_file,
                                    help='If local input, skip all files '
