@@ -2,6 +2,7 @@ lbsnstructure/
 backup/
 tests/
 scripts/
+scripts/*
 .project
 .pydevproject
 .settings/
