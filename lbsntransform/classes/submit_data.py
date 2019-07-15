@@ -648,6 +648,8 @@ class LBSNTransfer():
                 tsuccessful = True
             except psycopg2.ProgrammingError as e:
                 sys.exit(f'{e}\nINSERT SQL WAS: {insert_sql}')
+            except psycopg2.errors.DiskFull as e:
+                input("Disk space full. Clean files and continue..")
             else:
                 # self.count_affected += self.dbCursor.rowcount # monitoring
                 self.db_cursor.execute("RELEASE SAVEPOINT submit_recordBatch")
