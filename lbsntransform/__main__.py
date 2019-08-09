@@ -43,6 +43,7 @@ def main():
         origin_id=config.origin,
         logging_level=config.logging_level,
         is_local_input=config.is_local_input,
+        transfer_count=config.transfer_count,
         csv_output=config.csv_output,
         csv_suppress_linebreaks=config.csv_suppress_linebreaks,
         dbuser_output=config.dbuser_output,
@@ -110,7 +111,9 @@ def main():
                     f'Count per type: '
                     f'{lbsntransform.lbsn_records.get_type_counts()}'
                     f'records.', end='\r')
-
+            if (config.transferlimit and
+                    lbsntransform.processed_total >= config.transferlimit):
+                break
     # finalize output (close db connection, submit remaining)
     print(f'Transferring remaining '
           f'{lbsntransform.lbsn_records.count_glob} to db.. '
