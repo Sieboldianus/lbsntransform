@@ -17,12 +17,12 @@ from typing import Dict, TextIO, List, Union, Any, Generator, Iterator
 import ntpath
 import requests
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
-                                             RelationshipKey, lbsnCity,
-                                             lbsnCountry, lbsnOrigin,
-                                             lbsnPlace, lbsnPost,
-                                             lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             RelationshipKey, City,
+                                             Country, Origin,
+                                             Place, Post,
+                                             PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 
 from .db_connection import DBConnection
 from .helper_functions import GeocodeLocations
@@ -105,10 +105,10 @@ class LoadData():
         self.finished = False
 
     def __enter__(self) -> Iterator[Union[
-            CompositeKey, Language, RelationshipKey, lbsnCity,
-            lbsnCountry, lbsnOrigin, lbsnPlace, lbsnPost,
-            lbsnPostReaction, lbsnRelationship, lbsnUser,
-            lbsnUserGroup]]:
+            CompositeKey, Language, RelationshipKey, City,
+            Country, Origin, Place, Post,
+            PostReaction, Relationship, User,
+            UserGroup]]:
         """Main pipeline for reading input data
 
         Combine multiple generators to single pipeline,
@@ -174,10 +174,10 @@ class LoadData():
                 yield record
 
     def convert_records(self, records: Dict[str, Any]) -> Iterator[Union[
-            CompositeKey, Language, RelationshipKey, lbsnCity,
-            lbsnCountry, lbsnOrigin, lbsnPlace, lbsnPost,
-            lbsnPostReaction, lbsnRelationship, lbsnUser,
-            lbsnUserGroup]]:
+            CompositeKey, Language, RelationshipKey, City,
+            Country, Origin, Place, Post,
+            PostReaction, Relationship, User,
+            UserGroup]]:
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 

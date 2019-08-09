@@ -8,10 +8,10 @@ Shared structure and mapping between DB and Proto LBSN Structure.
 
 import sys
 
-from lbsnstructure.lbsnstructure_pb2 import (lbsnCity, lbsnCountry, lbsnPlace,
-                                             lbsnPost, lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+from lbsnstructure.lbsnstructure_pb2 import (City, Country, Place,
+                                             Post, PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 
 from .helper_functions import HelperFunctions as HF
 
@@ -27,16 +27,16 @@ class ProtoLBSNMapping():
         - ready for copy-from pg import
         """
         dict_switcher = \
-            {lbsnCity.DESCRIPTOR.name:
+            {City.DESCRIPTOR.name:
              'origin_id, city_guid, name, name_alternatives, geom_center, '
              'geom_area, url, country_guid, sub_type',
-             lbsnCountry.DESCRIPTOR.name:
+             Country.DESCRIPTOR.name:
              'origin_id, country_guid, name, name_alternatives, geom_center, '
              'geom_area, url',
-             lbsnPlace.DESCRIPTOR.name:
+             Place.DESCRIPTOR.name:
              'origin_id, place_guid, name, name_alternatives, geom_center, '
              'geom_area, url, city_guid, post_count',
-             lbsnPost.DESCRIPTOR.name:
+             Post.DESCRIPTOR.name:
              'origin_id, post_guid, post_latlng, place_guid, city_guid, '
              'country_guid, post_geoaccuracy, user_guid, post_create_date, '
              'post_publish_date, post_body, post_language, user_mentions, '
@@ -44,19 +44,19 @@ class ProtoLBSNMapping():
              'post_views_count, post_title, post_thumbnail_url, post_url, '
              'post_type, post_filter, post_quote_count, post_share_count, '
              'input_source, post_content_license',
-             lbsnPostReaction.DESCRIPTOR.name:
+             PostReaction.DESCRIPTOR.name:
              'origin_id, reaction_guid, reaction_latlng, user_guid, '
              'referencedPost_guid, referencedPostreaction_guid, '
              'reaction_type, reaction_date, reaction_content, '
              'reaction_like_count, user_mentions',
-             lbsnUser.DESCRIPTOR.name:
+             User.DESCRIPTOR.name:
              'origin_id, user_guid, user_name, user_fullname, follows, '
              'followed, group_count, biography, post_count, is_private, '
              'url, is_available, user_language, user_location, '
              'user_location_geom, liked_count, active_since, '
              'profile_image_url, user_timezone, user_utc_offset, '
              'user_groups_member, user_groups_follows',
-             lbsnUserGroup.DESCRIPTOR.name:
+             UserGroup.DESCRIPTOR.name:
              'origin_id, usergroup_guid, usergroup_name, '
              'usergroup_description, member_count, '
              'usergroup_createdate, user_owner',
@@ -76,14 +76,14 @@ class ProtoLBSNMapping():
     def func_prepare_selector(self, record):
         """Select correct prepare function according to record type"""
         dict_switcher = {
-            lbsnCountry().DESCRIPTOR.name: self.prepare_lbsn_country,
-            lbsnCity().DESCRIPTOR.name: self.prepare_lbsn_city,
-            lbsnPlace().DESCRIPTOR.name: self.prepare_lbsn_place,
-            lbsnUser().DESCRIPTOR.name: self.prepare_lbsn_user,
-            lbsnUserGroup().DESCRIPTOR.name: self.prepare_lbsn_usergroup,
-            lbsnPost().DESCRIPTOR.name: self.prepare_lbsn_post,
-            lbsnPostReaction().DESCRIPTOR.name: self.prepare_lbsn_postreaction,
-            lbsnRelationship().DESCRIPTOR.name: self.prepare_lbsn_relation
+            Country().DESCRIPTOR.name: self.prepare_lbsn_country,
+            City().DESCRIPTOR.name: self.prepare_lbsn_city,
+            Place().DESCRIPTOR.name: self.prepare_lbsn_place,
+            User().DESCRIPTOR.name: self.prepare_lbsn_user,
+            UserGroup().DESCRIPTOR.name: self.prepare_lbsn_usergroup,
+            Post().DESCRIPTOR.name: self.prepare_lbsn_post,
+            PostReaction().DESCRIPTOR.name: self.prepare_lbsn_postreaction,
+            Relationship().DESCRIPTOR.name: self.prepare_lbsn_relation
         }
         prepare_function = dict_switcher.get(record.DESCRIPTOR.name)
         return prepare_function(record)
@@ -247,7 +247,7 @@ class PlaceAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = lbsnPlace()  # init empty structure
+            record = Place()  # init empty structure
         self.origin_id = record.pkey.origin.origin_id  # = 3
         self.guid = record.pkey.id
         self.name = HF.null_check(record.name)
@@ -269,7 +269,7 @@ class UserAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = lbsnUser()
+            record = User()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.user_name = HF.null_check(record.user_name)
@@ -302,7 +302,7 @@ class UsergroupAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = lbsnUserGroup()
+            record = UserGroup()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.usergroup_name = HF.null_check(record.usergroup_name)
@@ -322,7 +322,7 @@ class PostAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = lbsnPost()
+            record = Post()
 
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
@@ -331,7 +331,7 @@ class PostAttrShared():
         self.city_guid = HF.null_check(record.city_pkey.id)
         self.country_guid = HF.null_check(record.country_pkey.id)
         self.post_geoaccuracy = HF.turn_lower(HF.null_check(
-            lbsnPost().PostGeoaccuracy.Name(record.post_geoaccuracy)))
+            Post().PostGeoaccuracy.Name(record.post_geoaccuracy)))
         self.user_guid = HF.null_check(record.user_pkey.id)
         self.post_create_date = HF.null_check_datetime(record.post_create_date)
         self.post_publish_date = HF.null_check_datetime(
@@ -349,7 +349,7 @@ class PostAttrShared():
         self.post_thumbnail_url = HF.null_check(record.post_thumbnail_url)
         self.post_url = HF.null_check(record.post_url)
         self.post_type = HF.turn_lower(HF.null_check(
-            lbsnPost().PostType.Name(record.post_type)))
+            Post().PostType.Name(record.post_type)))
         self.post_filter = HF.null_check(record.post_filter)
         self.post_quote_count = HF.null_check(record.post_quote_count)
         self.post_share_count = HF.null_check(record.post_share_count)
@@ -368,7 +368,7 @@ class PostreactionAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = lbsnPostReaction()
+            record = PostReaction()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.reaction_latlng = HF.null_geom_check(record.reaction_latlng)
@@ -377,7 +377,7 @@ class PostreactionAttrShared():
         self.referenced_postreaction = HF.null_check(
             record.referencedPostreaction_pkey.id)
         self.reaction_type = HF.turn_lower(HF.null_check(
-            lbsnPostReaction().ReactionType.Name(record.reaction_type)))
+            PostReaction().ReactionType.Name(record.reaction_type)))
         self.reaction_date = HF.null_check_datetime(record.reaction_date)
         self.reaction_content = HF.null_check(record.reaction_content)
         self.reaction_like_count = HF.null_check(record.reaction_like_count)
@@ -393,9 +393,9 @@ class RelationAttrShared():
 
     def __init__(self, relationship=None):
         if relationship is None:
-            relationship = lbsnRelationship()
+            relationship = Relationship()
         self.origin_id = relationship.pkey.relation_to.origin.origin_id
         self.guid = relationship.pkey.relation_to.id
         self.guid_rel = relationship.pkey.relation_from.id
-        self.rel_type = HF.null_check(lbsnRelationship().RelationshipType.Name(
+        self.rel_type = HF.null_check(Relationship().RelationshipType.Name(
             relationship.relationship_type)).lower()

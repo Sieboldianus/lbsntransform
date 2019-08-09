@@ -21,10 +21,10 @@ from sys import exit
 from google.protobuf import text_format
 from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
-                                             lbsnCity, lbsnCountry, lbsnPlace,
-                                             lbsnPost, lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             City, Country, Place,
+                                             Post, PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 
 from .helper_functions import HelperFunctions, LBSNRecordDicts
 from .shared_structure_proto_lbsndb import ProtoLBSNMapping

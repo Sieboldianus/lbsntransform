@@ -15,10 +15,10 @@ from sys import exit
 import psycopg2
 
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
-                                             lbsnCity, lbsnCountry, lbsnPlace,
-                                             lbsnPost, lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             City, Country, Place,
+                                             Post, PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 from psycopg2 import sql
 
 from .helper_functions import HelperFunctions, LBSNRecordDicts
@@ -58,14 +58,14 @@ class LBSNTransfer():
         self.disable_reaction_post_ref = disable_reaction_post_ref
         self.log = logging.getLogger('__main__')
         self.batched_records = {
-            lbsnCountry.DESCRIPTOR.name: list(),
-            lbsnCity.DESCRIPTOR.name: list(),
-            lbsnPlace.DESCRIPTOR.name: list(),
-            lbsnUser.DESCRIPTOR.name: list(),
-            lbsnUserGroup.DESCRIPTOR.name: list(),
-            lbsnPost.DESCRIPTOR.name: list(),
-            lbsnPostReaction.DESCRIPTOR.name: list(),
-            lbsnRelationship.DESCRIPTOR.name: list()}
+            Country.DESCRIPTOR.name: list(),
+            City.DESCRIPTOR.name: list(),
+            Place.DESCRIPTOR.name: list(),
+            User.DESCRIPTOR.name: list(),
+            UserGroup.DESCRIPTOR.name: list(),
+            Post.DESCRIPTOR.name: list(),
+            PostReaction.DESCRIPTOR.name: list(),
+            Relationship.DESCRIPTOR.name: list()}
 
         self.count_round = 0
         # Records are batched and submitted in
@@ -193,13 +193,13 @@ class LBSNTransfer():
             values_str      values to be inserted
         """
         dict_switcher = {
-            lbsnCountry().DESCRIPTOR.name: self.country_insertsql,
-            lbsnCity().DESCRIPTOR.name: self.city_insertsql,
-            lbsnPlace().DESCRIPTOR.name: self.place_insertsql,
-            lbsnUser().DESCRIPTOR.name: self.user_insertsql,
-            lbsnUserGroup().DESCRIPTOR.name: self.usergroup_insertsql,
-            lbsnPost().DESCRIPTOR.name: self.post_insertsql,
-            lbsnPostReaction().DESCRIPTOR.name: self.postreaction_insertsql,
+            Country().DESCRIPTOR.name: self.country_insertsql,
+            City().DESCRIPTOR.name: self.city_insertsql,
+            Place().DESCRIPTOR.name: self.place_insertsql,
+            User().DESCRIPTOR.name: self.user_insertsql,
+            UserGroup().DESCRIPTOR.name: self.usergroup_insertsql,
+            Post().DESCRIPTOR.name: self.post_insertsql,
+            PostReaction().DESCRIPTOR.name: self.postreaction_insertsql,
         }
         prepare_function = dict_switcher.get(record_type)
         return prepare_function(values_str, record_type)
@@ -501,7 +501,7 @@ class LBSNTransfer():
             the table selection
         """
         selectFriends = [relationship[1] for relationship in
-                         self.batched_records[lbsnRelationship(
+                         self.batched_records[Relationship(
                          ).DESCRIPTOR.name] if relationship[0] == "isfriend"]
         if selectFriends:
             if self.store_csv:
@@ -519,7 +519,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectConnected = [relationship[1] for relationship in
-                           self.batched_records[lbsnRelationship(
+                           self.batched_records[Relationship(
                            ).DESCRIPTOR.name] if
                            relationship[0] == "isconnected"]
         if selectConnected:
@@ -539,7 +539,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectUserGroupMember = [relationship[1] for relationship in
-                                 self.batched_records[lbsnRelationship(
+                                 self.batched_records[Relationship(
                                  ).DESCRIPTOR.name] if
                                  relationship[0] == "ingroup"]
         if selectUserGroupMember:
@@ -559,7 +559,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectUserGroupMember = [relationship[1] for relationship in
-                                 self.batched_records[lbsnRelationship(
+                                 self.batched_records[Relationship(
                                  ).DESCRIPTOR.name] if
                                  relationship[0] == "followsgroup"]
         if selectUserGroupMember:
@@ -579,7 +579,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectUserMentions = [relationship[1] for relationship in
-                              self.batched_records[lbsnRelationship(
+                              self.batched_records[Relationship(
                               ).DESCRIPTOR.name] if
                               relationship[0] == "mentions_user"]
         if selectUserMentions:

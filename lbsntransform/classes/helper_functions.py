@@ -17,10 +17,10 @@ from json import JSONDecodeError, JSONDecoder
 import emoji
 from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
-                                             lbsnCity, lbsnCountry, lbsnPlace,
-                                             lbsnPost, lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             City, Country, Place,
+                                             Post, PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 from shapely import geos, wkt
 
 # pylint: disable=no-member
@@ -49,13 +49,13 @@ class HelperFunctions():
     @staticmethod
     def geoacc_within_threshold(post_geoaccuracy, min_geoaccuracy):
         """Checks if geoaccuracy is within or below threshhold defined"""
-        if min_geoaccuracy == lbsnPost.LATLNG:
-            allowed_geoaccuracies = [lbsnPost.LATLNG]
-        elif min_geoaccuracy == lbsnPost.PLACE:
-            allowed_geoaccuracies = [lbsnPost.LATLNG, lbsnPost.PLACE]
-        elif min_geoaccuracy == lbsnPost.CITY:
-            allowed_geoaccuracies = [lbsnPost.LATLNG, lbsnPost.PLACE,
-                                     lbsnPost.CITY]
+        if min_geoaccuracy == Post.LATLNG:
+            allowed_geoaccuracies = [Post.LATLNG]
+        elif min_geoaccuracy == Post.PLACE:
+            allowed_geoaccuracies = [Post.LATLNG, Post.PLACE]
+        elif min_geoaccuracy == Post.CITY:
+            allowed_geoaccuracies = [Post.LATLNG, Post.PLACE,
+                                     Post.CITY]
         else:
             return True
         # check post geoaccuracy
@@ -162,12 +162,12 @@ class HelperFunctions():
         # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
         if type_string:
             if type_string == "photo":
-                post_type = lbsnPost.IMAGE
+                post_type = Post.IMAGE
             elif type_string in ("video", "animated_gif"):
-                post_type = lbsnPost.VIDEO
+                post_type = Post.VIDEO
 
         else:
-            post_type = lbsnPost.OTHER
+            post_type = Post.OTHER
             logging.getLogger('__main__').debug(f'Other Post type detected: '
                                                 f'{json_media_string}')
         return post_type
@@ -223,7 +223,7 @@ class HelperFunctions():
         mentioned_users_list = []
         for user_mention in userMentions_jsonString:  # iterate over the list
             ref_user_record = \
-                HelperFunctions.new_lbsn_record_with_id(lbsnUser(),
+                HelperFunctions.new_lbsn_record_with_id(User(),
                                                         user_mention.get(
                                                         'id_str'),
                                                         origin)
@@ -392,14 +392,14 @@ class HelperFunctions():
         """ Create protoBuf messages by name
         """
         dict_switcher = {
-            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
-            lbsnCity().DESCRIPTOR.name: lbsnCity(),
-            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
-            lbsnUser().DESCRIPTOR.name: lbsnUser(),
-            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
-            lbsnPost().DESCRIPTOR.name: lbsnPost(),
-            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
-            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
+            Country().DESCRIPTOR.name: Country(),
+            City().DESCRIPTOR.name: City(),
+            Place().DESCRIPTOR.name: Place(),
+            User().DESCRIPTOR.name: User(),
+            UserGroup().DESCRIPTOR.name:  UserGroup(),
+            Post().DESCRIPTOR.name: Post(),
+            PostReaction().DESCRIPTOR.name: PostReaction(),
+            Relationship().DESCRIPTOR.name: Relationship()
         }
         return dict_switcher.get(desc_name)
 
@@ -424,26 +424,26 @@ class LBSNRecordDicts():
         self.lbsn_post_dict = dict()
         self.lbsn_post_reaction_dict = dict()
         self.lbsn_relationship_dict = dict()
-        self.key_hashes = {lbsnPost.DESCRIPTOR.name: set(),
-                           lbsnCountry.DESCRIPTOR.name: set(),
-                           lbsnCity.DESCRIPTOR.name: set(),
-                           lbsnPlace.DESCRIPTOR.name: set(),
-                           lbsnUserGroup.DESCRIPTOR.name: set(),
-                           lbsnUser.DESCRIPTOR.name: set(),
-                           lbsnPostReaction.DESCRIPTOR.name: set(),
-                           lbsnRelationship.DESCRIPTOR.name: set()}
+        self.key_hashes = {Post.DESCRIPTOR.name: set(),
+                           Country.DESCRIPTOR.name: set(),
+                           City.DESCRIPTOR.name: set(),
+                           Place.DESCRIPTOR.name: set(),
+                           UserGroup.DESCRIPTOR.name: set(),
+                           User.DESCRIPTOR.name: set(),
+                           PostReaction.DESCRIPTOR.name: set(),
+                           Relationship.DESCRIPTOR.name: set()}
         self.count_glob = 0
         # returns all recordsDicts in correct order,
         # with names as references (tuple)
         self.all_dicts = [
-            (self.lbsn_country_dict, lbsnCountry().DESCRIPTOR.name),
-            (self.lbsn_city_dict, lbsnCity().DESCRIPTOR.name),
-            (self.lbsn_place_dict, lbsnPlace().DESCRIPTOR.name),
-            (self.lbsn_user_group_dict, lbsnUserGroup().DESCRIPTOR.name),
-            (self.lbsn_user_dict, lbsnUser().DESCRIPTOR.name),
-            (self.lbsn_post_dict, lbsnPost().DESCRIPTOR.name),
-            (self.lbsn_post_reaction_dict, lbsnPostReaction().DESCRIPTOR.name),
-            (self.lbsn_relationship_dict, lbsnRelationship().DESCRIPTOR.name)
+            (self.lbsn_country_dict, Country().DESCRIPTOR.name),
+            (self.lbsn_city_dict, City().DESCRIPTOR.name),
+            (self.lbsn_place_dict, Place().DESCRIPTOR.name),
+            (self.lbsn_user_group_dict, UserGroup().DESCRIPTOR.name),
+            (self.lbsn_user_dict, User().DESCRIPTOR.name),
+            (self.lbsn_post_dict, Post().DESCRIPTOR.name),
+            (self.lbsn_post_reaction_dict, PostReaction().DESCRIPTOR.name),
+            (self.lbsn_relationship_dict, Relationship().DESCRIPTOR.name)
         ]
 
     def get_type_counts(self):
@@ -459,7 +459,7 @@ class LBSNRecordDicts():
         # Users, Countries, Places etc.)
         # in this case we assume that origin_id remains the same
         # in each program iteration!
-        if record.DESCRIPTOR.name == lbsnRelationship().DESCRIPTOR.name:
+        if record.DESCRIPTOR.name == Relationship().DESCRIPTOR.name:
             # we need the complete uuid of both entities for
             # relationships because they can span different origin_ids
             self.key_hashes[record.DESCRIPTOR.name].add(
@@ -514,13 +514,13 @@ class LBSNRecordDicts():
         """ Get dictionary by type name
         """
         dict_switcher = {
-            lbsnPost().DESCRIPTOR.name: self.lbsn_post_dict,
-            lbsnCountry().DESCRIPTOR.name: self.lbsn_country_dict,
-            lbsnCity().DESCRIPTOR.name: self.lbsn_city_dict,
-            lbsnPlace().DESCRIPTOR.name: self.lbsn_place_dict,
-            lbsnPostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
-            lbsnUser().DESCRIPTOR.name: self.lbsn_user_dict,
-            lbsnUserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
+            Post().DESCRIPTOR.name: self.lbsn_post_dict,
+            Country().DESCRIPTOR.name: self.lbsn_country_dict,
+            City().DESCRIPTOR.name: self.lbsn_city_dict,
+            Place().DESCRIPTOR.name: self.lbsn_place_dict,
+            PostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
+            User().DESCRIPTOR.name: self.lbsn_user_dict,
+            UserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
         }
         return dict_switcher.get(record.DESCRIPTOR.name)
 

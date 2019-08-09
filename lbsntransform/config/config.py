@@ -12,7 +12,7 @@ import os
 import sys
 from shapely import geos
 import logging
-from lbsnstructure.lbsnstructure_pb2 import lbsnPost
+from lbsnstructure.lbsnstructure_pb2 import Post
 
 
 class BaseConfig():
@@ -307,11 +307,11 @@ class BaseConfig():
         against proto buf spec
         """
         if geoaccuracy_string == 'latlng':
-            return lbsnPost.LATLNG
+            return Post.LATLNG
         elif geoaccuracy_string == 'place':
-            return lbsnPost.PLACE
+            return Post.PLACE
         elif geoaccuracy_string == 'city':
-            return lbsnPost.CITY
+            return Post.CITY
         else:
             print("Unknown geoaccuracy.")
             return None
