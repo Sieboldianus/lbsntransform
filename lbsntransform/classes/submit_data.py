@@ -15,10 +15,10 @@ from sys import exit
 import psycopg2
 
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
-                                             lbsnCity, lbsnCountry, lbsnPlace,
-                                             lbsnPost, lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             City, Country, Place,
+                                             Post, PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 from psycopg2 import sql
 
 from .helper_functions import HelperFunctions, LBSNRecordDicts
@@ -28,13 +28,6 @@ from .store_csv import LBSNcsv
 # for debugging only:
 from google.protobuf import text_format
 from google.protobuf.timestamp_pb2 import Timestamp
-
-# due to different protocol buffers implementations, import both possible types
-from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-try:
-    from google.protobuf.pyext._message import RepeatedCompositeContainer
-except ImportError:
-    pass
 
 
 class LBSNTransfer():
@@ -58,14 +51,14 @@ class LBSNTransfer():
         self.disable_reaction_post_ref = disable_reaction_post_ref
         self.log = logging.getLogger('__main__')
         self.batched_records = {
-            lbsnCountry.DESCRIPTOR.name: list(),
-            lbsnCity.DESCRIPTOR.name: list(),
-            lbsnPlace.DESCRIPTOR.name: list(),
-            lbsnUser.DESCRIPTOR.name: list(),
-            lbsnUserGroup.DESCRIPTOR.name: list(),
-            lbsnPost.DESCRIPTOR.name: list(),
-            lbsnPostReaction.DESCRIPTOR.name: list(),
-            lbsnRelationship.DESCRIPTOR.name: list()}
+            Country.DESCRIPTOR.name: list(),
+            City.DESCRIPTOR.name: list(),
+            Place.DESCRIPTOR.name: list(),
+            User.DESCRIPTOR.name: list(),
+            UserGroup.DESCRIPTOR.name: list(),
+            Post.DESCRIPTOR.name: list(),
+            PostReaction.DESCRIPTOR.name: list(),
+            Relationship.DESCRIPTOR.name: list()}
 
         self.count_round = 0
         # Records are batched and submitted in
@@ -120,23 +113,22 @@ class LBSNTransfer():
         # self.headersWritten.clear()
         r_cnt = 0
         self.count_affected = 0
-        for records_dict in lbsn_record_dicts.all_dicts:
-            type_name = records_dict[1]
-            for record in records_dict[0].values():
-                r_cnt += 1
-                print(f'Storing {r_cnt} of {lbsn_record_dicts.count_glob} '
-                      f'output records ({type_name})..', end='\r')
-                self.prepare_lbsn_record(record, type_name)
-                self.count_glob += 1  # self.dbCursor.rowcount
-                self.count_entries_commit += 1  # self.dbCursor.rowcount
-                self.count_entries_store += 1
-                if self.db_cursor and (self.count_glob == 100 or
-                                       self.count_entries_commit >
-                                       self.commit_volume):
-                    self.commit_changes()
-                if self.store_csv and (self.count_entries_store >
-                                       self.store_volume):
-                    self.store_changes()
+        g_cnt = lbsn_record_dicts.get_current_count()
+        for record, type_name in lbsn_record_dicts.get_all_records():
+            r_cnt += 1
+            print(f'Storing {r_cnt} of {g_cnt} '
+                  f'lbsn records ({type_name})..', end='\r')
+            self.prepare_lbsn_record(record, type_name)
+            self.count_glob += 1  # self.dbCursor.rowcount
+            self.count_entries_commit += 1  # self.dbCursor.rowcount
+            self.count_entries_store += 1
+            if self.db_cursor and (self.count_glob == 100 or
+                                   self.count_entries_commit >
+                                   self.commit_volume):
+                self.commit_changes()
+            if self.store_csv and (self.count_entries_store >
+                                   self.store_volume):
+                self.store_changes()
         # submit remaining rest
         self.submit_all_batches()
         # self.count_affected += x # monitoring
@@ -193,13 +185,13 @@ class LBSNTransfer():
             values_str      values to be inserted
         """
         dict_switcher = {
-            lbsnCountry().DESCRIPTOR.name: self.country_insertsql,
-            lbsnCity().DESCRIPTOR.name: self.city_insertsql,
-            lbsnPlace().DESCRIPTOR.name: self.place_insertsql,
-            lbsnUser().DESCRIPTOR.name: self.user_insertsql,
-            lbsnUserGroup().DESCRIPTOR.name: self.usergroup_insertsql,
-            lbsnPost().DESCRIPTOR.name: self.post_insertsql,
-            lbsnPostReaction().DESCRIPTOR.name: self.postreaction_insertsql,
+            Country().DESCRIPTOR.name: self.country_insertsql,
+            City().DESCRIPTOR.name: self.city_insertsql,
+            Place().DESCRIPTOR.name: self.place_insertsql,
+            User().DESCRIPTOR.name: self.user_insertsql,
+            UserGroup().DESCRIPTOR.name: self.usergroup_insertsql,
+            Post().DESCRIPTOR.name: self.post_insertsql,
+            PostReaction().DESCRIPTOR.name: self.postreaction_insertsql,
         }
         prepare_function = dict_switcher.get(record_type)
         return prepare_function(values_str, record_type)
@@ -501,7 +493,7 @@ class LBSNTransfer():
             the table selection
         """
         selectFriends = [relationship[1] for relationship in
-                         self.batched_records[lbsnRelationship(
+                         self.batched_records[Relationship(
                          ).DESCRIPTOR.name] if relationship[0] == "isfriend"]
         if selectFriends:
             if self.store_csv:
@@ -519,7 +511,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectConnected = [relationship[1] for relationship in
-                           self.batched_records[lbsnRelationship(
+                           self.batched_records[Relationship(
                            ).DESCRIPTOR.name] if
                            relationship[0] == "isconnected"]
         if selectConnected:
@@ -539,7 +531,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectUserGroupMember = [relationship[1] for relationship in
-                                 self.batched_records[lbsnRelationship(
+                                 self.batched_records[Relationship(
                                  ).DESCRIPTOR.name] if
                                  relationship[0] == "ingroup"]
         if selectUserGroupMember:
@@ -559,7 +551,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectUserGroupMember = [relationship[1] for relationship in
-                                 self.batched_records[lbsnRelationship(
+                                 self.batched_records[Relationship(
                                  ).DESCRIPTOR.name] if
                                  relationship[0] == "followsgroup"]
         if selectUserGroupMember:
@@ -579,7 +571,7 @@ class LBSNTransfer():
                     '''
                 self.submitBatch(insert_sql)
         selectUserMentions = [relationship[1] for relationship in
-                              self.batched_records[lbsnRelationship(
+                              self.batched_records[Relationship(
                               ).DESCRIPTOR.name] if
                               relationship[0] == "mentions_user"]
         if selectUserMentions:
@@ -609,8 +601,8 @@ class LBSNTransfer():
         or this: https://stackoverflow.com/questions/8134602/
         psycopg2-insert-multiple-rows-with-one-query
         """
-        self.db_cursor.execute("SAVEPOINT submit_recordBatch")
         tsuccessful = False
+        self.db_cursor.execute("SAVEPOINT submit_recordBatch")
         while not tsuccessful:
             try:
                 self.db_cursor.execute(insert_sql)
@@ -624,15 +616,22 @@ class LBSNTransfer():
                     print(
                         f'TransactionIntegrityError, inserting language "'
                         f'{missingLanguage}" first..               ')
+                    # self.db_cursor.rollback()
                     self.db_cursor.execute(
                         "ROLLBACK TO SAVEPOINT submit_recordBatch")
                     insert_language_sql = '''
                            INSERT INTO data."language"
-                            (language_short,language_name,language_name_de)
+                            (language_short, language_name, language_name_de)
                            VALUES (%s,NULL,NULL);
                            '''
+                    # submit sql to db
                     self.db_cursor.execute(
                         insert_language_sql, (missingLanguage,))
+                    # commit changes so they're available when
+                    # try is executed again
+                    self.commit_changes()
+                    # recreate SAVEPOINT after language insert
+                    self.db_cursor.execute("SAVEPOINT submit_recordBatch")
                 else:
                     sys.exit(f'{e}')
             except psycopg2.DataError as e:
@@ -648,8 +647,10 @@ class LBSNTransfer():
                 tsuccessful = True
             except psycopg2.ProgrammingError as e:
                 sys.exit(f'{e}\nINSERT SQL WAS: {insert_sql}')
+            except psycopg2.errors.DiskFull as e:
+                input("Disk space full. Clean files and continue..")
             else:
-                # self.count_affected += self.dbCursor.rowcount # monitoring
+                # executed if the try clause does not raise an exception
                 self.db_cursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
 
@@ -683,8 +684,7 @@ class LBSNTransfer():
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x = getattr(record, descriptor.name)
-                if x and not (isinstance(x, RepeatedCompositeFieldContainer) or
-                              isinstance(x, RepeatedCompositeContainer)):
+                if x and not HelperFunctions.is_composite_field_container(x):
                     xCleaned = set(x)
                     xSorted = sorted(xCleaned)
                     # Complete clear of repeated field

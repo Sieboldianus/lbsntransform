@@ -17,12 +17,12 @@ from typing import Dict, TextIO, List, Union, Any, Generator, Iterator
 import ntpath
 import requests
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
-                                             RelationshipKey, lbsnCity,
-                                             lbsnCountry, lbsnOrigin,
-                                             lbsnPlace, lbsnPost,
-                                             lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             RelationshipKey, City,
+                                             Country, Origin,
+                                             Place, Post,
+                                             PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 
 from .db_connection import DBConnection
 from .helper_functions import GeocodeLocations
@@ -39,7 +39,8 @@ class LoadData():
             startwith_db_rownumber=None,
             skip_until_file=None, cursor_input=None, input_path=None,
             recursive_load=None, local_file_type=None,
-            endwith_db_rownumber=None, is_stacked_json=None, csv_delim=None,
+            endwith_db_rownumber=None, is_stacked_json=None,
+            is_line_separated_json=None, csv_delim=None,
             input_lbsn_type=None, geocode_locations=None,
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
@@ -75,13 +76,15 @@ class LoadData():
         self.db_row_number = 0
         self.endwith_db_rownumber = endwith_db_rownumber
         self.is_stacked_json = is_stacked_json
+        self.is_line_separated_json = is_line_separated_json
         self.local_file_type = local_file_type
         self.csv_delim = csv_delim
         self.file_format = local_file_type
         self.input_lbsn_type = input_lbsn_type
         self.cursor = None
         self.start_id = None
-        #self.transferlimit = cfg.transferlimit
+        self.count_glob = 0
+        # self.transferlimit = cfg.transferlimit
         # Optional Geocoding
         self.geocode_dict = None
         if geocode_locations:
@@ -105,10 +108,10 @@ class LoadData():
         self.finished = False
 
     def __enter__(self) -> Iterator[Union[
-            CompositeKey, Language, RelationshipKey, lbsnCity,
-            lbsnCountry, lbsnOrigin, lbsnPlace, lbsnPost,
-            lbsnPostReaction, lbsnRelationship, lbsnUser,
-            lbsnUserGroup]]:
+            CompositeKey, Language, RelationshipKey, City,
+            Country, Origin, Place, Post,
+            PostReaction, Relationship, User,
+            UserGroup]]:
         """Main pipeline for reading input data
 
         Combine multiple generators to single pipeline,
@@ -156,16 +159,19 @@ class LoadData():
             # local file loop
             for file_handle in file_handles:
                 if not self.file_format == 'json':
+                    # csv or txt
                     while file_handle:
                         record = self.fetch_record_from_file(
                             file_handle)
                         yield record
                 else:
-                    records = self.fetch_json_data_from_file(
-                        file_handle)
-                    if records is not None:
-                        for record in records:
+                    # json
+                    for record in self.fetch_json_data_from_file(
+                            file_handle):
+                        if record:
                             yield record
+                        else:
+                            continue
         else:
             # db query
             while self.cursor:
@@ -173,25 +179,26 @@ class LoadData():
                     self.cursor, self.continue_number)
                 yield record
 
-    def convert_records(self, records: Dict[str, Any]) -> Iterator[Union[
-            CompositeKey, Language, RelationshipKey, lbsnCity,
-            lbsnCountry, lbsnOrigin, lbsnPlace, lbsnPost,
-            lbsnPostReaction, lbsnRelationship, lbsnUser,
-            lbsnUserGroup]]:
+    def convert_records(self, records: Dict[str, Any]) -> Iterator[List[Union[
+            CompositeKey, Language, RelationshipKey, City,
+            Country, Origin, Place, Post,
+            PostReaction, Relationship, User,
+            UserGroup]]]:
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
         for record in records:
+            self.count_glob += 1
             if self.is_local_input:
                 single_record = record
             else:
                 self.db_row_number = record[0]
                 single_record = record[2]
-            # test for empty or malformed records
             if LoadData.skip_empty_or_other(single_record):
-                yield None
+                # skip empty or malformed records
+                continue
             if self.local_file_type == 'json' or not self.is_local_input:
                 # note: db-records always returned as json
                 lbsn_records = self.import_mapper.parse_json_record(
@@ -202,7 +209,10 @@ class LoadData():
             else:
                 exit(f'Format {self.local_file_type} not supportet.')
             # return record as pipe
-            yield lbsn_records
+            if lbsn_records is None:
+                continue
+            for lbsn_record in lbsn_records:
+                yield lbsn_record
 
     @staticmethod
     def skip_empty_or_other(single_record):
@@ -265,37 +275,67 @@ class LoadData():
 
         Typical form is [{json1},{json2}], if is_stacked_json is True:
         will process stacked jsons in the form of {json1}{json2}
+
+        If is_line_separated_json is true:
+        {json1}
+        {json2}
+        ...
         """
-        records = []
+        # records = []
         # Stacked JSON is a simple file with many concatenated jsons, e.g.
         # {json1}{json2} etc.
         if self.is_stacked_json:
+            # note: this requires loading file completely first
+            # not streaming optimized yet
             try:
-                for obj in HF.decode_stacked(file_handle.read()):
-                    records.append(obj)
+                for record in HF.decode_stacked(file_handle.read()):
+                    yield record
             except json.decoder.JSONDecodeError:
                 pass
+        if self.is_line_separated_json:
+            # json's separated by line ending
+            for line in file_handle:
+                record = json.loads(line)
+                yield record
         else:
             # normal json nesting, e.g.  {{record1},{record2}}
             try:
                 records = json.load(file_handle)
             except json.decoder.JSONDecodeError:
                 pass
-        if records:
-            return records
-        return None
+            if records:
+                if isinstance(records, list):
+                    for record in records:
+                        yield record
+                else:
+                    record = records
+                    yield record
+            yield None
+            # streaming version:
+            # start_pos = 0
+            # while True:
+            #     try:
+            #         record = json.load(file_handle)
+            #         yield record
+            #         return
+            #     except json.JSONDecodeError as e:
+            #         file_handle.seek(start_pos)
+            #         json_str = file_handle.read(e.pos)
+            #         record = json.loads(json_str)
+            #         start_pos += e.pos
+            #         yield record
 
     def fetch_csv_data_from_file(self, file_handle):
         """Read csv entries from file (either *.txt or *.csv).
 
         The actual CSV formatting is not setable in config yet.
         There are many specifics, e.g.
-        #QUOTE_NONE is used here because media saved from Flickr
+        # QUOTE_NONE is used here because media saved from Flickr
         does not contain any quotes ""
         """
         if self.csv_delim is None:
             self.csv_delim = ','
-        #records = []
+        # records = []
         record_reader = csv.reader(file_handle, delimiter=self.csv_delim,
                                    quotechar='"', quoting=csv.QUOTE_NONE)
         return record_reader

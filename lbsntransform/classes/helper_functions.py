@@ -11,17 +11,27 @@ import logging
 import re
 import sys
 import time
+from typing import Tuple, Any, Iterator
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
 
 import emoji
 from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
-                                             lbsnCity, lbsnCountry, lbsnPlace,
-                                             lbsnPost, lbsnPostReaction,
-                                             lbsnRelationship, lbsnUser,
-                                             lbsnUserGroup)
+                                             City, Country, Place,
+                                             Post, PostReaction,
+                                             Relationship, User,
+                                             UserGroup)
 from shapely import geos, wkt
+
+# due to different protocol buffers implementations on Unix, MacOS and Windows
+# import types based on OS
+import platform
+PLATFORM_SYS = platform.system()
+if PLATFORM_SYS == 'Linux':
+    from google.protobuf.pyext._message import RepeatedCompositeContainer  # pylint: disable=no-name-in-module
+else:
+    from google.protobuf.internal.containers import RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
 
 # pylint: disable=no-member
 
@@ -49,13 +59,13 @@ class HelperFunctions():
     @staticmethod
     def geoacc_within_threshold(post_geoaccuracy, min_geoaccuracy):
         """Checks if geoaccuracy is within or below threshhold defined"""
-        if min_geoaccuracy == lbsnPost.LATLNG:
-            allowed_geoaccuracies = [lbsnPost.LATLNG]
-        elif min_geoaccuracy == lbsnPost.PLACE:
-            allowed_geoaccuracies = [lbsnPost.LATLNG, lbsnPost.PLACE]
-        elif min_geoaccuracy == lbsnPost.CITY:
-            allowed_geoaccuracies = [lbsnPost.LATLNG, lbsnPost.PLACE,
-                                     lbsnPost.CITY]
+        if min_geoaccuracy == Post.LATLNG:
+            allowed_geoaccuracies = [Post.LATLNG]
+        elif min_geoaccuracy == Post.PLACE:
+            allowed_geoaccuracies = [Post.LATLNG, Post.PLACE]
+        elif min_geoaccuracy == Post.CITY:
+            allowed_geoaccuracies = [Post.LATLNG, Post.PLACE,
+                                     Post.CITY]
         else:
             return True
         # check post geoaccuracy
@@ -156,18 +166,19 @@ class HelperFunctions():
 
     @staticmethod
     def assign_media_post_type(json_media_string):
+        """Media type assignment based on Twitter json"""
         # if post, get type of first entity
         type_string = json_media_string[0].get('type')
         # type is either photo, video, or animated_gif
         # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
         if type_string:
             if type_string == "photo":
-                post_type = lbsnPost.IMAGE
+                post_type = Post.IMAGE
             elif type_string in ("video", "animated_gif"):
-                post_type = lbsnPost.VIDEO
+                post_type = Post.VIDEO
 
         else:
-            post_type = lbsnPost.OTHER
+            post_type = Post.OTHER
             logging.getLogger('__main__').debug(f'Other Post type detected: '
                                                 f'{json_media_string}')
         return post_type
@@ -223,7 +234,7 @@ class HelperFunctions():
         mentioned_users_list = []
         for user_mention in userMentions_jsonString:  # iterate over the list
             ref_user_record = \
-                HelperFunctions.new_lbsn_record_with_id(lbsnUser(),
+                HelperFunctions.new_lbsn_record_with_id(User(),
                                                         user_mention.get(
                                                         'id_str'),
                                                         origin)
@@ -362,6 +373,17 @@ class HelperFunctions():
             return None
 
     @staticmethod
+    def is_composite_field_container(in_obj):
+        """Checks whether in_obj is of type RepeatedCompositeFieldContainer"""
+        if PLATFORM_SYS == 'Linux':
+            if isinstance(in_obj, RepeatedCompositeContainer):
+                return True
+        else:
+            if isinstance(in_obj, RepeatedCompositeFieldContainer):
+                return True
+        return False
+
+    @staticmethod
     def merge_existing_records(oldrecord, newrecord):
         # Basic Compare function for GUIDS
         # First check if length of both ProtoBuf Messages are the same
@@ -374,7 +396,7 @@ class HelperFunctions():
             #                                               newrecord)
 
     @staticmethod
-    def load_importer_mapping_module(origin):
+    def load_importer_mapping_module(origin: int):
         """ Switch import module based on origin input
             1 - Instagram, 2 - Flickr, 3 - Twitter
         """
@@ -392,14 +414,14 @@ class HelperFunctions():
         """ Create protoBuf messages by name
         """
         dict_switcher = {
-            lbsnCountry().DESCRIPTOR.name: lbsnCountry(),
-            lbsnCity().DESCRIPTOR.name: lbsnCity(),
-            lbsnPlace().DESCRIPTOR.name: lbsnPlace(),
-            lbsnUser().DESCRIPTOR.name: lbsnUser(),
-            lbsnUserGroup().DESCRIPTOR.name:  lbsnUserGroup(),
-            lbsnPost().DESCRIPTOR.name: lbsnPost(),
-            lbsnPostReaction().DESCRIPTOR.name: lbsnPostReaction(),
-            lbsnRelationship().DESCRIPTOR.name: lbsnRelationship()
+            Country().DESCRIPTOR.name: Country(),
+            City().DESCRIPTOR.name: City(),
+            Place().DESCRIPTOR.name: Place(),
+            User().DESCRIPTOR.name: User(),
+            UserGroup().DESCRIPTOR.name:  UserGroup(),
+            Post().DESCRIPTOR.name: Post(),
+            PostReaction().DESCRIPTOR.name: PostReaction(),
+            Relationship().DESCRIPTOR.name: Relationship()
         }
         return dict_switcher.get(desc_name)
 
@@ -408,10 +430,40 @@ class HelperFunctions():
         if not post_guid:
             logging.getLogger('__main__').warning(f'No PostGuid\n\n'
                                                   f'{post_guid}')
-            input("Press Enter to continue... (entry will be skipped)")
+            # input("Press Enter to continue... (entry will be skipped)")
             return False
         else:
             return True
+
+    @staticmethod
+    def get_skipped_report(import_mapper):
+        """Get count report of records skipped due to low geoaccuracy
+        or ignore list"""
+        skipped_geo = None
+        skipped_ignore = None
+        # check if methods habe been implemented in import mapper module
+        try:
+            skipped_geo_count = import_mapper.get_skipped_geoaccuracy()
+        except AttributeError:
+            skipped_geo_count = 0
+        try:
+            skipped_ignorelist_count = import_mapper.get_skipped_ignorelist()
+        except AttributeError:
+            skipped_ignorelist_count = 0
+        # compile report texts
+        if skipped_geo_count > 0:
+            skipped_geo = (f'Skipped '
+                           f'{skipped_geo_count} '
+                           f'due to low geoaccuracy.')
+        if skipped_ignorelist_count > 0:
+            skipped_ignore = (f'Skipped '
+                              f'{skipped_ignorelist_count} '
+                              f'due to ignore list.')
+        if skipped_geo is None and skipped_ignore is None:
+            return ''
+        else:
+            report_str = ' '.join([skipped_geo, skipped_ignore])
+            return report_str
 
 
 class LBSNRecordDicts():
@@ -424,27 +476,46 @@ class LBSNRecordDicts():
         self.lbsn_post_dict = dict()
         self.lbsn_post_reaction_dict = dict()
         self.lbsn_relationship_dict = dict()
-        self.key_hashes = {lbsnPost.DESCRIPTOR.name: set(),
-                           lbsnCountry.DESCRIPTOR.name: set(),
-                           lbsnCity.DESCRIPTOR.name: set(),
-                           lbsnPlace.DESCRIPTOR.name: set(),
-                           lbsnUserGroup.DESCRIPTOR.name: set(),
-                           lbsnUser.DESCRIPTOR.name: set(),
-                           lbsnPostReaction.DESCRIPTOR.name: set(),
-                           lbsnRelationship.DESCRIPTOR.name: set()}
-        self.count_glob = 0
+        self.key_hashes = {Post.DESCRIPTOR.name: set(),
+                           Country.DESCRIPTOR.name: set(),
+                           City.DESCRIPTOR.name: set(),
+                           Place.DESCRIPTOR.name: set(),
+                           UserGroup.DESCRIPTOR.name: set(),
+                           User.DESCRIPTOR.name: set(),
+                           PostReaction.DESCRIPTOR.name: set(),
+                           Relationship.DESCRIPTOR.name: set()}
+        self.count_glob = 0  # total number of records added
+        self.count_glob_total = 0
+        self.count_dup_merge = 0  # number of duplicate records merged
+        self.count_dup_merge_total = 0
         # returns all recordsDicts in correct order,
         # with names as references (tuple)
         self.all_dicts = [
-            (self.lbsn_country_dict, lbsnCountry().DESCRIPTOR.name),
-            (self.lbsn_city_dict, lbsnCity().DESCRIPTOR.name),
-            (self.lbsn_place_dict, lbsnPlace().DESCRIPTOR.name),
-            (self.lbsn_user_group_dict, lbsnUserGroup().DESCRIPTOR.name),
-            (self.lbsn_user_dict, lbsnUser().DESCRIPTOR.name),
-            (self.lbsn_post_dict, lbsnPost().DESCRIPTOR.name),
-            (self.lbsn_post_reaction_dict, lbsnPostReaction().DESCRIPTOR.name),
-            (self.lbsn_relationship_dict, lbsnRelationship().DESCRIPTOR.name)
+            (self.lbsn_country_dict, Country().DESCRIPTOR.name),
+            (self.lbsn_city_dict, City().DESCRIPTOR.name),
+            (self.lbsn_place_dict, Place().DESCRIPTOR.name),
+            (self.lbsn_user_group_dict, UserGroup().DESCRIPTOR.name),
+            (self.lbsn_user_dict, User().DESCRIPTOR.name),
+            (self.lbsn_post_dict, Post().DESCRIPTOR.name),
+            (self.lbsn_post_reaction_dict, PostReaction().DESCRIPTOR.name),
+            (self.lbsn_relationship_dict, Relationship().DESCRIPTOR.name)
         ]
+
+    def get_current_count(self):
+        count_glob = self.count_glob
+        return count_glob
+
+    def get_all_records(self) -> Iterator[Tuple[Any, str]]:
+        """Returns tuple of 1) all records from self
+        in correct order using all_dicts and 2) Type of record
+
+        Order is: Country(), City(), Place(), UserGroup(),
+        User(), Post(), PostReaction(), Relationship()
+        """
+        for records_dict in self.all_dicts:
+            type_name = records_dict[1]
+            for record in records_dict[0].values():
+                yield record, type_name
 
     def get_type_counts(self):
         count_list = []
@@ -459,7 +530,7 @@ class LBSNRecordDicts():
         # Users, Countries, Places etc.)
         # in this case we assume that origin_id remains the same
         # in each program iteration!
-        if record.DESCRIPTOR.name == lbsnRelationship().DESCRIPTOR.name:
+        if record.DESCRIPTOR.name == Relationship().DESCRIPTOR.name:
             # we need the complete uuid of both entities for
             # relationships because they can span different origin_ids
             self.key_hashes[record.DESCRIPTOR.name].add(
@@ -478,7 +549,10 @@ class LBSNRecordDicts():
         """
         for lbsn_dict, __ in self.all_dicts:
             lbsn_dict.clear()
+        self.count_glob_total += self.count_glob
         self.count_glob = 0
+        self.count_dup_merge_total += self.count_dup_merge
+        self.count_dup_merge = 0
 
     def deep_compare_merge_messages(self, old_record, new_record):
         # Do a deep compare
@@ -514,13 +588,13 @@ class LBSNRecordDicts():
         """ Get dictionary by type name
         """
         dict_switcher = {
-            lbsnPost().DESCRIPTOR.name: self.lbsn_post_dict,
-            lbsnCountry().DESCRIPTOR.name: self.lbsn_country_dict,
-            lbsnCity().DESCRIPTOR.name: self.lbsn_city_dict,
-            lbsnPlace().DESCRIPTOR.name: self.lbsn_place_dict,
-            lbsnPostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
-            lbsnUser().DESCRIPTOR.name: self.lbsn_user_dict,
-            lbsnUserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
+            Post().DESCRIPTOR.name: self.lbsn_post_dict,
+            Country().DESCRIPTOR.name: self.lbsn_country_dict,
+            City().DESCRIPTOR.name: self.lbsn_city_dict,
+            Place().DESCRIPTOR.name: self.lbsn_place_dict,
+            PostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
+            User().DESCRIPTOR.name: self.lbsn_user_dict,
+            UserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
         }
         return dict_switcher.get(record.DESCRIPTOR.name)
 
@@ -531,22 +605,13 @@ class LBSNRecordDicts():
             oldrecord = sel_dict[pkeyID]
             # oldrecord will be modified/updated
             HelperFunctions.merge_existing_records(oldrecord, newrecord)
+            self.count_dup_merge += 1
         else:
             # just count new entries
-            self.count_progress_report()
+            self.count_glob += 1
             # update keyHash only necessary for new record
             self.update_key_hash(newrecord)
             sel_dict[pkeyID] = newrecord
-
-    def count_progress_report(self):
-        self.count_glob += 1
-        if self.count_glob % 1000 == 0:
-            # progress report (modulo)
-            print(
-                f'Identified Output Records {self.count_glob}..'
-                f'                                                    ',
-                end='\r')
-            sys.stdout.flush()
 
     def add_relationship_to_dict(self, newrelationship):
         pkey_id = f'{newrelationship.pkey.relation_to.origin.origin_id}' \
@@ -582,10 +647,19 @@ class GeocodeLocations():
 
 
 class TimeMonitor():
+    """Utility to report processing speed
+
+    Once initiallized, the start time will be
+    recorded and can be stopped at any time with
+    stop_time(), which will return the time passed
+    in a text readable time format.
+    """
+
     def __init__(self):
         self.now = time.time()
 
     def stop_time(self):
+        """Returns a text with time passed since self.now"""
         later = time.time()
         hours, rem = divmod(later-self.now, 3600)
         minutes, seconds = divmod(rem, 60)
@@ -593,53 +667,3 @@ class TimeMonitor():
         report_msg = f'{int(hours):0>2} Hours {int(minutes):0>2} ' \
                      f'Minutes and {seconds:05.2f} Seconds passed.'
         return report_msg
-
-
-class MemoryLeakDetec():
-    """Identifies memory leaks
-
-    execute .before() and .after() to see the difference
-    in new objects being added
-    execute report to list
-    if there are high numbers of specific types of objects,
-    use printType to print these, e.g. .printType(list)
-    see also http://tech.labs.oliverwyman.com/blog/
-    2008/11/14/tracing-python-memory-leaks/
-    """
-    os = __import__('os')
-
-    def __init__(self):
-        global defaultdict  # pylint: disable=global-variable-not-assigned
-        global get_objects  # pylint: disable=global-variable-not-assigned
-        from collections import defaultdict
-        from gc import get_objects
-        self._before = defaultdict(int)
-        self._after = defaultdict(int)
-
-    def before(self):
-        global get_objects  # pylint: disable=global-variable-not-assigned
-        for i in get_objects():  # pylint: disable=undefined-variable
-            self._before[type(i)] += 1
-
-    def after(self):
-        global get_objects  # pylint: disable=global-variable-not-assigned
-        for i in get_objects():  # pylint: disable=undefined-variable
-            self._after[type(i)] += 1
-
-    def report(self):
-        reportStat = ""
-        if self._before and self._after:
-            reportStat = [(k, self._after[k] - self._before[k])
-                          for k in self._after if
-                          self._after[k] - self._before[k]]
-        return reportStat
-
-    def printType(self, type, max=100):
-        x = 0
-        toplist = []
-        for obj in get_objects():  # pylint: disable=undefined-variable
-            if isinstance(obj, type):
-                x += 1
-                if x < max:
-                    toplist.append(obj)
-        print(f'Count all of Type {type}: {x}. Top {max}: {toplist}')
