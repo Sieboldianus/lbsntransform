@@ -11,6 +11,7 @@ import logging
 import re
 import sys
 import time
+from typing import Tuple, Any, Iterator
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
 
@@ -156,6 +157,7 @@ class HelperFunctions():
 
     @staticmethod
     def assign_media_post_type(json_media_string):
+        """Media type assignment based on Twitter json"""
         # if post, get type of first entity
         type_string = json_media_string[0].get('type')
         # type is either photo, video, or animated_gif
@@ -374,7 +376,7 @@ class HelperFunctions():
             #                                               newrecord)
 
     @staticmethod
-    def load_importer_mapping_module(origin):
+    def load_importer_mapping_module(origin: int):
         """ Switch import module based on origin input
             1 - Instagram, 2 - Flickr, 3 - Twitter
         """
@@ -478,6 +480,18 @@ class LBSNRecordDicts():
             (self.lbsn_post_reaction_dict, PostReaction().DESCRIPTOR.name),
             (self.lbsn_relationship_dict, Relationship().DESCRIPTOR.name)
         ]
+
+    def get_all_records(self) -> Iterator[Tuple[Any, str]]:
+        """Returns tuple of 1) all records from self
+        in correct order using all_dicts and 2) Type of record
+
+        Order is: Country(), City(), Place(), UserGroup(),
+        User(), Post(), PostReaction(), Relationship()
+        """
+        for records_dict in self.all_dicts:
+            type_name = records_dict[1]
+            for record in records_dict[0].values():
+                yield record, type_name
 
     def get_type_counts(self):
         count_list = []
@@ -619,10 +633,19 @@ class GeocodeLocations():
 
 
 class TimeMonitor():
+    """Utility to report processing speed
+
+    Once initiallized, the start time will be
+    recorded and can be stopped at any time with
+    stop_time(), which will return the time passed
+    in a text readable time format.
+    """
+
     def __init__(self):
         self.now = time.time()
 
     def stop_time(self):
+        """Returns a text with time passed since self.now"""
         later = time.time()
         hours, rem = divmod(later-self.now, 3600)
         minutes, seconds = divmod(rem, 60)
@@ -630,53 +653,3 @@ class TimeMonitor():
         report_msg = f'{int(hours):0>2} Hours {int(minutes):0>2} ' \
                      f'Minutes and {seconds:05.2f} Seconds passed.'
         return report_msg
-
-
-class MemoryLeakDetec():
-    """Identifies memory leaks
-
-    execute .before() and .after() to see the difference
-    in new objects being added
-    execute report to list
-    if there are high numbers of specific types of objects,
-    use printType to print these, e.g. .printType(list)
-    see also http://tech.labs.oliverwyman.com/blog/
-    2008/11/14/tracing-python-memory-leaks/
-    """
-    os = __import__('os')
-
-    def __init__(self):
-        global defaultdict  # pylint: disable=global-variable-not-assigned
-        global get_objects  # pylint: disable=global-variable-not-assigned
-        from collections import defaultdict
-        from gc import get_objects
-        self._before = defaultdict(int)
-        self._after = defaultdict(int)
-
-    def before(self):
-        global get_objects  # pylint: disable=global-variable-not-assigned
-        for i in get_objects():  # pylint: disable=undefined-variable
-            self._before[type(i)] += 1
-
-    def after(self):
-        global get_objects  # pylint: disable=global-variable-not-assigned
-        for i in get_objects():  # pylint: disable=undefined-variable
-            self._after[type(i)] += 1
-
-    def report(self):
-        reportStat = ""
-        if self._before and self._after:
-            reportStat = [(k, self._after[k] - self._before[k])
-                          for k in self._after if
-                          self._after[k] - self._before[k]]
-        return reportStat
-
-    def printType(self, type, max=100):
-        x = 0
-        toplist = []
-        for obj in get_objects():  # pylint: disable=undefined-variable
-            if isinstance(obj, type):
-                x += 1
-                if x < max:
-                    toplist.append(obj)
-        print(f'Count all of Type {type}: {x}. Top {max}: {toplist}')
