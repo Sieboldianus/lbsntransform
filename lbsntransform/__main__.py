@@ -109,6 +109,7 @@ def main():
                     f'Count per type: '
                     f'{lbsntransform.lbsn_records.get_type_counts()}'
                     f'records.', end='\r')
+                sys.stdout.flush()
             if (config.transferlimit and
                     lbsntransform.processed_total >= config.transferlimit):
                 break

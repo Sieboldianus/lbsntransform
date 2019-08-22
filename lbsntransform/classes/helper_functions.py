@@ -501,6 +501,10 @@ class LBSNRecordDicts():
             (self.lbsn_relationship_dict, Relationship().DESCRIPTOR.name)
         ]
 
+    def get_current_count(self):
+        count_glob = self.count_glob
+        return count_glob
+
     def get_all_records(self) -> Iterator[Tuple[Any, str]]:
         """Returns tuple of 1) all records from self
         in correct order using all_dicts and 2) Type of record
@@ -604,20 +608,10 @@ class LBSNRecordDicts():
             self.count_dup_merge += 1
         else:
             # just count new entries
-            self.count_progress_report()
+            self.count_glob += 1
             # update keyHash only necessary for new record
             self.update_key_hash(newrecord)
             sel_dict[pkeyID] = newrecord
-
-    def count_progress_report(self):
-        self.count_glob += 1
-        if self.count_glob % 1000 == 0:
-            # progress report (modulo)
-            print(
-                f'Identified LBSN Records: {self.count_glob}..'
-                f'{"".join([" " for x in range(1, 200)])}',
-                end='\r')
-            sys.stdout.flush()
 
     def add_relationship_to_dict(self, newrelationship):
         pkey_id = f'{newrelationship.pkey.relation_to.origin.origin_id}' \
