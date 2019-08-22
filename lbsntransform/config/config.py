@@ -262,11 +262,11 @@ class BaseConfig():
         if args.Origin:
             self.origin = int(args.Origin)
         if args.geocodeLocations:
-            self.geocode_locations = f'{os.getcwd()}\\'
-            f'{args.geocodeLocations}'
+            self.geocode_locations = Path(
+                args.geocodeLocations)
         if args.ignoreInputSourceList:
-            self.ignore_input_source_list = f'{os.getcwd()}\\'
-            f'{args.ignoreInputSourceList}'
+            self.ignore_input_source_list = Path(
+                args.ignoreInputSourceList)
         if args.dbUser_Output:
             self.dbuser_output = args.dbUser_Output
             self.dbpassword_output = args.dbPassword_Output
