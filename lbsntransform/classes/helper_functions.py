@@ -29,9 +29,9 @@ from shapely import geos, wkt
 import platform
 PLATFORM_SYS = platform.system()
 if PLATFORM_SYS == 'Linux':
-    from google.protobuf.pyext._message import RepeatedCompositeContainer
+    from google.protobuf.pyext._message import RepeatedCompositeContainer  # pylint: disable=no-name-in-module
 else:
-    from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
+    from google.protobuf.internal.containers import RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
 
 # pylint: disable=no-member
 
