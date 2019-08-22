@@ -24,6 +24,15 @@ from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
                                              UserGroup)
 from shapely import geos, wkt
 
+# due to different protocol buffers implementations on Unix, MacOS and Windows
+# import types based on OS
+import platform
+PLATFORM_SYS = platform.system()
+if PLATFORM_SYS == 'Linux':
+    from google.protobuf.pyext._message import RepeatedCompositeContainer
+else:
+    from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
+
 # pylint: disable=no-member
 
 
@@ -362,6 +371,17 @@ class HelperFunctions():
                 return list
         else:
             return None
+
+    @staticmethod
+    def is_composite_field_container(in_obj):
+        """Checks whether in_obj is of type RepeatedCompositeFieldContainer"""
+        if PLATFORM_SYS == 'Linux':
+            if isinstance(in_obj, RepeatedCompositeContainer):
+                return True
+        else:
+            if isinstance(in_obj, RepeatedCompositeFieldContainer):
+                return True
+        return False
 
     @staticmethod
     def merge_existing_records(oldrecord, newrecord):

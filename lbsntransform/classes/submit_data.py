@@ -29,13 +29,6 @@ from .store_csv import LBSNcsv
 from google.protobuf import text_format
 from google.protobuf.timestamp_pb2 import Timestamp
 
-# due to different protocol buffers implementations, import both possible types
-from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-try:
-    from google.protobuf.pyext._message import RepeatedCompositeContainer
-except ImportError:
-    pass
-
 
 class LBSNTransfer():
     def __init__(self, db_cursor=None,
@@ -690,8 +683,7 @@ class LBSNTransfer():
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x = getattr(record, descriptor.name)
-                if x and not (isinstance(x, RepeatedCompositeFieldContainer) or
-                              isinstance(x, RepeatedCompositeContainer)):
+                if x and not HelperFunctions.is_composite_field_container(x):
                     xCleaned = set(x)
                     xSorted = sorted(xCleaned)
                     # Complete clear of repeated field
