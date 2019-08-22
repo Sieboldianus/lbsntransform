@@ -31,13 +31,13 @@ class LBSNTransform():
     Output can be:
         - local CSV
         - local file with ProtoBuf encoded records
-        - local SQL file ready for "Impoort from" in Postgres LBSN db
-        - Postgres DB connection
+        - local SQL file ready for "Import from" in Postgres LBSN db
+        - Postgres DB connection (with existing LBSN DB Structure)
 
     Parameters
     ----------
 
-    origin : str, optional (default=3)
+    origin_id : int, optional (default=3)
         Type of input source. Each input source has its own import mapper
         defined in a class. Feel free to add or modify classes based
         on your needs. Pre-provided are:
@@ -102,9 +102,7 @@ class LBSNTransform():
         #
 
         # initialize stats
-        self.processed_records = 0
         self.processed_total = 0
-        self.skipped_low_geoaccuracy = 0
         self.initial_loop = True
         self.how_long = None
         # field mapping structure
@@ -120,7 +118,6 @@ class LBSNTransform():
         """
         self.lbsn_records.add_records_to_dict(
             lbsn_record)
-        self.processed_records += 1
         self.processed_total += 1
         # On the first loop
         # or after 50.000 (default) processed records,
@@ -129,7 +126,7 @@ class LBSNTransform():
             self.output.store_origin(self.origin_id, self.origin_name)
             self.store_lbsn_records()
             self.initial_loop = False
-        if self.processed_records >= self.transfer_count:
+        if self.lbsn_records.count_glob >= self.transfer_count:
             self.store_lbsn_records()
 
     def store_lbsn_records(self):
@@ -138,8 +135,6 @@ class LBSNTransform():
         self.output.store_lbsn_record_dicts(self.lbsn_records)
         self.output.commit_changes()
         self.lbsn_records.clear()
-        # update statistics
-        self.processed_records = 0
 
     def finalize_output(self):
         """finalize all transactions (csv merge etc.)

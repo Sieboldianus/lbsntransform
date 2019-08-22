@@ -408,10 +408,40 @@ class HelperFunctions():
         if not post_guid:
             logging.getLogger('__main__').warning(f'No PostGuid\n\n'
                                                   f'{post_guid}')
-            input("Press Enter to continue... (entry will be skipped)")
+            # input("Press Enter to continue... (entry will be skipped)")
             return False
         else:
             return True
+
+    @staticmethod
+    def get_skipped_report(import_mapper):
+        """Get count report of records skipped due to low geoaccuracy
+        or ignore list"""
+        skipped_geo = None
+        skipped_ignore = None
+        # check if methods habe been implemented in import mapper module
+        try:
+            skipped_geo_count = import_mapper.get_skipped_geoaccuracy()
+        except AttributeError:
+            skipped_geo_count = 0
+        try:
+            skipped_ignorelist_count = import_mapper.get_skipped_ignorelist()
+        except AttributeError:
+            skipped_ignorelist_count = 0
+        # compile report texts
+        if skipped_geo_count > 0:
+            skipped_geo = (f'Skipped '
+                           f'{skipped_geo_count} '
+                           f'due to low geoaccuracy.')
+        if skipped_ignorelist_count > 0:
+            skipped_ignore = (f'Skipped '
+                              f'{skipped_ignorelist_count} '
+                              f'due to ignore list.')
+        if skipped_geo is None and skipped_ignore is None:
+            return ''
+        else:
+            report_str = ' '.join([skipped_geo, skipped_ignore])
+            return report_str
 
 
 class LBSNRecordDicts():
@@ -432,7 +462,10 @@ class LBSNRecordDicts():
                            User.DESCRIPTOR.name: set(),
                            PostReaction.DESCRIPTOR.name: set(),
                            Relationship.DESCRIPTOR.name: set()}
-        self.count_glob = 0
+        self.count_glob = 0  # total number of records added
+        self.count_glob_total = 0
+        self.count_dup_merge = 0  # number of duplicate records merged
+        self.count_dup_merge_total = 0
         # returns all recordsDicts in correct order,
         # with names as references (tuple)
         self.all_dicts = [
@@ -478,7 +511,10 @@ class LBSNRecordDicts():
         """
         for lbsn_dict, __ in self.all_dicts:
             lbsn_dict.clear()
+        self.count_glob_total += self.count_glob
         self.count_glob = 0
+        self.count_dup_merge_total += self.count_dup_merge
+        self.count_dup_merge = 0
 
     def deep_compare_merge_messages(self, old_record, new_record):
         # Do a deep compare
@@ -531,6 +567,7 @@ class LBSNRecordDicts():
             oldrecord = sel_dict[pkeyID]
             # oldrecord will be modified/updated
             HelperFunctions.merge_existing_records(oldrecord, newrecord)
+            self.count_dup_merge += 1
         else:
             # just count new entries
             self.count_progress_report()
@@ -543,8 +580,8 @@ class LBSNRecordDicts():
         if self.count_glob % 1000 == 0:
             # progress report (modulo)
             print(
-                f'Identified Output Records {self.count_glob}..'
-                f'                                                    ',
+                f'Identified LBSN Records: {self.count_glob}..'
+                f'{"".join([" " for x in range(1, 200)])}',
                 end='\r')
             sys.stdout.flush()
 

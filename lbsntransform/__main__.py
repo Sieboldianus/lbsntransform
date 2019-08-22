@@ -103,12 +103,9 @@ def main():
             # report progress
             if lbsntransform.processed_total % 1000 == 0:
                 print(
-                    f'{lbsntransform.processed_total} '
+                    f'{input_data.count_glob} '
                     f'input records processed (up to '
                     f'{input_data.continue_number}). '
-                    f'Skipped '
-                    f'{input_data.import_mapper.skipped_low_geoaccuracy} '
-                    f'due to low geoaccuracy. '
                     f'Count per type: '
                     f'{lbsntransform.lbsn_records.get_type_counts()}'
                     f'records.', end='\r')
@@ -116,17 +113,19 @@ def main():
                     lbsntransform.processed_total >= config.transferlimit):
                 break
     # finalize output (close db connection, submit remaining)
-    print(f'Transferring remaining '
+    print(f'\nTransferring remaining '
           f'{lbsntransform.lbsn_records.count_glob} to db.. '
           f'{HF.null_notice(input_data.import_mapper.null_island)})')
     lbsntransform.finalize_output()
 
     # final report
-    print(f'\n\nProcessed {lbsntransform.processed_total} input records '
+    print(f'\n\nProcessed {input_data.count_glob} input records '
           f'(Input {input_data.start_number} to '
           f'{input_data.continue_number}). '
-          f'Skipped {input_data.import_mapper.skipped_low_geoaccuracy} '
-          f'due to low geoaccuracy.')
+          f'\n\nIdentified {lbsntransform.processed_total} LBSN records, '
+          f'with {lbsntransform.lbsn_records.count_glob_total} distinct LBSN records overall. '
+          f'{HF.get_skipped_report(input_data.import_mapper)}. '
+          f'Merged {lbsntransform.lbsn_records.count_dup_merge_total} duplicate records.')
 
     input(f'Done. {how_long.stop_time()}')
 
