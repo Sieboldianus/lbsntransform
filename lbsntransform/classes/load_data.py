@@ -39,7 +39,8 @@ class LoadData():
             startwith_db_rownumber=None,
             skip_until_file=None, cursor_input=None, input_path=None,
             recursive_load=None, local_file_type=None,
-            endwith_db_rownumber=None, is_stacked_json=None, csv_delim=None,
+            endwith_db_rownumber=None, is_stacked_json=None,
+            is_line_separated_json=None, csv_delim=None,
             input_lbsn_type=None, geocode_locations=None,
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
@@ -75,13 +76,15 @@ class LoadData():
         self.db_row_number = 0
         self.endwith_db_rownumber = endwith_db_rownumber
         self.is_stacked_json = is_stacked_json
+        self.is_line_separated_json = is_line_separated_json
         self.local_file_type = local_file_type
         self.csv_delim = csv_delim
         self.file_format = local_file_type
         self.input_lbsn_type = input_lbsn_type
         self.cursor = None
         self.start_id = None
-        #self.transferlimit = cfg.transferlimit
+        self.count_glob = 0
+        # self.transferlimit = cfg.transferlimit
         # Optional Geocoding
         self.geocode_dict = None
         if geocode_locations:
@@ -265,37 +268,67 @@ class LoadData():
 
         Typical form is [{json1},{json2}], if is_stacked_json is True:
         will process stacked jsons in the form of {json1}{json2}
+
+        If is_line_separated_json is true:
+        {json1}
+        {json2}
+        ...
         """
-        records = []
+        # records = []
         # Stacked JSON is a simple file with many concatenated jsons, e.g.
         # {json1}{json2} etc.
         if self.is_stacked_json:
+            # note: this requires loading file completely first
+            # not streaming optimized yet
             try:
-                for obj in HF.decode_stacked(file_handle.read()):
-                    records.append(obj)
+                for record in HF.decode_stacked(file_handle.read()):
+                    yield record
             except json.decoder.JSONDecodeError:
                 pass
+        if self.is_line_separated_json:
+            # json's separated by line ending
+            for line in file_handle:
+                record = json.loads(line)
+                yield record
         else:
             # normal json nesting, e.g.  {{record1},{record2}}
             try:
                 records = json.load(file_handle)
             except json.decoder.JSONDecodeError:
                 pass
-        if records:
-            return records
-        return None
+            if records:
+                if isinstance(records, list):
+                    for record in records:
+                        yield record
+                else:
+                    record = records
+                    yield record
+            yield None
+            # streaming version:
+            # start_pos = 0
+            # while True:
+            #     try:
+            #         record = json.load(file_handle)
+            #         yield record
+            #         return
+            #     except json.JSONDecodeError as e:
+            #         file_handle.seek(start_pos)
+            #         json_str = file_handle.read(e.pos)
+            #         record = json.loads(json_str)
+            #         start_pos += e.pos
+            #         yield record
 
     def fetch_csv_data_from_file(self, file_handle):
         """Read csv entries from file (either *.txt or *.csv).
 
         The actual CSV formatting is not setable in config yet.
         There are many specifics, e.g.
-        #QUOTE_NONE is used here because media saved from Flickr
+        # QUOTE_NONE is used here because media saved from Flickr
         does not contain any quotes ""
         """
         if self.csv_delim is None:
             self.csv_delim = ','
-        #records = []
+        # records = []
         record_reader = csv.reader(file_handle, delimiter=self.csv_delim,
                                    quotechar='"', quoting=csv.QUOTE_NONE)
         return record_reader

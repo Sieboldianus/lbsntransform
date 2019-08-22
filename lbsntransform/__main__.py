@@ -77,6 +77,7 @@ def main():
         local_file_type=config.local_file_type,
         endwith_db_rownumber=config.endwith_db_rownumber,
         is_stacked_json=config.is_stacked_json,
+        is_line_separated_json=config.is_line_separated_json,
         csv_delim=config.csv_delim,
         input_lbsn_type=config.input_lbsn_type,
         geocode_locations=config.geocode_locations,

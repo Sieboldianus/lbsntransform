@@ -26,7 +26,7 @@ class LBSNTransform():
     in Google's ProtoBuf format (see package lbsnstructure).
 
     Input can be:
-        - local CSV or Json (stacked/regular)
+        - local CSV or Json (stacked/regular/line separated)
         - Postgres DB connection
     Output can be:
         - local CSV

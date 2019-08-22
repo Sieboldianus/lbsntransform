@@ -26,6 +26,7 @@ class BaseConfig():
         self.local_file_type = 'json'
         self.input_path = None
         self.is_stacked_json = False
+        self.is_line_separated_json = False
         self.dbuser_input = 'example-user-name'
         self.dbpassword_input = 'example-user-password'
         self.dbserveraddress_input = '222.22.222.22'
@@ -92,9 +93,17 @@ class BaseConfig():
                                       default=False,
                                       help='Typical form is '
                                       '[{json1},{json2}], '
-                                      'if is_stacked_json is True: '
+                                      'if isStackedJson is True: '
                                       'will process stacked jsons in the form '
                                       'of {json1}{json2} (no comma)')
+        local_input_args.add_argument('-iL', "--isLineSeparatedJson",
+                                      action='store_true',
+                                      default=False,
+                                      help='Typical form is '
+                                      '[{json1},{json2}], '
+                                      'if isLineSeparatedJson is True: '
+                                      'will process stacked jsons in the form '
+                                      'of {json1}\n{json2} (linebreak)')
         # DB Output
         dboutput_args = parser.add_argument_group('DB Output')
         dboutput_args.add_argument('-pO', "--dbPassword_Output",
@@ -229,6 +238,8 @@ class BaseConfig():
             self.local_file_type = args.LocalFileType
             if args.isStackedJson:
                 self.is_stacked_json = True
+            if args.isLineSeparatedJson:
+                self.is_line_separated_json = True
             if not args.InputPath:
                 self.input_path = Path.cwd() / "01_Input"
                 print(f'Using Path: {self.input_path}')
