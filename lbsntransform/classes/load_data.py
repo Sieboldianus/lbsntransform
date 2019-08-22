@@ -159,16 +159,19 @@ class LoadData():
             # local file loop
             for file_handle in file_handles:
                 if not self.file_format == 'json':
+                    # csv or txt
                     while file_handle:
                         record = self.fetch_record_from_file(
                             file_handle)
                         yield record
                 else:
-                    records = self.fetch_json_data_from_file(
-                        file_handle)
-                    if records is not None:
-                        for record in records:
+                    # json
+                    for record in self.fetch_json_data_from_file(
+                            file_handle):
+                        if record:
                             yield record
+                        else:
+                            continue
         else:
             # db query
             while self.cursor:
@@ -176,25 +179,26 @@ class LoadData():
                     self.cursor, self.continue_number)
                 yield record
 
-    def convert_records(self, records: Dict[str, Any]) -> Iterator[Union[
+    def convert_records(self, records: Dict[str, Any]) -> Iterator[List[Union[
             CompositeKey, Language, RelationshipKey, City,
             Country, Origin, Place, Post,
             PostReaction, Relationship, User,
-            UserGroup]]:
+            UserGroup]]]:
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 
         Returns statistic-counts, modifies (adds results to) import_mapper
         """
         for record in records:
+            self.count_glob += 1
             if self.is_local_input:
                 single_record = record
             else:
                 self.db_row_number = record[0]
                 single_record = record[2]
-            # test for empty or malformed records
             if LoadData.skip_empty_or_other(single_record):
-                yield None
+                # skip empty or malformed records
+                continue
             if self.local_file_type == 'json' or not self.is_local_input:
                 # note: db-records always returned as json
                 lbsn_records = self.import_mapper.parse_json_record(
@@ -205,7 +209,10 @@ class LoadData():
             else:
                 exit(f'Format {self.local_file_type} not supportet.')
             # return record as pipe
-            yield lbsn_records
+            if lbsn_records is None:
+                continue
+            for lbsn_record in lbsn_records:
+                yield lbsn_record
 
     @staticmethod
     def skip_empty_or_other(single_record):

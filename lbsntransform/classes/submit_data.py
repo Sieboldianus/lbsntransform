@@ -120,23 +120,21 @@ class LBSNTransfer():
         # self.headersWritten.clear()
         r_cnt = 0
         self.count_affected = 0
-        for records_dict in lbsn_record_dicts.all_dicts:
-            type_name = records_dict[1]
-            for record in records_dict[0].values():
-                r_cnt += 1
-                print(f'Storing {r_cnt} of {lbsn_record_dicts.count_glob} '
-                      f'output records ({type_name})..', end='\r')
-                self.prepare_lbsn_record(record, type_name)
-                self.count_glob += 1  # self.dbCursor.rowcount
-                self.count_entries_commit += 1  # self.dbCursor.rowcount
-                self.count_entries_store += 1
-                if self.db_cursor and (self.count_glob == 100 or
-                                       self.count_entries_commit >
-                                       self.commit_volume):
-                    self.commit_changes()
-                if self.store_csv and (self.count_entries_store >
-                                       self.store_volume):
-                    self.store_changes()
+        for record, type_name in lbsn_record_dicts.get_all_records():
+            r_cnt += 1
+            print(f'Storing {r_cnt} of {lbsn_record_dicts.count_glob} '
+                  f'lbsn records ({type_name})..', end='\r')
+            self.prepare_lbsn_record(record, type_name)
+            self.count_glob += 1  # self.dbCursor.rowcount
+            self.count_entries_commit += 1  # self.dbCursor.rowcount
+            self.count_entries_store += 1
+            if self.db_cursor and (self.count_glob == 100 or
+                                   self.count_entries_commit >
+                                   self.commit_volume):
+                self.commit_changes()
+            if self.store_csv and (self.count_entries_store >
+                                   self.store_volume):
+                self.store_changes()
         # submit remaining rest
         self.submit_all_batches()
         # self.count_affected += x # monitoring
