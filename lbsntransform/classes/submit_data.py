@@ -609,8 +609,8 @@ class LBSNTransfer():
         or this: https://stackoverflow.com/questions/8134602/
         psycopg2-insert-multiple-rows-with-one-query
         """
-        self.db_cursor.execute("SAVEPOINT submit_recordBatch")
         tsuccessful = False
+        self.db_cursor.execute("SAVEPOINT submit_recordBatch")
         while not tsuccessful:
             try:
                 self.db_cursor.execute(insert_sql)
@@ -624,15 +624,22 @@ class LBSNTransfer():
                     print(
                         f'TransactionIntegrityError, inserting language "'
                         f'{missingLanguage}" first..               ')
+                    # self.db_cursor.rollback()
                     self.db_cursor.execute(
                         "ROLLBACK TO SAVEPOINT submit_recordBatch")
                     insert_language_sql = '''
                            INSERT INTO data."language"
-                            (language_short,language_name,language_name_de)
+                            (language_short, language_name, language_name_de)
                            VALUES (%s,NULL,NULL);
                            '''
+                    # submit sql to db
                     self.db_cursor.execute(
                         insert_language_sql, (missingLanguage,))
+                    # commit changes so they're available when
+                    # try is executed again
+                    self.commit_changes()
+                    # recreate SAVEPOINT after language insert
+                    self.db_cursor.execute("SAVEPOINT submit_recordBatch")
                 else:
                     sys.exit(f'{e}')
             except psycopg2.DataError as e:
@@ -651,7 +658,7 @@ class LBSNTransfer():
             except psycopg2.errors.DiskFull as e:
                 input("Disk space full. Clean files and continue..")
             else:
-                # self.count_affected += self.dbCursor.rowcount # monitoring
+                # executed if the try clause does not raise an exception
                 self.db_cursor.execute("RELEASE SAVEPOINT submit_recordBatch")
                 tsuccessful = True
 
