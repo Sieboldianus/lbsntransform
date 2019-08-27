@@ -466,9 +466,11 @@ class FieldMappingTwitter():
         post_record.post_like_count = value_count(
             json_string_dict.get('favorite_count'))
         post_record.post_url = f'https://twitter.com/statuses/{post_guid}'
-        post_language = Language()
-        post_language.language_short = json_string_dict.get('lang')
-        post_record.post_language.CopyFrom(post_language)
+        language_str = json_string_dict.get('lang')
+        if language_str:
+            post_language = Language()
+            post_language.language_short = json_string_dict.get('lang')
+            post_record.post_language.CopyFrom(post_language)
         # If Extended_tweet object is available,
         # process entities and post_body (text) data from extended object
         is_truncated = json_string_dict.get('truncated')
