@@ -1,11 +1,10 @@
 test:
-  image: continuumio/miniconda3:latest
-  before_script:
-      - conda config --add channels conda-forge 
-      - conda env create -f environment_dev.yml
-      - source activate lbsntransform
+  image: continuumio/miniconda3:4.6.14
   stage: test
   script:
+    - conda config --add channels conda-forge
+    - conda env create -f environment_dev.yml
+    - source activate lbsntransform
     # test dev install
     - pip install -e . --no-dependencies
     # create badges
