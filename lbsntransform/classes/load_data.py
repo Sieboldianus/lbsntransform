@@ -160,10 +160,12 @@ class LoadData():
             for file_handle in file_handles:
                 if not self.file_format == 'json':
                     # csv or txt
-                    while file_handle:
-                        record = self.fetch_record_from_file(
-                            file_handle)
-                        yield record
+                    for record in self.fetch_record_from_file(
+                            file_handle):
+                        if record:
+                            yield record
+                        else:
+                            continue
                 else:
                     # json
                     for record in self.fetch_json_data_from_file(
@@ -260,7 +262,6 @@ class LoadData():
 
     def fetch_record_from_file(self, file_handle):
         """Fetches CSV or JSON data (including stacked json) from file"""
-
         if self.file_format in ['txt', 'csv']:
             record_reader = self.fetch_csv_data_from_file(
                 file_handle)
@@ -268,7 +269,7 @@ class LoadData():
             exit(f'Format {self.file_format} not supported.')
         # return record pipeline
         for record in record_reader:
-            return record
+            yield record
 
     def fetch_json_data_from_file(self, file_handle, start_file_id=0):
         """Read json entries from file.
