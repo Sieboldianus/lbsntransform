@@ -46,7 +46,7 @@ class FieldMappingFlickr():
         self.origin = origin
         self.null_island = 0
         # this is where all the data will be stored
-        self.lbsn_records = LBSNRecordDicts()
+        self.lbsn_records = []
         self.log = logging.getLogger('__main__')  # get the main logger object
         self.skipped_count = 0
         self.skipped_low_geoaccuracy = 0
@@ -62,12 +62,14 @@ class FieldMappingFlickr():
         Attributes:
         record    A single row from CSV, stored as list type.
         """
+        self.lbsn_records.clear()
         if len(record) < 12 or not record[0].isdigit():
             # skip
             self.skipped_count += 1
             return
         else:
             self.extract_flickr_post(record)
+        return self.lbsn_records
 
     def extract_flickr_post(self, record):
         """Main function for processing Flickr CSV entry.
@@ -93,7 +95,7 @@ class FieldMappingFlickr():
         user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
-        self.lbsn_records.add_records_to_dict(user_record)
+        self.lbsn_records.append(user_record)
         post_record.post_latlng = self.flickr_extract_postlatlng(record)
         geoaccuracy = FieldMappingFlickr.flickr_map_geoaccuracy(record[13])
         if geoaccuracy:
@@ -105,7 +107,7 @@ class FieldMappingFlickr():
             place_record = HF.new_lbsn_record_with_id(Place(),
                                                       record[19],
                                                       self.origin)
-            self.lbsn_records.add_records_to_dict(place_record)
+            self.lbsn_records.append(place_record)
             post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
             HF.parse_csv_datestring_to_protobuf(record[9]))
@@ -134,7 +136,7 @@ class FieldMappingFlickr():
         else:
             post_record.post_type = Post.IMAGE
         post_record.post_content_license = value_count(record[14])
-        self.lbsn_records.add_records_to_dict(post_record)
+        self.lbsn_records.append(post_record)
 
     @staticmethod
     def reverse_csv_comma_replace(csv_string):
