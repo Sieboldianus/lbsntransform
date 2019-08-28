@@ -62,10 +62,10 @@ class HelperFunctions():
         try:
             if single:
                 record = json.loads(gen)
-                yield record
+                return record
             else:
                 records = json.load(gen)
-                yield records
+                return records
         except json.decoder.JSONDecodeError:
             print(e)
             pass
