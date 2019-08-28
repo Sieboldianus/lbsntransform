@@ -19,6 +19,7 @@ __license__ = "GNU GPLv3"
 import io
 import logging
 import sys
+import traceback
 
 from lbsntransform.classes.helper_functions import HelperFunctions as HF
 from lbsntransform.classes.helper_functions import TimeMonitor
@@ -98,21 +99,32 @@ def main():
     # read and process unfiltered input records from csv
     # start settings
     with input_data as records:
-        for record in records:
-            lbsntransform.add_processed_records(record)
-            # report progress
-            if lbsntransform.processed_total % 1000 == 0:
-                print(
-                    f'{input_data.count_glob} '
-                    f'input records processed (up to '
-                    f'{input_data.continue_number}). '
-                    f'Count per type: '
-                    f'{lbsntransform.lbsn_records.get_type_counts()}'
-                    f'records.', end='\r')
-                sys.stdout.flush()
-            if (config.transferlimit and
-                    lbsntransform.processed_total >= config.transferlimit):
-                break
+        try:
+            for record in records:
+                lbsntransform.add_processed_records(record)
+                # report progress
+                if lbsntransform.processed_total % 1000 == 0:
+                    stats_str = HF.report_stats(
+                        input_data.count_glob,
+                        input_data.continue_number,
+                        lbsntransform.lbsn_records)
+                    print(stats_str, end='\r')
+                    sys.stdout.flush()
+                if (config.transferlimit and
+                        lbsntransform.processed_total >= config.transferlimit):
+                    break
+        except Exception as e:
+            # catch any exception and output additional information
+            print(
+                f"\nError while reading records: "
+                f"{e}\n{e.args}\n{traceback.format_exc()}\n")
+            print(f"Current source: \n {input_data.current_source}\n")
+            stats_str = HF.report_stats(
+                input_data.count_glob,
+                input_data.continue_number,
+                lbsntransform.lbsn_records)
+            print(stats_str)
+
     # finalize output (close db connection, submit remaining)
     print(f'\nTransferring remaining '
           f'{lbsntransform.lbsn_records.count_glob} to db.. '
