@@ -13,6 +13,7 @@ import sys
 import time
 from typing import Tuple, Any, Iterator
 from datetime import timezone
+import json
 from json import JSONDecodeError, JSONDecoder
 
 import emoji
@@ -37,6 +38,51 @@ else:
 
 
 class HelperFunctions():
+
+    @staticmethod
+    def json_read_wrapper(gen):
+        """Wraps json iterator and catches any error"""
+        while True:
+            try:
+                yield next(gen)
+            except StopIteration:
+                # no further items produced by the iterator
+                raise
+            except json.decoder.JSONDecodeError:
+                pass
+            except Exception as e:
+                print(e)
+                pass
+
+    @staticmethod
+    def json_load_wrapper(gen, single: bool = None):
+        """Wraps json load(s) and catches any error"""
+        if single is None:
+            single = False
+        try:
+            if single:
+                record = json.loads(gen)
+                yield record
+            else:
+                records = json.load(gen)
+                yield records
+        except json.decoder.JSONDecodeError:
+            print(e)
+            pass
+        except Exception as e:
+            print(e)
+            pass
+
+    @staticmethod
+    def report_stats(input_cnt, current_cnt, lbsn_records):
+        """Format string for reporting stats."""
+        report_stats = (f'{input_cnt} '
+                        f'input records processed (up to '
+                        f'{current_cnt}). '
+                        f'Count per type: '
+                        f'{lbsn_records.get_type_counts()}'
+                        f'records.')
+        return report_stats
 
     @staticmethod
     def set_logger():

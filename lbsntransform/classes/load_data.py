@@ -84,6 +84,7 @@ class LoadData():
         self.cursor = None
         self.start_id = None
         self.count_glob = 0
+        self.current_source = None
         # self.transferlimit = cfg.transferlimit
         # Optional Geocoding
         self.geocode_dict = None
@@ -135,6 +136,7 @@ class LoadData():
         # process localfiles
         for file_name in self.filelist:
             self.continue_number += 1
+            self.current_source = file_name
             # HF.log_main_debug(f'\nCurrent file: {ntpath.basename(file_name)}')
             yield open(file_name, 'r', encoding="utf-8", errors='replace')
 
@@ -288,22 +290,17 @@ class LoadData():
         if self.is_stacked_json:
             # note: this requires loading file completely first
             # not streaming optimized yet
-            try:
-                for record in HF.decode_stacked(file_handle.read()):
-                    yield record
-            except json.decoder.JSONDecodeError:
-                pass
+            for record in HF.json_read_wrapper(
+                    HF.decode_stacked(file_handle.read())):
+                yield record
         if self.is_line_separated_json:
             # json's separated by line ending
             for line in file_handle:
-                record = json.loads(line)
+                record = HF.json_load_wrapper(line, single=True)
                 yield record
         else:
             # normal json nesting, e.g.  {{record1},{record2}}
-            try:
-                records = json.load(file_handle)
-            except json.decoder.JSONDecodeError:
-                pass
+            records = HF.json_load_wrapper(file_handle)
             if records:
                 if isinstance(records, list):
                     for record in records:
