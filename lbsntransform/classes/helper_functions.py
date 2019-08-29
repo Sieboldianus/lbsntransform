@@ -49,12 +49,10 @@ class HelperFunctions():
                 # no further items produced by the iterator
                 raise
             except json.decoder.JSONDecodeError:
-                logging.getlogger('__main__').Warning(
-                    f"\nJSONDecodeError: skipping entry\n{gen}\n\n")
+                HelperFunctions._log_JSONDecodeError(gen)
                 pass
             except Exception as e:
-                logging.getlogger('__main__').Warning(
-                    f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
+                HelperFunctions._log_unhandled_exception(e)
                 pass
 
     @staticmethod
@@ -70,13 +68,21 @@ class HelperFunctions():
                 records = json.load(gen)
                 return records
         except json.decoder.JSONDecodeError:
-            logging.getlogger('__main__').Warning(
-                f"\nJSONDecodeError: skipping entry\n{gen}\n\n")
+            HelperFunctions._log_JSONDecodeError(gen)
             pass
         except Exception as e:
-            logging.getlogger('__main__').Warning(
-                f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
+            HelperFunctions._log_unhandled_exception(e)
             pass
+
+    @staticmethod
+    def _log_JSONDecodeError(record_str: str):
+        logging.getlogger('__main__').Warning(
+            f"\nJSONDecodeError: skipping entry\n{record_str}\n\n")
+
+    @staticmethod
+    def _log_unhandled_exception(e: str):
+        logging.getlogger('__main__').Warning(
+            f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
 
     @staticmethod
     def report_stats(input_cnt, current_cnt, lbsn_records):
