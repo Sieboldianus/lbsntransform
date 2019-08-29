@@ -49,9 +49,12 @@ class HelperFunctions():
                 # no further items produced by the iterator
                 raise
             except json.decoder.JSONDecodeError:
+                logging.getlogger('__main__').Warning(
+                    f"\nJSONDecodeError: skipping entry\n{gen}\n\n")
                 pass
             except Exception as e:
-                print(e)
+                logging.getlogger('__main__').Warning(
+                    f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
                 pass
 
     @staticmethod
@@ -67,10 +70,12 @@ class HelperFunctions():
                 records = json.load(gen)
                 return records
         except json.decoder.JSONDecodeError:
-            print(e)
+            logging.getlogger('__main__').Warning(
+                f"\nJSONDecodeError: skipping entry\n{gen}\n\n")
             pass
         except Exception as e:
-            print(e)
+            logging.getlogger('__main__').Warning(
+                f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
             pass
 
     @staticmethod
