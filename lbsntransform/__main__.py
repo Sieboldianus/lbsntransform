@@ -126,21 +126,27 @@ def main():
             print(stats_str)
 
     # finalize output (close db connection, submit remaining)
-    print(f'\nTransferring remaining '
-          f'{lbsntransform.lbsn_records.count_glob} to db.. '
-          f'{HF.null_notice(input_data.import_mapper.null_island)})')
+    lbsntransform.log.info(
+        f'\nTransferring remaining '
+        f'{lbsntransform.lbsn_records.count_glob} to db.. '
+        f'{HF.null_notice(input_data.import_mapper.null_island)})')
     lbsntransform.finalize_output()
 
     # final report
-    print(f'\n\nProcessed {input_data.count_glob} input records '
-          f'(Input {input_data.start_number} to '
-          f'{input_data.continue_number}). '
-          f'\n\nIdentified {lbsntransform.processed_total} LBSN records, '
-          f'with {lbsntransform.lbsn_records.count_glob_total} distinct LBSN records overall. '
-          f'{HF.get_skipped_report(input_data.import_mapper)}. '
-          f'Merged {lbsntransform.lbsn_records.count_dup_merge_total} duplicate records.')
+    lbsntransform.log.info(
+        f'\n\nProcessed {input_data.count_glob} input records '
+        f'(Input {input_data.start_number} to '
+        f'{input_data.continue_number}). '
+        f'\n\nIdentified {lbsntransform.processed_total} LBSN records, '
+        f'with {lbsntransform.lbsn_records.count_glob_total} distinct LBSN records overall. '
+        f'{HF.get_skipped_report(input_data.import_mapper)}. '
+        f'Merged {lbsntransform.lbsn_records.count_dup_merge_total} duplicate records.')
 
-    input(f'Done. {how_long.stop_time()}')
+    lbsntransform.log.info(f'Done. {how_long.stop_time()}')
+
+    input()
+
+    lbsntransform.close_log()
 
 
 if __name__ == "__main__":

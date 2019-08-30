@@ -96,6 +96,13 @@ class HelperFunctions():
         return report_stats
 
     @staticmethod
+    def get_str_formatted_today():
+        """Returns date as string (YYYY-mm-dd)"""
+        today = dt.date.today()
+        today_str = today.strftime("%Y-%m-%d")
+        return today_str
+
+    @staticmethod
     def set_logger():
         """ Set logging handler manually,
         so we can also print to console while logging to file

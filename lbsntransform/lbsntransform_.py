@@ -10,8 +10,10 @@ __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
 
 import io
+import os
 import logging
 import sys
+from pathlib import Path
 
 from .classes.helper_functions import HelperFunctions as HF
 from .classes.helper_functions import LBSNRecordDicts
@@ -146,3 +148,17 @@ class LBSNTransform():
             self.cursor_input.close()
         if self.dbuser_output:
             self.cursor_output.close()
+
+    def close_log(self):
+        """"Closes and renames log file for archive
+        """
+        handlers = self.log.handlers[:]
+        for handler in handlers:
+            handler.close()
+            self.log.removeHandler(handler)
+        # rename log file for archive purposes
+        today = HF.get_str_formatted_today()
+        numb = 0
+        while Path(f"{today}_log{numb}.log").exists():
+            numb += 1
+        os.rename('log.log', f'{today}_log{numb}.log')
