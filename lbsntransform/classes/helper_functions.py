@@ -76,12 +76,12 @@ class HelperFunctions():
 
     @staticmethod
     def _log_JSONDecodeError(record_str: str):
-        logging.getlogger('__main__').Warning(
+        logging.getLogger('__main__').warning(
             f"\nJSONDecodeError: skipping entry\n{record_str}\n\n")
 
     @staticmethod
     def _log_unhandled_exception(e: str):
-        logging.getlogger('__main__').Warning(
+        logging.getLogger('__main__').warning(
             f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
 
     @staticmethod
