@@ -152,10 +152,7 @@ class LBSNTransform():
     def close_log(self):
         """"Closes and renames log file for archive
         """
-        handlers = self.log.handlers[:]
-        for handler in handlers:
-            handler.close()
-            self.log.removeHandler(handler)
+        logging.shutdown()
         # rename log file for archive purposes
         today = HF.get_str_formatted_today()
         numb = 0
