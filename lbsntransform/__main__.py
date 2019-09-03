@@ -144,8 +144,6 @@ def main():
 
     lbsntransform.log.info(f'Done. {how_long.stop_time()}')
 
-    input()
-
     lbsntransform.close_log()
 
 
