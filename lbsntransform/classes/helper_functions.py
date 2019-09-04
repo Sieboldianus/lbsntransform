@@ -90,9 +90,16 @@ class HelperFunctions():
         report_stats = (f'{input_cnt} '
                         f'input records processed (up to '
                         f'{current_cnt}). '
-                        f'Count per type: '
-                        f'{lbsn_records.get_type_counts()}'
-                        f'records.')
+                        f'{HelperFunctions.get_count_stats(lbsn_records)}')
+        return report_stats
+
+    @staticmethod
+    def get_count_stats(lbsn_records):
+        """Format string for reporting count stats."""
+        report_stats = (
+            f'Count per type: '
+            f'{lbsn_records.get_type_counts()}'
+            f'records.')
         return report_stats
 
     @staticmethod

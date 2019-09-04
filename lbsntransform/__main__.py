@@ -115,15 +115,16 @@ def main():
                     break
         except Exception as e:
             # catch any exception and output additional information
-            print(
+            lbsntransform.log.warning(
                 f"\nError while reading records: "
                 f"{e}\n{e.args}\n{traceback.format_exc()}\n")
-            print(f"Current source: \n {input_data.current_source}\n")
+            lbsntransform.log.warning(
+                f"Current source: \n {input_data.current_source}\n")
             stats_str = HF.report_stats(
                 input_data.count_glob,
                 input_data.continue_number,
                 lbsntransform.lbsn_records)
-            print(stats_str)
+            lbsntransform.log.warning(stats_str)
 
     # finalize output (close db connection, submit remaining)
     lbsntransform.log.info(
@@ -138,9 +139,13 @@ def main():
         f'(Input {input_data.start_number} to '
         f'{input_data.continue_number}). '
         f'\n\nIdentified {lbsntransform.processed_total} LBSN records, '
-        f'with {lbsntransform.lbsn_records.count_glob_total} distinct LBSN records overall. '
+        f'with {lbsntransform.lbsn_records.count_glob_total} '
+        f'distinct LBSN records overall. '
         f'{HF.get_skipped_report(input_data.import_mapper)}. '
-        f'Merged {lbsntransform.lbsn_records.count_dup_merge_total} duplicate records.')
+        f'Merged {lbsntransform.lbsn_records.count_dup_merge_total} '
+        f'duplicate records.')
+    lbsntransform.log.info(
+        f'\n{HF.get_count_stats(lbsntransform.lbsn_records)}')
 
     lbsntransform.log.info(f'Done. {how_long.stop_time()}')
 
