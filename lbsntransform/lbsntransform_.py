@@ -150,12 +150,14 @@ class LBSNTransform():
             self.cursor_output.close()
 
     def close_log(self):
-        """"Closes and renames log file for archive
+        """"Closes log and writes to archive file
         """
         logging.shutdown()
         # rename log file for archive purposes
         today = HF.get_str_formatted_today()
-        numb = 0
-        while Path(f"{today}_log{numb}.log").exists():
-            numb += 1
-        os.rename('log.log', f'{today}_log{numb}.log')
+        outfile = Path(f"{today}.log")
+        with open(outfile, 'w+') as outfile:
+            with open('log.log') as infile:
+                outfile.write(f'\n')
+                for line in infile:
+                    outfile.write(line)
