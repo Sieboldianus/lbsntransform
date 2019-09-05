@@ -156,7 +156,7 @@ class LBSNTransform():
         # rename log file for archive purposes
         today = HF.get_str_formatted_today()
         outfile = Path(f"{today}.log")
-        with open(outfile, 'w+') as outfile:
+        with open(outfile, 'a+') as outfile:
             with open('log.log') as infile:
                 outfile.write(f'\n')
                 for line in infile:
