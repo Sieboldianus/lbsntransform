@@ -138,7 +138,7 @@ class LoadData():
             self.continue_number += 1
             self.current_source = file_name
             HF.log_main_debug(
-                f'\nCurrent file: {ntpath.basename(file_name)}\n')
+                f'Current file: {ntpath.basename(file_name)}')
             yield open(file_name, 'r', encoding="utf-8", errors='replace')
 
     def _process_input(self, file_handles: Iterator[TextIO]) -> Iterator[Dict[

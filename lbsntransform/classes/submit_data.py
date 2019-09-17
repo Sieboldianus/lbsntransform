@@ -420,7 +420,24 @@ class LBSNTransfer():
                     data."place".city_guid),
                 post_count = GREATEST(COALESCE(EXCLUDED.post_count,
                     data."place".post_count), COALESCE(
-                        data."place".post_count, EXCLUDED.post_count));
+                        data."place".post_count, EXCLUDED.post_count)),
+                place_website = COALESCE(
+                    EXCLUDED.place_website, data."place".place_website),
+                place_phone = COALESCE(
+                    EXCLUDED.place_phone, data."place".place_phone),
+                address = COALESCE(
+                    EXCLUDED.address, data."place".address),
+                zip_code = COALESCE(
+                    EXCLUDED.zip_code, data."place".zip_code),
+                attributes = COALESCE(
+                    EXCLUDED.attributes, data."place".attributes),
+                checkin_count = COALESCE(
+                    EXCLUDED.checkin_count, data."place".checkin_count),
+                like_count = COALESCE(
+                    EXCLUDED.like_count, data."place".like_count),
+                parent_places = COALESCE(
+                    extensions.mergeArrays(EXCLUDED.parent_places,
+                    data."place".parent_places), ARRAY[]::text[]);
             '''
         return insert_sql
 

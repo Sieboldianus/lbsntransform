@@ -27,7 +27,7 @@ from .helper_functions import HelperFunctions as HF
 from .helper_functions import LBSNRecordDicts
 
 
-class FieldMappingFB():
+class FieldMappingFBPlace():
     """ Provides mapping function from Facebook Place Graph endpoints to
         protobuf lbsnstructure
     """
@@ -43,7 +43,7 @@ class FieldMappingFB():
                  ignore_sources_set=set(),
                  min_geoaccuracy=None):
         origin = Origin()
-        origin.origin_id = Origin.TWITTER
+        origin.origin_id = Origin.FACEBOOK
         self.origin = origin
         # this is where all the data will be stored
         self.lbsn_records = []
@@ -73,14 +73,11 @@ class FieldMappingFB():
         """
         # clear any records from previous run
         self.lbsn_records.clear()
-        # decide if main object is place
-        if input_lbsn_type and input_lbsn_type in ('placepage'):
-            # place
-            place_record = self.extract_place(json_string_dict)
+        # place
+        fb_places_list = json_string_dict.get("data")
+        for place in fb_places_list:
+            place_record = self.extract_place(place)
             self.lbsn_records.append(place_record)
-        else:
-            # otherwise, raise error
-            raise ValueError("Input type not supported")
         # finally, return list of all extracted records
         return self.lbsn_records
 
@@ -115,28 +112,34 @@ class FieldMappingFB():
                     Place(), place_id, self.origin)
         if isinstance(place_record, Place):
             # place specific
-            input(type(place_cat_list))
             if place_cat_list:
-                place_record.attributes = place_cat_list
+                for cat in place_cat_list:
+                    place_record.attributes[
+                        cat.get("id")] = cat.get("name")
             place_opening_hours = place.get('hours')
             if place_opening_hours:
-                # merge dictionaries (shallow)
-                place_record.attributes = {
-                    **place_record.attributes, **place_opening_hours}
+                for open_hour in place_opening_hours:
+                    place_record.attributes[
+                        open_hour.get("key")] = open_hour.get("value")
             rating_count = place.get('rating_count')
             if rating_count:
-                # merge dictionaries (shallow)
-                place_record.attributes["rating_count"] = rating_count
+                # explicit column needed for rating
+                place_record.attributes["rating_count"] = str(rating_count)
             about = place.get('about')
             if about:
-                # merge dictionaries (shallow)
                 place_record.attributes["about"] = about
             place_record.like_count = place.get('engagement').get('count')
             place_record.checkin_count = place.get('checkins')
-            place_record.place_description = place.get('description')
-            place_record.zip_code = place.get('zip')
-            place_record.address = FieldMappingFB.compile_address(place)
-            place_record.place_phone = place.get('description')
+            description = place.get('description')
+            if description:
+                place_record.place_description = description
+            zip_code = place.get('zip')
+            if zip_code:
+                place_record.zip_code = zip_code
+            place_record.address = FieldMappingFBPlace.compile_address(place)
+            place_phone = place.get('place_phone')
+            if place_phone:
+                place_record.place_phone = place_phone
         # same for Country, City and Place
         place_name = place.get('name').replace('\n\r', '')
         # remove multiple whitespace
@@ -147,15 +150,15 @@ class FieldMappingFB():
         # return
         return place_record
 
-
-@staticmethod
-def compile_address(fb_place_dict):
-    single_line_address = fb_place_dict.get("single_line_address")
-    if single_line_address:
-        return single_line_address
-    else:
-        fb_city = fb_place_dict.get("city")
-        fb_country = fb_place_dict.get("country")
-        fb_street = fb_place_dict.get("street")
-        fb_address = ', '.join([fb_street, fb_city, fb_country])
-        return fb_address
+    @staticmethod
+    def compile_address(fb_place_dict):
+        single_line_address = fb_place_dict.get("single_line_address")
+        if single_line_address:
+            return single_line_address
+        else:
+            fb_city = fb_place_dict.get("city")
+            fb_country = fb_place_dict.get("country")
+            fb_street = fb_place_dict.get("street")
+            fb_address = ', '.join(
+                filter(None, [fb_street, fb_city, fb_country]))
+            return fb_address

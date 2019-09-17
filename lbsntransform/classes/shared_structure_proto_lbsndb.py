@@ -35,7 +35,9 @@ class ProtoLBSNMapping():
              'geom_area, url',
              Place.DESCRIPTOR.name:
              'origin_id, place_guid, name, name_alternatives, geom_center, '
-             'geom_area, url, city_guid, post_count',
+             'geom_area, url, city_guid, post_count, place_description, '
+             'place_website, place_phone, address, zip_code, attributes, '
+             'checkin_count, like_count, parent_places',
              Post.DESCRIPTOR.name:
              'origin_id, post_guid, post_latlng, place_guid, city_guid, '
              'country_guid, post_geoaccuracy, user_guid, post_create_date, '
@@ -90,7 +92,7 @@ class ProtoLBSNMapping():
 
     def prepare_lbsn_country(self, record):
         """Get common attributes for records of type Place"""
-        place_record = PlaceAttrShared(record)
+        place_record = PlaceBaseAttrShared(record)
         prepared_record = (place_record.origin_id,
                            place_record.guid,
                            place_record.name,
@@ -103,7 +105,7 @@ class ProtoLBSNMapping():
 
     def prepare_lbsn_city(self, record):
         """Get common attributes for records of type City"""
-        place_record = PlaceAttrShared(record)
+        place_record = PlaceBaseAttrShared(record)
         country_guid = HF.null_check(record.country_pkey.id)
         sub_type = HF.null_check(record.sub_type)
         prepared_record = (place_record.origin_id,
@@ -121,9 +123,19 @@ class ProtoLBSNMapping():
 
     def prepare_lbsn_place(self, record):
         """Get common attributes for records of type Place"""
-        place_record = PlaceAttrShared(record)
+        place_record = PlaceBaseAttrShared(record)
+        # get additional attributes specific to places
         city_guid = HF.null_check(record.city_pkey.id)
         post_count = HF.null_check(record.post_count)
+        place_description = HF.null_check(record.place_description)
+        place_website = HF.null_check(record.place_website)
+        place_phone = HF.null_check(record.place_phone)
+        address = HF.null_check(record.address)
+        zip_code = HF.null_check(record.zip_code)
+        attributes = HF.map_to_dict(HF.null_check(record.attributes))
+        checkin_count = HF.null_check(record.checkin_count)
+        like_count = HF.null_check(record.like_count)
+        parent_places = HF.null_check(record.parent_places)
         prepared_record = (place_record.origin_id,
                            place_record.guid,
                            place_record.name,
@@ -134,7 +146,16 @@ class ProtoLBSNMapping():
                                place_record.geom_area),
                            place_record.url,
                            city_guid,
-                           post_count)
+                           post_count,
+                           place_description,
+                           place_website,
+                           place_phone,
+                           address,
+                           zip_code,
+                           attributes,
+                           checkin_count,
+                           like_count,
+                           parent_places)
         return prepared_record
 
     def prepare_lbsn_user(self, record):
@@ -238,7 +259,7 @@ class ProtoLBSNMapping():
         return prepared_typerecord_tuple
 
 
-class PlaceAttrShared():
+class PlaceBaseAttrShared():
     """Shared structure for Place Attributes
 
     Contains attributes shared among PG DB and LBSN ProtoBuf spec.
