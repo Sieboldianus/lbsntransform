@@ -9,6 +9,7 @@ import logging
 import sys
 
 import psycopg2
+import psycopg2.extras
 
 LOG = logging.getLogger()
 
@@ -62,6 +63,8 @@ class DBConnection():
         except Exception as err:
             print(err)
             sys.exit()
+        # activate dict to hstore conversion globally
+        psycopg2.extras.register_hstore(conn, globally=True)
         # conn.cursor will return a cursor object,
         # you can use this cursor to perform queries
         cursor = conn.cursor()

@@ -31,8 +31,10 @@ import platform
 PLATFORM_SYS = platform.system()
 if PLATFORM_SYS == 'Linux':
     from google.protobuf.pyext._message import RepeatedCompositeContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.pyext._message import ScalarMapContainer  # pylint: disable=no-name-in-module
 else:
     from google.protobuf.internal.containers import RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.internal.containers import ScalarMapContainer  # pylint: disable=no-name-in-module
 
 # pylint: disable=no-member
 
@@ -447,12 +449,21 @@ class HelperFunctions():
     def is_composite_field_container(in_obj):
         """Checks whether in_obj is of type RepeatedCompositeFieldContainer"""
         if PLATFORM_SYS == 'Linux':
-            if isinstance(in_obj, RepeatedCompositeContainer):
+            if isinstance(
+                    in_obj, (RepeatedCompositeContainer, ScalarMapContainer)):
                 return True
         else:
-            if isinstance(in_obj, RepeatedCompositeFieldContainer):
+            if isinstance(
+                    in_obj, (RepeatedCompositeFieldContainer, ScalarMapContainer)):
                 return True
         return False
+
+    @staticmethod
+    def map_to_dict(proto_map):
+        """Converts protobuf field map (ScalarMapContainer)
+        to Dictionary"""
+        mapped_dict = dict(zip(proto_map.keys(), proto_map.values()))
+        return mapped_dict
 
     @staticmethod
     def merge_existing_records(oldrecord, newrecord):
@@ -478,8 +489,10 @@ class HelperFunctions():
             from .field_mapping_yfcc100m import FieldMappingYFCC100M as importer
         elif origin == 3:
             from .field_mapping_twitter import FieldMappingTwitter as importer
-        elif origin == 4:
-            from .field_mapping_fb import FieldMappingFB as importer
+        elif origin == 41:
+            from .field_mapping_fb import FieldMappingFBPlace as importer
+        else:
+            raise ValueError("Input type not supported")
         return importer
 
     @staticmethod
