@@ -469,7 +469,7 @@ class HelperFunctions():
     @staticmethod
     def load_importer_mapping_module(origin: int):
         """ Switch import module based on origin input
-            1 - Instagram, 2 - Flickr, 3 - Twitter
+            1 - Instagram, 2 - Flickr, 3 - Twitter, 4 - Facebook
         """
         if origin == 2:
             from .field_mapping_flickr import FieldMappingFlickr as importer
@@ -478,6 +478,8 @@ class HelperFunctions():
             from .field_mapping_yfcc100m import FieldMappingYFCC100M as importer
         elif origin == 3:
             from .field_mapping_twitter import FieldMappingTwitter as importer
+        elif origin == 4:
+            from .field_mapping_fb import FieldMappingFB as importer
         return importer
 
     @staticmethod
