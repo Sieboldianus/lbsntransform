@@ -125,14 +125,18 @@ class FieldMappingFBPlace():
             if rating_count:
                 # explicit column needed for rating
                 place_record.attributes["rating_count"] = str(rating_count)
-            about = place.get('about')
-            if about:
-                place_record.attributes["about"] = about
             place_record.like_count = place.get('engagement').get('count')
             place_record.checkin_count = place.get('checkins')
             description = place.get('description')
             if description:
                 place_record.place_description = description
+            about = place.get('about')
+            if about:
+                if not description:
+                    place_record.place_description = about
+                else:
+                    # store additional about in description
+                    place_record.attributes["about"] = about
             zip_code = place.get('zip')
             if zip_code:
                 place_record.zip_code = zip_code
