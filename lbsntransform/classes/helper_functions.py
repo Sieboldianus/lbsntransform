@@ -462,8 +462,10 @@ class HelperFunctions():
     def map_to_dict(proto_map):
         """Converts protobuf field map (ScalarMapContainer)
         to Dictionary"""
-        mapped_dict = dict(zip(proto_map.keys(), proto_map.values()))
-        return mapped_dict
+        if proto_map:
+            mapped_dict = dict(zip(proto_map.keys(), proto_map.values()))
+            return mapped_dict
+        return {}
 
     @staticmethod
     def merge_existing_records(oldrecord, newrecord):
@@ -484,7 +486,7 @@ class HelperFunctions():
         """
         if origin == 2:
             from .field_mapping_flickr import FieldMappingFlickr as importer
-        if origin == 21:
+        elif origin == 21:
             # Flickr YFCC100M dataset
             from .field_mapping_yfcc100m import FieldMappingYFCC100M as importer
         elif origin == 3:
