@@ -421,6 +421,8 @@ class LBSNTransfer():
                 post_count = GREATEST(COALESCE(EXCLUDED.post_count,
                     data."place".post_count), COALESCE(
                         data."place".post_count, EXCLUDED.post_count)),
+                place_description = COALESCE(
+                    EXCLUDED.place_description, data."place".place_description),
                 place_website = COALESCE(
                     EXCLUDED.place_website, data."place".place_website),
                 place_phone = COALESCE(
