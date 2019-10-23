@@ -12,6 +12,6 @@ dependencies:
   - shapely
   - requests
   - pip:
-    - lbsnstructure==0.2.8
+    - lbsnstructure>=0.5.0
     - ppygis3>=0.4
 
