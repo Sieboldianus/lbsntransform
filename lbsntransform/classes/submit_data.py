@@ -88,7 +88,7 @@ class LBSNTransfer():
     def store_origin(self, origin_id, name):
         insert_sql = \
             f'''
-            INSERT INTO data."origin" (
+            INSERT INTO social."origin" (
                 origin_id, name)
             VALUES ({origin_id},'{name}')
             ON CONFLICT (origin_id)
@@ -199,7 +199,7 @@ class LBSNTransfer():
     def postreaction_insertsql(self, values_str, record_type):
         insert_sql = \
             f'''
-            INSERT INTO data."post_reaction" (
+            INSERT INTO topical."post_reaction" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id, reaction_guid)
@@ -207,26 +207,26 @@ class LBSNTransfer():
                 reaction_latlng = COALESCE(
                     NULLIF(EXCLUDED.reaction_latlng,
                     '0101000020E610000000000000000000000000000000000000'),
-                    data."post_reaction".reaction_latlng,
+                    topical."post_reaction".reaction_latlng,
                     '0101000020E610000000000000000000000000000000000000'),
                 user_guid = COALESCE(EXCLUDED.user_guid,
-                    data."post_reaction".user_guid),
+                    topical."post_reaction".user_guid),
                 referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid,
-                    data."post_reaction".referencedPost_guid),
+                    topical."post_reaction".referencedPost_guid),
                 referencedPostreaction_guid = COALESCE(
                     EXCLUDED.referencedPostreaction_guid,
-                    data."post_reaction".referencedPostreaction_guid),
+                    topical."post_reaction".referencedPostreaction_guid),
                 reaction_type = COALESCE(NULLIF(EXCLUDED.reaction_type, 'unknown'),
-                    data."post_reaction".reaction_type, 'unknown'),
+                    topical."post_reaction".reaction_type, 'unknown'),
                 reaction_date = COALESCE(EXCLUDED.reaction_date,
-                    data."post_reaction".reaction_date),
+                    topical."post_reaction".reaction_date),
                 reaction_content = COALESCE(EXCLUDED.reaction_content,
-                    data."post_reaction".reaction_content),
+                    topical."post_reaction".reaction_content),
                 reaction_like_count = COALESCE(EXCLUDED.reaction_like_count,
-                    data."post_reaction".reaction_like_count),
+                    topical."post_reaction".reaction_like_count),
                 user_mentions = COALESCE(
                     extensions.mergeArrays(EXCLUDED.user_mentions,
-                    data."post_reaction".user_mentions), ARRAY[]::text[]);
+                    topical."post_reaction".user_mentions), ARRAY[]::text[]);
             '''
         return insert_sql
 
@@ -247,7 +247,7 @@ class LBSNTransfer():
         """
         insert_sql = \
             f'''
-            INSERT INTO data."post" (
+            INSERT INTO topical."post" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id, post_guid)
@@ -255,140 +255,140 @@ class LBSNTransfer():
                 post_latlng = COALESCE(
                     NULLIF(EXCLUDED.post_latlng,
                     '0101000020E610000000000000000000000000000000000000'),
-                    data."post".post_latlng,
+                    topical."post".post_latlng,
                     '0101000020E610000000000000000000000000000000000000'),
                 place_guid = COALESCE(EXCLUDED.place_guid,
-                    data."post".place_guid),
+                    topical."post".place_guid),
                 city_guid = COALESCE(EXCLUDED.city_guid,
-                    data."post".city_guid),
+                    topical."post".city_guid),
                 country_guid = COALESCE(EXCLUDED.country_guid,
-                    data."post".country_guid),
+                    topical."post".country_guid),
                 post_geoaccuracy = COALESCE(NULLIF(EXCLUDED.post_geoaccuracy,'unknown'),
-                    data."post".post_geoaccuracy, 'unknown'),
+                    topical."post".post_geoaccuracy, 'unknown'),
                 user_guid = COALESCE(EXCLUDED.user_guid,
-                    data."post".user_guid),
+                    topical."post".user_guid),
                 post_create_date = COALESCE(EXCLUDED.post_create_date,
-                    data."post".post_create_date),
+                    topical."post".post_create_date),
                 post_publish_date = COALESCE(EXCLUDED.post_publish_date,
-                    data."post".post_publish_date),
+                    topical."post".post_publish_date),
                 post_body = COALESCE(EXCLUDED.post_body,
-                    data."post".post_body),
+                    topical."post".post_body),
                 post_language = COALESCE(EXCLUDED.post_language,
-                    data."post".post_language),
+                    topical."post".post_language),
                 user_mentions = COALESCE(EXCLUDED.user_mentions,
-                    data."post".user_mentions),
+                    topical."post".user_mentions),
                 hashtags = COALESCE(extensions.mergeArrays(EXCLUDED.hashtags,
-                    data."post".hashtags), ARRAY[]::text[]),
+                    topical."post".hashtags), ARRAY[]::text[]),
                 emoji = COALESCE(
                     extensions.mergeArrays(EXCLUDED.emoji,
-                    data."post".emoji), ARRAY[]::text[]),
+                    topical."post".emoji), ARRAY[]::text[]),
                 post_like_count = COALESCE(EXCLUDED.post_like_count,
-                    data."post".post_like_count),
+                    topical."post".post_like_count),
                 post_comment_count = COALESCE(EXCLUDED.post_comment_count,
-                    data."post".post_comment_count),
+                    topical."post".post_comment_count),
                 post_views_count = COALESCE(EXCLUDED.post_views_count,
-                    data."post".post_views_count),
+                    topical."post".post_views_count),
                 post_title = COALESCE(EXCLUDED.post_title,
-                    data."post".post_title),
+                    topical."post".post_title),
                 post_thumbnail_url = COALESCE(EXCLUDED.post_thumbnail_url,
-                    data."post".post_thumbnail_url),
+                    topical."post".post_thumbnail_url),
                 post_url = COALESCE(EXCLUDED.post_url,
-                    data."post".post_url),
+                    topical."post".post_url),
                 post_type = COALESCE(NULLIF(EXCLUDED.post_type, 'text'),
-                    data."post".post_type, 'text'),
+                    topical."post".post_type, 'text'),
                 post_filter = COALESCE(EXCLUDED.post_filter,
-                    data."post".post_filter),
+                    topical."post".post_filter),
                 post_quote_count = COALESCE(EXCLUDED.post_quote_count,
-                    data."post".post_quote_count),
+                    topical."post".post_quote_count),
                 post_share_count = COALESCE(EXCLUDED.post_share_count,
-                    data."post".post_share_count),
+                    topical."post".post_share_count),
                 input_source = COALESCE(EXCLUDED.input_source,
-                    data."post".input_source),
+                    topical."post".input_source),
                 post_content_license = COALESCE(
                     EXCLUDED.post_content_license,
-                        data."post".post_content_license);
+                        topical."post".post_content_license);
             '''
         return insert_sql
 
     def user_insertsql(self, values_str, record_type):
         insert_sql = \
             f'''
-            INSERT INTO data."user" (
+            INSERT INTO social."user" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id, user_guid)
             DO UPDATE SET
                 user_name = COALESCE(EXCLUDED.user_name,
-                    data."user".user_name),
+                    social."user".user_name),
                 user_fullname = COALESCE(EXCLUDED.user_fullname,
-                    data."user".user_fullname),
+                    social."user".user_fullname),
                 follows = GREATEST(COALESCE(
-                    EXCLUDED.follows, data."user".follows),
-                    COALESCE(data."user".follows, EXCLUDED.follows)),
+                    EXCLUDED.follows, social."user".follows),
+                    COALESCE(social."user".follows, EXCLUDED.follows)),
                 followed = GREATEST(COALESCE(
-                    EXCLUDED.followed, data."user".followed),
-                    COALESCE(data."user".followed, EXCLUDED.followed)),
+                    EXCLUDED.followed, social."user".followed),
+                    COALESCE(social."user".followed, EXCLUDED.followed)),
                 group_count = GREATEST(COALESCE(
-                    EXCLUDED.group_count, data."user".group_count),
-                    COALESCE(data."user".group_count, EXCLUDED.group_count)),
+                    EXCLUDED.group_count, social."user".group_count),
+                    COALESCE(social."user".group_count, EXCLUDED.group_count)),
                 biography = COALESCE(EXCLUDED.biography,
-                    data."user".biography),
+                    social."user".biography),
                 post_count = GREATEST(COALESCE(
                     EXCLUDED.post_count, "user".post_count),
-                    COALESCE(data."user".post_count, EXCLUDED.post_count)),
+                    COALESCE(social."user".post_count, EXCLUDED.post_count)),
                 is_private = COALESCE(EXCLUDED.is_private,
-                    data."user".is_private),
-                url = COALESCE(EXCLUDED.url, data."user".url),
+                    social."user".is_private),
+                url = COALESCE(EXCLUDED.url, social."user".url),
                 is_available = COALESCE(EXCLUDED.is_available,
-                    data."user".is_available),
+                    social."user".is_available),
                 user_language = COALESCE(EXCLUDED.user_language,
-                    data."user".user_language),
+                    social."user".user_language),
                 user_location = COALESCE(EXCLUDED.user_location,
-                    data."user".user_location),
+                    social."user".user_location),
                 user_location_geom = COALESCE(EXCLUDED.user_location_geom,
-                    data."user".user_location_geom),
+                    social."user".user_location_geom),
                 liked_count = GREATEST(COALESCE(
-                    EXCLUDED.liked_count, data."user".liked_count),
-                    COALESCE(data."user".liked_count, EXCLUDED.liked_count)),
+                    EXCLUDED.liked_count, social."user".liked_count),
+                    COALESCE(social."user".liked_count, EXCLUDED.liked_count)),
                 active_since = COALESCE(EXCLUDED.active_since,
-                    data."user".active_since),
+                    social."user".active_since),
                 profile_image_url = COALESCE(EXCLUDED.profile_image_url,
-                    data."user".profile_image_url),
+                    social."user".profile_image_url),
                 user_timezone = COALESCE(EXCLUDED.user_timezone,
-                    data."user".user_timezone),
+                    social."user".user_timezone),
                 user_utc_offset = COALESCE(EXCLUDED.user_utc_offset,
-                    data."user".user_utc_offset),
+                    social."user".user_utc_offset),
                 user_groups_member = COALESCE(
                     extensions.mergeArrays(EXCLUDED.user_groups_member,
-                    data."user".user_groups_member), ARRAY[]::text[]),
+                    social."user".user_groups_member), ARRAY[]::text[]),
                 user_groups_follows = COALESCE(
                     extensions.mergeArrays(EXCLUDED.user_groups_follows,
-                    data."user".user_groups_follows), ARRAY[]::text[]);
+                    social."user".user_groups_follows), ARRAY[]::text[]);
             '''
         return insert_sql
 
     def usergroup_insertsql(self, values_str, record_type):
         insert_sql = \
             f'''
-            INSERT INTO data."user_groups" (
+            INSERT INTO social."user_groups" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id, usergroup_guid)
             DO UPDATE SET
                 usergroup_name = COALESCE(EXCLUDED.usergroup_name,
-                    data."user_groups".usergroup_name),
+                    social."user_groups".usergroup_name),
                 usergroup_description = COALESCE(
                     EXCLUDED.usergroup_description,
-                    data."user_groups".usergroup_description),
+                    social."user_groups".usergroup_description),
                 member_count = GREATEST(COALESCE(
-                    EXCLUDED.member_count, data."user_groups".member_count),
-                    COALESCE(data."user_groups".member_count,
+                    EXCLUDED.member_count, social."user_groups".member_count),
+                    COALESCE(social."user_groups".member_count,
                     EXCLUDED.member_count)),
                 usergroup_createdate = COALESCE(
                     EXCLUDED.usergroup_createdate,
-                    data."user_groups".usergroup_createdate),
+                    social."user_groups".usergroup_createdate),
                 user_owner = COALESCE(EXCLUDED.user_owner,
-                    data."user_groups".user_owner);
+                    social."user_groups".user_owner);
             '''
         # No coalesce for user: in case user changes or
         # removes information, this should also be removed from the record
@@ -397,102 +397,102 @@ class LBSNTransfer():
     def place_insertsql(self, values_str, record_type):
         insert_sql = \
             f'''
-            INSERT INTO data."place" (
+            INSERT INTO spatial."place" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id,place_guid)
             DO UPDATE SET
-                name = COALESCE(EXCLUDED.name, data."place".name),
+                name = COALESCE(EXCLUDED.name, spatial."place".name),
                 name_alternatives = COALESCE((
-                    SELECT array_remove(altNamesNewArray,data."place".name)
+                    SELECT array_remove(altNamesNewArray,spatial."place".name)
                     from extensions.mergeArrays(EXCLUDED.name_alternatives,
-                    data."place".name_alternatives) AS altNamesNewArray),
+                    spatial."place".name_alternatives) AS altNamesNewArray),
                     ARRAY[]::text[]),
                 geom_center = COALESCE(
                     NULLIF(EXCLUDED.geom_center,
                     '0101000020E610000000000000000000000000000000000000'),
-                    data."place".geom_center,
+                    spatial."place".geom_center,
                     '0101000020E610000000000000000000000000000000000000'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
-                    data."place".geom_area),
-                url = COALESCE(EXCLUDED.url, data."place".url),
+                    spatial."place".geom_area),
+                url = COALESCE(EXCLUDED.url, spatial."place".url),
                 city_guid = COALESCE(EXCLUDED.city_guid,
-                    data."place".city_guid),
+                    spatial."place".city_guid),
                 post_count = GREATEST(COALESCE(EXCLUDED.post_count,
-                    data."place".post_count), COALESCE(
-                        data."place".post_count, EXCLUDED.post_count)),
+                    spatial."place".post_count), COALESCE(
+                        spatial."place".post_count, EXCLUDED.post_count)),
                 place_description = COALESCE(
-                    EXCLUDED.place_description, data."place".place_description),
+                    EXCLUDED.place_description, spatial."place".place_description),
                 place_website = COALESCE(
-                    EXCLUDED.place_website, data."place".place_website),
+                    EXCLUDED.place_website, spatial."place".place_website),
                 place_phone = COALESCE(
-                    EXCLUDED.place_phone, data."place".place_phone),
+                    EXCLUDED.place_phone, spatial."place".place_phone),
                 address = COALESCE(
-                    EXCLUDED.address, data."place".address),
+                    EXCLUDED.address, spatial."place".address),
                 zip_code = COALESCE(
-                    EXCLUDED.zip_code, data."place".zip_code),
+                    EXCLUDED.zip_code, spatial."place".zip_code),
                 attributes = COALESCE(
-                    EXCLUDED.attributes, data."place".attributes),
+                    EXCLUDED.attributes, spatial."place".attributes),
                 checkin_count = COALESCE(
-                    EXCLUDED.checkin_count, data."place".checkin_count),
+                    EXCLUDED.checkin_count, spatial."place".checkin_count),
                 like_count = COALESCE(
-                    EXCLUDED.like_count, data."place".like_count),
+                    EXCLUDED.like_count, spatial."place".like_count),
                 parent_places = COALESCE(
                     extensions.mergeArrays(EXCLUDED.parent_places,
-                    data."place".parent_places), ARRAY[]::text[]);
+                    spatial."place".parent_places), ARRAY[]::text[]);
             '''
         return insert_sql
 
     def city_insertsql(self, values_str, record_type):
         insert_sql = \
             f'''
-            INSERT INTO data."city" (
+            INSERT INTO spatial."city" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id,city_guid)
             DO UPDATE SET
-                name = COALESCE(EXCLUDED.name, data."city".name),
+                name = COALESCE(EXCLUDED.name, spatial."city".name),
                 name_alternatives = COALESCE((
-                    SELECT array_remove(altNamesNewArray,data."city".name)
+                    SELECT array_remove(altNamesNewArray,spatial."city".name)
                     from extensions.mergeArrays(EXCLUDED.name_alternatives,
-                    data."city".name_alternatives) AS altNamesNewArray),
+                    spatial."city".name_alternatives) AS altNamesNewArray),
                     ARRAY[]::text[]),
                 geom_center = COALESCE(
                     NULLIF(EXCLUDED.geom_center,
                     '0101000020E610000000000000000000000000000000000000'),
-                    data."city".geom_center,
+                    spatial."city".geom_center,
                     '0101000020E610000000000000000000000000000000000000'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
-                    data."city".geom_area),
-                url = COALESCE(EXCLUDED.url, data."city".url),
+                    spatial."city".geom_area),
+                url = COALESCE(EXCLUDED.url, spatial."city".url),
                 country_guid = COALESCE(EXCLUDED.country_guid,
-                    data."city".country_guid),
-                sub_type = COALESCE(EXCLUDED.sub_type, data."city".sub_type);
+                    spatial."city".country_guid),
+                sub_type = COALESCE(EXCLUDED.sub_type, spatial."city".sub_type);
             '''
         return insert_sql
 
     def country_insertsql(self, values_str, record_type):
         insert_sql = \
             f'''
-            INSERT INTO data."country" (
+            INSERT INTO spatial."country" (
                 {self.db_mapping.get_header_for_type(record_type)})
             VALUES {values_str}
             ON CONFLICT (origin_id,country_guid)
             DO UPDATE SET
-                name = COALESCE(EXCLUDED.name, data."country".name),
+                name = COALESCE(EXCLUDED.name, spatial."country".name),
                 name_alternatives = COALESCE((
-                    SELECT array_remove(altNamesNewArray,data."country".name)
+                    SELECT array_remove(altNamesNewArray,spatial."country".name)
                     from extensions.mergeArrays(EXCLUDED.name_alternatives,
-                    data."country".name_alternatives) AS altNamesNewArray),
+                    spatial."country".name_alternatives) AS altNamesNewArray),
                     ARRAY[]::text[]),
                 geom_center = COALESCE(
                     NULLIF(EXCLUDED.geom_center,
                     '0101000020E610000000000000000000000000000000000000'),
-                    data."country".geom_center,
+                    spatial."country".geom_center,
                     '0101000020E610000000000000000000000000000000000000'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
-                    data."country".geom_area),
-                url = COALESCE(EXCLUDED.url, data."country".url);
+                    spatial."country".geom_area),
+                url = COALESCE(EXCLUDED.url, spatial."country".url);
             '''
         # Array merge of alternatives:
         # Arrays cannot be null, therefore COALESCE(
@@ -522,7 +522,7 @@ class LBSNTransfer():
                 args_isFriend = ','.join(selectFriends)
                 insert_sql = \
                     f'''
-                    INSERT INTO relations."_user_friends_user" (
+                    INSERT INTO social."_user_friends_user" (
                         {self.typeNamesHeaderDict["_user_friends_user"]})
                     VALUES {args_isFriend}
                     ON CONFLICT (origin_id, user_guid, friend_guid)
@@ -541,7 +541,7 @@ class LBSNTransfer():
                 args_isConnected = ','.join(selectConnected)
                 insert_sql = \
                     f'''
-                        INSERT INTO relations."_user_connectsto_user" (
+                        INSERT INTO social."_user_connectsto_user" (
                             {self.typeNamesHeaderDict["_user_connectsto_user"]})
                         VALUES {args_isConnected}
                         ON CONFLICT (origin_id, user_guid,
@@ -562,7 +562,7 @@ class LBSNTransfer():
                 args_isInGroup = ','.join(selectUserGroupMember)
                 insert_sql = \
                     f'''
-                    INSERT INTO relations."_user_memberof_group" (
+                    INSERT INTO social."_user_memberof_group" (
                         {self.typeNamesHeaderDict["_user_memberof_group"]})
                     VALUES {args_isInGroup}
                     ON CONFLICT (origin_id, user_guid, group_guid)
@@ -582,7 +582,7 @@ class LBSNTransfer():
                 args_isInGroup = ','.join(selectUserGroupMember)
                 insert_sql = \
                     f'''
-                    INSERT INTO relations."_user_follows_group" (
+                    INSERT INTO social."_user_follows_group" (
                         {self.typeNamesHeaderDict["_user_follows_group"]})
                     VALUES {args_isInGroup}
                     ON CONFLICT (origin_id, user_guid, group_guid)
@@ -602,7 +602,7 @@ class LBSNTransfer():
                 args_isInGroup = ','.join(selectUserMentions)
                 insert_sql = \
                     f'''
-                    INSERT INTO relations."_user_mentions_user" (
+                    INSERT INTO social."_user_mentions_user" (
                         {self.typeNamesHeaderDict["_user_mentions_user"]})
                     VALUES {args_isInGroup}
                     ON CONFLICT (origin_id, user_guid, mentioneduser_guid)
