@@ -21,7 +21,7 @@ from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
                                              UserGroup)
 from psycopg2 import sql
 
-from .helper_functions import HelperFunctions, LBSNRecordDicts
+from .helper_functions import HelperFunctions as HF, LBSNRecordDicts
 from .shared_structure_proto_lbsndb import ProtoLBSNMapping
 from .store_csv import LBSNcsv
 
@@ -206,9 +206,9 @@ class LBSNTransfer():
             DO UPDATE SET
                 reaction_latlng = COALESCE(
                     NULLIF(EXCLUDED.reaction_latlng,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                     topical."post_reaction".reaction_latlng,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                 user_guid = COALESCE(EXCLUDED.user_guid,
                     topical."post_reaction".user_guid),
                 referencedPost_guid = COALESCE(EXCLUDED.referencedPost_guid,
@@ -254,9 +254,9 @@ class LBSNTransfer():
             DO UPDATE SET
                 post_latlng = COALESCE(
                     NULLIF(EXCLUDED.post_latlng,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                     topical."post".post_latlng,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                 place_guid = COALESCE(EXCLUDED.place_guid,
                     topical."post".place_guid),
                 city_guid = COALESCE(EXCLUDED.city_guid,
@@ -410,9 +410,9 @@ class LBSNTransfer():
                     ARRAY[]::text[]),
                 geom_center = COALESCE(
                     NULLIF(EXCLUDED.geom_center,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                     spatial."place".geom_center,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
                     spatial."place".geom_area),
                 url = COALESCE(EXCLUDED.url, spatial."place".url),
@@ -459,9 +459,9 @@ class LBSNTransfer():
                     ARRAY[]::text[]),
                 geom_center = COALESCE(
                     NULLIF(EXCLUDED.geom_center,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                     spatial."city".geom_center,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
                     spatial."city".geom_area),
                 url = COALESCE(EXCLUDED.url, spatial."city".url),
@@ -487,9 +487,9 @@ class LBSNTransfer():
                     ARRAY[]::text[]),
                 geom_center = COALESCE(
                     NULLIF(EXCLUDED.geom_center,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                     spatial."country".geom_center,
-                    '0101000020E610000000000000000000000000000000000000'),
+                    '{HF.NULL_GEOM_STR}'),
                 geom_area = COALESCE(EXCLUDED.geom_area,
                     spatial."country".geom_area),
                 url = COALESCE(EXCLUDED.url, spatial."country".url);
@@ -703,7 +703,7 @@ class LBSNTransfer():
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x = getattr(record, descriptor.name)
-                if x and not HelperFunctions.is_composite_field_container(x):
+                if x and not HF.is_composite_field_container(x):
                     xCleaned = set(x)
                     xSorted = sorted(xCleaned)
                     # Complete clear of repeated field

@@ -40,6 +40,9 @@ else:
 
 
 class HelperFunctions():
+    # Null Geometry String (4326)
+    # for improving performance in PostGIS Upserts
+    NULL_GEOM_STR = '0101000020E610000000000000000000000000000000000000'
 
     @staticmethod
     def json_read_wrapper(gen):
