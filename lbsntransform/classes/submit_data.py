@@ -156,7 +156,7 @@ class LBSNTransfer():
                 # self.funcSubmitSelector(record_type)
                 batch_list.clear()
 
-    def prepare_records(self, record_type):
+    def prepare_records(self, record_type: str):
         prepared_records = []
         for record in self.batched_records[record_type]:
             prepared_record = self.db_mapping.func_prepare_selector(record)
@@ -164,7 +164,7 @@ class LBSNTransfer():
                 prepared_records.append(prepared_record)
         return prepared_records
 
-    def submit_lbsn_records(self, record_type):
+    def submit_lbsn_records(self, record_type: str):
         prepared_records = self.prepare_records(record_type)
         if self.store_csv:
             self.csv_output.store_append_batch_to_csv(
