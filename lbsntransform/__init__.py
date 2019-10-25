@@ -1,11 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Collection of classes to import, convert and export data
-from and to common lbsn structure
 
-For more info, see [concept](https://gitlab.vgiscience.de/lbsn/concept)
-"""
+"""LBSNtransform package import specifications"""
+
+from .version import __version__
 
 from .lbsntransform_ import LBSNTransform
 from .classes.helper_functions import (GeocodeLocations, HelperFunctions,

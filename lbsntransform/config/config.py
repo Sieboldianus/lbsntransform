@@ -14,6 +14,8 @@ from shapely import geos
 import logging
 from lbsnstructure.lbsnstructure_pb2 import Post
 
+from lbsntransform import __version__
+
 
 class BaseConfig():
     def __init__(self):
@@ -31,8 +33,10 @@ class BaseConfig():
         self.dbpassword_input = 'example-user-password'
         self.dbserveraddress_input = '222.22.222.22'
         self.dbserverport_input = 5432
+        self.dbformat_input = 'json'
         self.dbname_input = 'test_db2'
         self.dbuser_output = None
+        self.dbformat_output = 'raw'
         self.dbpassword_output = None
         self.dbserveraddress_output = None
         self.dbserverport_output = 5432
@@ -67,250 +71,303 @@ class BaseConfig():
         All args are optional, but some groups need to be defined together.
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('-sO', "--Origin",
+        parser.add_argument('--version',
+                            action='version',
+                            version=f'lbsntransform {__version__}')
+        parser.add_argument('-o', "--origin",
                             default=self.origin,
                             help='Type of input source. '
                             'Defaults to 3: Twitter '
-                            '(1 - Instagram, 2 - Flickr, 3 - Twitter)')
+                            '(1 - Instagram, 2 - Flickr, 3 - Twitter)',
+                            type=int)
         # Local Input
         local_input_args = parser.add_argument_group('Local Input')
-        local_input_args.add_argument('-lI', "--LocalInput",
+        local_input_args.add_argument('-l', "--local_input",
                                       action='store_true',
                                       default=False,
-                                      help='Process local json or csv')
-        local_input_args.add_argument('-lT', "--LocalFileType",
+                                      help='Process data from local folder, '
+                                      'e.g. json or csv')
+        local_input_args.add_argument("--local_file_type",
                                       default=self.local_file_type,
-                                      help='If localread, '
-                                      'specify filetype (json, csv etc.)')
-        local_input_args.add_argument('-iP', "--InputPath",
+                                      help='If "--local_input" is set, '
+                                      'specify filetype (json, csv etc.)',
+                                      type=str)
+        local_input_args.add_argument("--input_path",
                                       default=self.input_path,
                                       help='Optionally provide path to '
                                       'input folder, otherwise '
                                       './Input/ will be used. You can also '
-                                      'provide a web-url starting with http')
-        local_input_args.add_argument('-iS', "--isStackedJson",
+                                      'provide a web-url starting with http',
+                                      type=str)
+        local_input_args.add_argument("--is_stacked_json",
                                       action='store_true',
                                       default=False,
                                       help='Typical form is '
                                       '[{json1},{json2}], '
-                                      'if isStackedJson is True: '
+                                      'if is_stacked_json is set: '
                                       'will process stacked jsons in the form '
                                       'of {json1}{json2} (no comma)')
-        local_input_args.add_argument('-iL', "--isLineSeparatedJson",
+        local_input_args.add_argument("--is_line_separated_json",
                                       action='store_true',
                                       default=False,
                                       help='Typical form is '
                                       '[{json1},{json2}], '
-                                      'if isLineSeparatedJson is True: '
+                                      'if is_line_separated_json is set: '
                                       'will process stacked jsons in the form '
                                       'of {json1}\n{json2} (linebreak)')
         # DB Output
         dboutput_args = parser.add_argument_group('DB Output')
-        dboutput_args.add_argument('-pO', "--dbPassword_Output",
+        dboutput_args.add_argument('-p', "--dbpassword_output",
                                    default=self.dbpassword_output,
-                                   help='')
-        dboutput_args.add_argument('-uO', "--dbUser_Output",
+                                   help='Password for output postgres db',
+                                   type=str)
+        dboutput_args.add_argument('-u', "--dbuser_output",
                                    default=self.dbuser_output,
-                                   help='Default: example-user-name2')
-        dboutput_args.add_argument('-aO', "--dbServeraddressOutput",
+                                   help='Username for output postgres db. '
+                                   'Default: example-user-name2',
+                                   type=str)
+        dboutput_args.add_argument('-a', "--dbserveraddress_output",
                                    default=self.dbserveraddress_output,
-                                   help='e.g. 111.11.11.11 . Optionally add '
+                                   help='IP Address for output db, '
+                                   'e.g. 111.11.11.11 . Optionally add '
                                    'port to use, e.g. 111.11.11.11:5432. '
-                                   '5432 is the default port')
-        dboutput_args.add_argument('-nO', "--dbNameOutput",
+                                   '5432 is the default port',
+                                   type=str)
+        dboutput_args.add_argument('-n', "--dbname_output",
                                    default=self.dbname_output,
-                                   help='e.g.: test_db')
+                                   help='DB name for output db, '
+                                   'e.g.: "test_db"',
+                                   type=str)
+        dboutput_args.add_argument("--dbformat_output",
+                                   default=self.dbformat_output,
+                                   help='The format of the output db, '
+                                   'either "hll" or "lbsn". This setting '
+                                   'affects how data is stored, either '
+                                   'anonymized and aggregated (hll) or in '
+                                   'its original structure (lbsn).',
+                                   type=str)
         # DB Input
         dbinput_args = parser.add_argument_group('DB Input')
-        dbinput_args.add_argument('-pI', "--dbPassword_Input",
+        dbinput_args.add_argument("--dbpassword_input",
                                   default=self.dbpassword_input,
-                                  help='')
-        dbinput_args.add_argument('-uI', "--dbUser_Input",
+                                  help='Password for input postgres db',
+                                  type=str)
+        dbinput_args.add_argument("--dbuser_input",
                                   default=self.dbuser_input,
-                                  help='Default: example-user-name')
-        dbinput_args.add_argument('-aI', "--dbServeraddressInput",
+                                  help='Username for input postgres db. '
+                                  'Default: example-user-name',
+                                  type=str)
+        dbinput_args.add_argument("--dbserveraddress_input",
                                   default=self.dbserveraddress_input,
-                                  help='e.g. 111.11.11.11. Optionally add '
+                                  help='IP Address for input db, '
+                                  'e.g. 111.11.11.11. Optionally add '
                                   'port to use, e.g. 111.11.11.11:5432. '
-                                  '5432 is the default port')
-        dbinput_args.add_argument('-nI', "--dbNameInput",
+                                  '5432 is the default port',
+                                  type=str)
+        dbinput_args.add_argument("--dbname_input",
                                   default=self.dbname_input,
-                                  help='e.g.: test_db')
+                                  help='DB name for input db, '
+                                  'e.g.: test_db',
+                                  type=str)
+        dbinput_args.add_argument("--dbformat_input",
+                                  default=self.dbformat_input,
+                                  help='The format of the input db, '
+                                  'either "lbsn" or "json".',
+                                  type=str)
         # Additional args
         settings_args = parser.add_argument_group('Additional settings')
         settings_args.add_argument('-t', "--transferlimit",
                                    default=self.transferlimit,
-                                   help='')
-        settings_args.add_argument('-tC', "--transferCount",
+                                   help='Limit the number of records to '
+                                   'process. Defaults to None (= process all).',
+                                   type=int)
+        settings_args.add_argument("--transfer_count",
                                    default=self.transfer_count,
                                    help='Default to 50k: After how many '
                                    'parsed records should the result be '
                                    'transferred to the DB. Larger values '
                                    'improve speed, because duplicate '
                                    'check happens in Python and not in '
-                                   'Postgres Coalesce; larger values are '
-                                   'heavier on memory.')
-        settings_args.add_argument('-nR', "--numberOfRecordsToFetch",
+                                   'Postgres Coalesce; however, they\'re also '
+                                   'heavier on memory.',
+                                   type=int)
+        settings_args.add_argument("--records_tofetch",
                                    default=self.number_of_records_to_fetch,
-                                   help='')
+                                   help='If retrieving from a db, limit the '
+                                   'number of records to fetch at once. '
+                                   'Defaults to 10k', type=int)
         settings_args.add_argument(
-            '-tR', "--disableTransferReactions",
+            "--disable_transfer_reactions",
             action='store_true',
-            help='')
+            help='Disable transfer of reactions '
+            '(reactions will be skipped, only original posts are transferred)')
         settings_args.add_argument(
-            '-rR', "--disableReactionPostReferencing",
+            "--disable_reaction_post_referencing",
             action='store_true',
             default=False,
             help='Enable this option in args to prevent empty posts stored '
             'due to Foreign Key Exists Requirement '
-            '0 = Save Original Tweets of Retweets in "posts"; 1 = do not '
+            'e.g. 0 = Save Original Tweets of Retweets in "posts"; 1 = do not '
             'store Original Tweets of Retweets; !Not implemented: 2 = Store '
             'Original Tweets of Retweets as "post_reactions"')
-        settings_args.add_argument('-iG', "--ignoreNonGeotagged",
+        settings_args.add_argument("--ignore_non_geotagged",
                                    action='store_true',
-                                   default=self.ignore_non_geotagged,
-                                   help='')
-        settings_args.add_argument('-rS', "--startWithDBRowNumber",
-                                   default=self.startwith_db_rownumber,
-                                   help='')
-        settings_args.add_argument('-rE', "--endWithDBRowNumber",
-                                   default=self.endwith_db_rownumber,
-                                   help='')
-        settings_args.add_argument('-d', "--debugMode",
-                                   default=self.debug_mode,
-                                   help='Needs to be implemented.')
-        settings_args.add_argument('-gL', "--geocodeLocations",
+                                   help='Ignore posts that are not geotagged.')
+        settings_args.add_argument("--startwith_db_rownumber",
+                                   help='Provide a number (row-id) to start '
+                                   'processing from live db', type=int)
+        settings_args.add_argument("--endwith_db_rownumber",
+                                   help='Provide a number (row-id) to end '
+                                   'processing from live db', type=int)
+        settings_args.add_argument("--debug_mode",
+                                   help='Enable debug mode (not implemented).',
+                                   type=str)
+        settings_args.add_argument("--geocode_locations",
                                    default=self.geocode_locations,
-                                   help='Defaults to None. '
-                                   'Provide path to CSV file with '
+                                   help='Provide path to CSV file with '
                                    'location geocodes (CSV Structure: '
-                                   'lat, lng, name)')
-        settings_args.add_argument('-igS', "--ignoreInputSourceList",
+                                   'lat, lng, name. Defaults to None.',
+                                   type=str)
+        settings_args.add_argument("--ignore_input_source_list",
                                    default=self.ignore_input_source_list,
-                                   help='Provide a list of input_source '
+                                   help='Provide a path to a list of input_source '
                                    'types that will be ignored (e.g. to '
-                                   'ignore certain bots etc.)')
-        settings_args.add_argument('-iT', "--inputType",
+                                   'ignore certain bots etc.)',
+                                   type=str)
+        settings_args.add_argument("--input_lbsn_type",
                                    default=self.input_lbsn_type,
                                    help='Input type, e.g. "post", "profile", '
-                                   '"friendslist", "followerslist" etc.')
-        settings_args.add_argument('-mR', "--mapFullRelations",
+                                   '"friendslist", "followerslist" etc. '
+                                   'Used to select appropiate mapping '
+                                   'procedure.',
+                                   type=str)
+        settings_args.add_argument("--map_full_relations",
                                    action='store_true',
-                                   help='Defaults to False. Set to true '
-                                   'to map full relations, e.g. many-to-many '
-                                   'relationships such as user_follows, '
+                                   help='Set to true to map full relations, '
+                                   'e.g. many-to-many relationships, '
+                                   'such as user_follows, '
                                    'user_friend, user_mentions etc. are '
-                                   'mapped in a separate table')
-        settings_args.add_argument('-CSV', "--CSVOutput",
+                                   'mapped in a separate table. '
+                                   'Defaults to False.')
+        settings_args.add_argument("--csv_output",
                                    action='store_true',
                                    default=self.csv_output,
-                                   help='Set to True to Output all '
-                                   'Submit values to CSV')
-        settings_args.add_argument('-CSVal', "--CSVallowLinebreaks",
-                                   action='store_true', default=False,
-                                   help='If set to False will not '
+                                   help='If set will output all '
+                                   'submit values to local CSV instead.')
+        settings_args.add_argument("--csv_allow_linebreaks",
+                                   action='store_true',
+                                   help='If set will not '
                                    'remove intext-linebreaks (\r or \n) '
                                    'in output CSVs')
-        settings_args.add_argument('-CSVdelim', "--CSVdelimiter",
+        settings_args.add_argument("--csv_delimiter",
                                    default=None,
                                    help=repr(
                                        'Provide CSV delimiter to use. '
                                        'Default is comma(,). Note: to pass tab, '
-                                       'use variable substitution ($"\t")'))
-        settings_args.add_argument('-rL', "--recursiveLoad",
+                                       'use variable substitution ($"\t")'),
+                                   type=str)
+        settings_args.add_argument("--recursive_load",
                                    action='store_true', default=False,
-                                   help='Process Input Directories '
+                                   help='If set, process input directories '
                                    'recursively (default depth: 2)')
-        settings_args.add_argument('-sF', "--skipUntilFile",
+        settings_args.add_argument("--skip_until_file",
                                    default=self.skip_until_file,
                                    help='If local input, skip all files '
                                    'until file with name x appears '
-                                   '(default: start immediately)')
-        settings_args.add_argument('-mGA', "--minGeoAccuracy",
+                                   '(default: start immediately)',
+                                   type=str)
+        settings_args.add_argument("--min_geoaccuracy",
                                    default=self.min_geoaccuracy,
                                    help='Set to "latlng", "place", '
                                    'or "city" to limit output based '
-                                   'on min geoaccuracy')
+                                   'on min geoaccuracy',
+                                   type=str)
 
         args = parser.parse_args()
-        if args.LocalInput:
+        if args.local_input:
             self.is_local_input = True
-            self.local_file_type = args.LocalFileType
-            if args.isStackedJson:
+            self.local_file_type = args.local_file_type
+            if args.is_stacked_json:
                 self.is_stacked_json = True
-            if args.isLineSeparatedJson:
+            if args.is_line_separated_json:
                 self.is_line_separated_json = True
-            if not args.InputPath:
+            if not args.input_path:
                 self.input_path = Path.cwd() / "01_Input"
                 print(f'Using Path: {self.input_path}')
             else:
-                if str(args.InputPath).startswith('http'):
-                    self.input_path = str(args.InputPath)
+                if str(args.input_path).startswith('http'):
+                    self.input_path = str(args.input_path)
                     self.source_web = True
                 else:
-                    input_path = Path(args.InputPath)
+                    input_path = Path(args.input_path)
                     self.input_path = input_path
         else:
-            self.dbuser_input = args.dbUser_Input
-            self.dbpassword_input = args.dbPassword_Input
+            self.dbuser_input = args.dbuser_input
+            self.dbpassword_input = args.dbpassword_input
             input_ip, input_port = BaseConfig.get_ip_port(
-                args.dbServeraddressInput)
+                args.dbserveraddress_input)
             self.dbserveraddress_input = input_ip
             if input_port:
                 self.dbserverport_input = input_port
-            self.dbname_input = args.dbNameInput
-        if args.Origin:
-            self.origin = int(args.Origin)
-        if args.geocodeLocations:
+            self.dbname_input = args.dbname_input
+        if args.dbformat_input:
+            self.dbformat_input = args.dbformat_input
+        if args.origin:
+            self.origin = args.origin
+        if args.geocode_locations:
             self.geocode_locations = Path(
-                args.geocodeLocations)
-        if args.ignoreInputSourceList:
+                args.geocode_locations)
+        if args.ignore_input_source_list:
             self.ignore_input_source_list = Path(
-                args.ignoreInputSourceList)
-        if args.dbUser_Output:
-            self.dbuser_output = args.dbUser_Output
-            self.dbpassword_output = args.dbPassword_Output
+                args.ignore_input_source_list)
+        if args.dbuser_output:
+            self.dbuser_output = args.dbuser_output
+            self.dbpassword_output = args.dbpassword_output
             output_ip, output_port = BaseConfig.get_ip_port(
-                args.dbServeraddressOutput)
+                args.dbserveraddress_output)
             self.dbserveraddress_output = output_ip
             if output_port:
                 self.dbserverport_output = output_port
-            self.dbname_output = args.dbNameOutput
+            self.dbname_output = args.dbname_output
+        if args.dbformat_output:
+            self.dbformat_output = args.dbformat_output
         if args.transferlimit:
-            self.transferlimit = int(args.transferlimit)
+            self.transferlimit = args.transferlimit
             if self.transferlimit == 0:
                 self.transferlimit = None
-        if args.transferCount:
-            self.transfer_count = int(args.transferCount)
-        if args.numberOfRecordsToFetch:
-            self.number_of_records_to_fetch = int(args.numberOfRecordsToFetch)
-        if args.disableTransferReactions is True:
+        if args.transfer_count:
+            self.transfer_count = args.transfer_count
+        if args.records_tofetch:
+            self.number_of_records_to_fetch = args.records_tofetch
+        if args.disable_transfer_reactions:
             self.transfer_reactions = False
-        if args.disableReactionPostReferencing:
+        if args.disable_reaction_post_referencing:
             self.disable_reactionpost_ref = True
-        self.ignore_non_geotagged = args.ignoreNonGeotagged
-        if args.startWithDBRowNumber:
-            self.startwith_db_rownumber = int(args.startWithDBRowNumber)
-        if args.endWithDBRowNumber:
-            self.endwith_db_rownumber = int(args.endWithDBRowNumber)
-        self.debug_mode = args.debugMode
-        if args.inputType:
-            self.input_lbsn_type = args.inputType
-        if args.mapFullRelations:
+        if args.ignore_non_geotagged:
+            self.ignore_non_geotagged = True
+        if args.startwith_db_rownumber:
+            self.startwith_db_rownumber = args.startwith_db_rownumber
+        if args.endwith_db_rownumber:
+            self.endwith_db_rownumber = args.endwith_db_rownumber
+        if args.debug_mode:
+            self.debug_mode = args.debug_mode
+        if args.input_lbsn_type:
+            self.input_lbsn_type = args.input_lbsn_type
+        if args.map_full_relations:
             self.map_relations = True
-        if args.CSVOutput:
+        if args.csv_output:
             self.csv_output = True
-        if args.CSVallowLinebreaks:
+        if args.csv_allow_linebreaks:
             self.csv_suppress_linebreaks = False
-        if args.CSVdelimiter:
-            self.csv_delim = args.CSVdelimiter
-        if args.recursiveLoad:
+        if args.csv_delimiter:
+            self.csv_delim = args.csv_delimiter
+        if args.recursive_load:
             self.recursive_load = True
-        if args.skipUntilFile:
-            self.skip_until_file = args.skipUntilFile
-        if args.minGeoAccuracy:
+        if args.skip_until_file:
+            self.skip_until_file = args.skip_until_file
+        if args.min_geoaccuracy:
             self.min_geoaccuracy = self.check_geoaccuracy_input(
-                args.minGeoAccuracy)
+                args.min_geoaccuracy)
 
     @staticmethod
     def check_geoaccuracy_input(geoaccuracy_string):
