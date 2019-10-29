@@ -41,6 +41,11 @@ setup(name="lbsntransform",
           'emoji',
           'requests'
       ],
+      extras_require={
+          'nltk_stopwords':  [
+              "nltk"  # python -c 'import nltk;nltk.download("stopwords")'
+          ]
+      },
       entry_points={
           'console_scripts': [
               'lbsntransform = lbsntransform.__main__:main'

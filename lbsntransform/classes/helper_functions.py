@@ -11,19 +11,19 @@ import logging
 import re
 import sys
 import time
-from typing import Tuple, Any, Iterator
+import string
+from typing import Tuple, Any, Iterator, Union, List, Set
 from datetime import timezone
 import json
 from json import JSONDecodeError, JSONDecoder
 
 import emoji
 from google.protobuf.timestamp_pb2 import Timestamp
-from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, RelationshipKey,
-                                             City, Country, Place,
-                                             Post, PostReaction,
-                                             Relationship, User,
-                                             UserGroup)
+from lbsnstructure import lbsnstructure_pb2 as lbsn
+
+from .shared_structure import Coordinates
 from shapely import geos, wkt
+from shapely.geometry import Point, Polygon
 
 # due to different protocol buffers implementations on Unix, MacOS and Windows
 # import types based on OS
@@ -36,13 +36,162 @@ else:
     from google.protobuf.internal.containers import RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
     from google.protobuf.internal.containers import ScalarMapContainer  # pylint: disable=no-name-in-module
 
+NLTK_AVAIL = True
+try:
+    import nltk
+except ImportError:
+    NLTK_AVAIL = False
+
+if NLTK_AVAIL:
+    try:
+        from nltk.corpus import stopwords
+    except LookupError:
+        print(
+            'Please use '
+            '`python -c \'import nltk;nltk.download("stopwords")\'` '
+            'to install stopwords resource globally. Continuing without '
+            'nltk stopwords filter..')
+        NLTK_AVAIL = False
 # pylint: disable=no-member
 
 
 class HelperFunctions():
     # Null Geometry String (4326)
     # for improving performance in PostGIS Upserts
-    NULL_GEOM_STR = '0101000020E610000000000000000000000000000000000000'
+    NULL_GEOM_HEX = '0101000020E610000000000000000000000000000000000000'
+
+    @staticmethod
+    def remove_prefix(text_str: str, prefix: str):
+        """Remove prefix from string"""
+        if text_str.startswith(prefix):
+            return text_str[len(prefix):]
+        return text_str
+
+    @staticmethod
+    def concat_values_str(
+            sql_escaped_values_list: List[str]) -> str:
+        """Concat List of sql escaped values with comma separated
+        """
+        values_str = ','.join(sql_escaped_values_list)
+        return values_str
+
+    @staticmethod
+    def sanitize_string(str_text: str):
+        """Sanitize text strings for postgres sql compatibility
+
+        * remove any NUL (0x00) characters
+        """
+        return str_text.replace('\x00', '')
+
+    @staticmethod
+    def format_base_repr(base):
+        """Return formatted string of base"""
+        return (
+            f'{base.__name__}\nFacet: {base.facet}, '
+            f'Key: {base.get_key_value()}, '
+            f'Metrics: \n'
+            f'{[":".join([k, str(len(v))]) for k, v in base.metrics.items()]}')
+
+    @staticmethod
+    def remove_hyperlinks(text_s):
+        """Remove any hyperlinks from string (regex)
+
+        Note:
+        - anything between <a>xxx</a> will be kept
+        """
+        pattern = r'<(a|/a).*?>'
+        result = re.sub(pattern, "", text_s)
+        return result
+
+    @staticmethod
+    def select_terms(
+            text_s: str, selection_list: List[str] = None) -> Set[str]:
+        """Extract list of words from sentence and return filtered version
+        """
+        # first remove hyperlinks
+        text_s = HelperFunctions.remove_hyperlinks(text_s)
+        # remove problematic characters from string
+        text_s = HelperFunctions.sanitize_string(text_s)
+        # remove punctuation
+        text_s = text_s.translate(
+            str.maketrans('', '', string.punctuation))
+        # split string by space character into list
+        querywords = text_s.split()
+        resultwords = HelperFunctions.filter_terms(
+            querywords, selection_list)
+        return resultwords
+
+    @staticmethod
+    def filter_terms(
+            terms: List[str],
+            selection_list: List[str] = None) -> Set[str]:
+        """Filter a list of terms
+
+        * based on a provided positive(negative) filter list of terms,
+        * based on length (minimum 2 characters),
+        * based on type (no plain numbers)
+        """
+        # turn lowercase
+        querywords = [word.lower() for word in terms]
+        # filter based on
+        # - stoplist/selectionlist
+        # - length (3+ character)
+        # - type: no numbers
+        resultwords = {word for word in querywords if (
+            selection_list is None or word in selection_list)
+            and len(word) > 2
+            and HelperFunctions.nltk_stopword_filter(word) == True
+            and not word.isdigit()}
+        return resultwords
+
+    @staticmethod
+    def nltk_stopword_filter(term: str) -> bool:
+        """Filter term against nltk stopwords (english)"""
+        if NLTK_AVAIL:
+            if term in stopwords.words('english'):
+                return False
+        return True
+
+    @staticmethod
+    def reduce_ewkt_to_wkt(geom_ewkt: str) -> str:
+        """Hack to reduce extended WKT (eWKT) to WKT"""
+        geom_wkt = geom_ewkt.replace("SRID=4326;", "")
+        return geom_wkt
+
+    @staticmethod
+    def get_geom_from_ewkt(
+            geom_ewkt: str) -> Union[Point, Polygon]:
+        """Convert EWKT representation (without srid) to shapely geometry
+
+        Note: either Point or Polygon
+        """
+        geom_wkt = HelperFunctions.reduce_ewkt_to_wkt(geom_ewkt)
+        shply_geom = wkt.loads(geom_wkt)
+        return shply_geom
+
+    @staticmethod
+    def get_coordinates_from_ewkt(
+            geom: str) -> Coordinates:
+        """Convert EWKT representation (with srid) to geometry
+
+        Note:
+        Shapely has no support for handling SRID (projection). The
+        approach used here is a shortcut. This should be replaced
+        by proper EWKT handling using a package, e.g.
+        django.contrib.gis.geos or django.contrib.gis.geometry, see:
+        https://docs.huihoo.com/django/1.11/ref/contrib/gis/geos.html
+        """
+        if not geom:
+            return Coordinates()
+        geom = HelperFunctions.reduce_ewkt_to_wkt(geom)
+        shply_geom = HelperFunctions.get_geom_from_ewkt(geom)
+        if not shply_geom.geom_type == "Point":
+            raise ValueError(
+                f"Expected geometry of type Point, "
+                f"but found {shply_geom.geom_type}")
+        coordinates = Coordinates(
+            lng=shply_geom.x, lat=shply_geom.y)  # pylint: disable=maybe-no-member
+        return coordinates
 
     @staticmethod
     def json_read_wrapper(gen):
@@ -90,7 +239,7 @@ class HelperFunctions():
             f"\nUnhandled exception: \n{e}\n ..skipping entry\n")
 
     @staticmethod
-    def report_stats(input_cnt, current_cnt, lbsn_records):
+    def report_stats(input_cnt, current_cnt, lbsn_records=None):
         """Format string for reporting stats."""
         report_stats = (f'{input_cnt} '
                         f'input records processed (up to '
@@ -99,8 +248,10 @@ class HelperFunctions():
         return report_stats
 
     @staticmethod
-    def get_count_stats(lbsn_records):
+    def get_count_stats(lbsn_records=None):
         """Format string for reporting count stats."""
+        if lbsn_records is None:
+            return
         report_stats = (
             f'Count per type: '
             f'{lbsn_records.get_type_counts()}'
@@ -135,13 +286,13 @@ class HelperFunctions():
     @staticmethod
     def geoacc_within_threshold(post_geoaccuracy, min_geoaccuracy):
         """Checks if geoaccuracy is within or below threshhold defined"""
-        if min_geoaccuracy == Post.LATLNG:
-            allowed_geoaccuracies = [Post.LATLNG]
-        elif min_geoaccuracy == Post.PLACE:
-            allowed_geoaccuracies = [Post.LATLNG, Post.PLACE]
-        elif min_geoaccuracy == Post.CITY:
-            allowed_geoaccuracies = [Post.LATLNG, Post.PLACE,
-                                     Post.CITY]
+        if min_geoaccuracy == lbsn.Post.LATLNG:
+            allowed_geoaccuracies = [lbsn.Post.LATLNG]
+        elif min_geoaccuracy == lbsn.Post.PLACE:
+            allowed_geoaccuracies = [lbsn.Post.LATLNG, lbsn.Post.PLACE]
+        elif min_geoaccuracy == lbsn.Post.CITY:
+            allowed_geoaccuracies = [lbsn.Post.LATLNG, lbsn.Post.PLACE,
+                                     lbsn.Post.CITY]
         else:
             return True
         # check post geoaccuracy
@@ -204,7 +355,7 @@ class HelperFunctions():
     @staticmethod
     def new_lbsn_record_with_id(record, id, origin):
             # initializes new record with composite ID
-        c_key = CompositeKey()
+        c_key = lbsn.CompositeKey()
         c_key.origin.CopyFrom(origin)
         c_key.id = id
         record.pkey.CopyFrom(c_key)
@@ -216,13 +367,13 @@ class HelperFunctions():
                                   relation_from_id,
                                   relation_origin):
         # initializes new relationship with 2 composite IDs for one origin
-        c_key_to = CompositeKey()
+        c_key_to = lbsn.CompositeKey()
         c_key_to.origin.CopyFrom(relation_origin)
         c_key_to.id = relation_to_id
-        c_key_from = CompositeKey()
+        c_key_from = lbsn.CompositeKey()
         c_key_from.origin.CopyFrom(relation_origin)
         c_key_from.id = relation_from_id
-        r_key = RelationshipKey()
+        r_key = lbsn.RelationshipKey()
         r_key.relation_to.CopyFrom(c_key_to)
         r_key.relation_from.CopyFrom(c_key_from)
         lbsn_relationship.pkey.CopyFrom(r_key)
@@ -249,13 +400,13 @@ class HelperFunctions():
         # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
         if type_string:
             if type_string == "photo":
-                post_type = Post.IMAGE
+                post_type = lbsn.Post.IMAGE
             elif type_string in ("video", "animated_gif"):
-                post_type = Post.VIDEO
+                post_type = lbsn.Post.VIDEO
 
         else:
-            post_type = Post.OTHER
-            logging.getLogger('__main__').debug(f'Other Post type detected: '
+            post_type = lbsn.Post.OTHER
+            logging.getLogger('__main__').debug(f'Other lbsn.Post type detected: '
                                                 f'{json_media_string}')
         return post_type
 
@@ -310,10 +461,8 @@ class HelperFunctions():
         mentioned_users_list = []
         for user_mention in userMentions_jsonString:  # iterate over the list
             ref_user_record = \
-                HelperFunctions.new_lbsn_record_with_id(User(),
-                                                        user_mention.get(
-                                                        'id_str'),
-                                                        origin)
+                HelperFunctions.new_lbsn_record_with_id(
+                    lbsn.User(), user_mention.get('id_str'), origin)
             ref_user_record.user_fullname = \
                 user_mention.get('name')  # Needs to be saved
             ref_user_record.user_name = user_mention.get('screen_name')
@@ -340,7 +489,7 @@ class HelperFunctions():
                 ref_user_pkey = ref_user_records[0].pkey
             if ref_user_pkey is None:
                 log.warning(
-                    f'No User record found for referenced post in: '
+                    f'No lbsn.User record found for referenced post in: '
                     f'{main_post}')
                 input("Press Enter to continue... "
                       "(post will be saved without userid)")
@@ -505,14 +654,14 @@ class HelperFunctions():
         """ Create protoBuf messages by name
         """
         dict_switcher = {
-            Country().DESCRIPTOR.name: Country(),
-            City().DESCRIPTOR.name: City(),
-            Place().DESCRIPTOR.name: Place(),
-            User().DESCRIPTOR.name: User(),
-            UserGroup().DESCRIPTOR.name:  UserGroup(),
-            Post().DESCRIPTOR.name: Post(),
-            PostReaction().DESCRIPTOR.name: PostReaction(),
-            Relationship().DESCRIPTOR.name: Relationship()
+            lbsn.Country().DESCRIPTOR.name: lbsn.Country(),
+            lbsn.City().DESCRIPTOR.name: lbsn.City(),
+            lbsn.Place().DESCRIPTOR.name: lbsn.Place(),
+            lbsn.User().DESCRIPTOR.name: lbsn.User(),
+            lbsn.UserGroup().DESCRIPTOR.name:  lbsn.UserGroup(),
+            lbsn.Post().DESCRIPTOR.name: lbsn.Post(),
+            lbsn.PostReaction().DESCRIPTOR.name: lbsn.PostReaction(),
+            lbsn.Relationship().DESCRIPTOR.name: lbsn.Relationship()
         }
         return dict_switcher.get(desc_name)
 
@@ -567,14 +716,14 @@ class LBSNRecordDicts():
         self.lbsn_post_dict = dict()
         self.lbsn_post_reaction_dict = dict()
         self.lbsn_relationship_dict = dict()
-        self.key_hashes = {Post.DESCRIPTOR.name: set(),
-                           Country.DESCRIPTOR.name: set(),
-                           City.DESCRIPTOR.name: set(),
-                           Place.DESCRIPTOR.name: set(),
-                           UserGroup.DESCRIPTOR.name: set(),
-                           User.DESCRIPTOR.name: set(),
-                           PostReaction.DESCRIPTOR.name: set(),
-                           Relationship.DESCRIPTOR.name: set()}
+        self.key_hashes = {lbsn.Post.DESCRIPTOR.name: set(),
+                           lbsn.Country.DESCRIPTOR.name: set(),
+                           lbsn.City.DESCRIPTOR.name: set(),
+                           lbsn.Place.DESCRIPTOR.name: set(),
+                           lbsn.UserGroup.DESCRIPTOR.name: set(),
+                           lbsn.User.DESCRIPTOR.name: set(),
+                           lbsn.PostReaction.DESCRIPTOR.name: set(),
+                           lbsn.Relationship.DESCRIPTOR.name: set()}
         self.count_glob = 0  # total number of records added
         self.count_glob_total = 0
         self.count_dup_merge = 0  # number of duplicate records merged
@@ -582,14 +731,14 @@ class LBSNRecordDicts():
         # returns all recordsDicts in correct order,
         # with names as references (tuple)
         self.all_dicts = [
-            (self.lbsn_country_dict, Country().DESCRIPTOR.name),
-            (self.lbsn_city_dict, City().DESCRIPTOR.name),
-            (self.lbsn_place_dict, Place().DESCRIPTOR.name),
-            (self.lbsn_user_group_dict, UserGroup().DESCRIPTOR.name),
-            (self.lbsn_user_dict, User().DESCRIPTOR.name),
-            (self.lbsn_post_dict, Post().DESCRIPTOR.name),
-            (self.lbsn_post_reaction_dict, PostReaction().DESCRIPTOR.name),
-            (self.lbsn_relationship_dict, Relationship().DESCRIPTOR.name)
+            (self.lbsn_country_dict, lbsn.Country().DESCRIPTOR.name),
+            (self.lbsn_city_dict, lbsn.City().DESCRIPTOR.name),
+            (self.lbsn_place_dict, lbsn.Place().DESCRIPTOR.name),
+            (self.lbsn_user_group_dict, lbsn.UserGroup().DESCRIPTOR.name),
+            (self.lbsn_user_dict, lbsn.User().DESCRIPTOR.name),
+            (self.lbsn_post_dict, lbsn.Post().DESCRIPTOR.name),
+            (self.lbsn_post_reaction_dict, lbsn.PostReaction().DESCRIPTOR.name),
+            (self.lbsn_relationship_dict, lbsn.Relationship().DESCRIPTOR.name)
         ]
 
     def get_current_count(self):
@@ -600,8 +749,8 @@ class LBSNRecordDicts():
         """Returns tuple of 1) all records from self
         in correct order using all_dicts and 2) Type of record
 
-        Order is: Country(), City(), Place(), UserGroup(),
-        User(), Post(), PostReaction(), Relationship()
+        Order is: lbsn.Country(), lbsn.City(), lbsn.Place(), lbsn.UserGroup(),
+        lbsn.User(), lbsn.Post(), lbsn.PostReaction(), lbsn.Relationship()
         """
         for records_dict in self.all_dicts:
             type_name = records_dict[1]
@@ -621,7 +770,7 @@ class LBSNRecordDicts():
         # Users, Countries, Places etc.)
         # in this case we assume that origin_id remains the same
         # in each program iteration!
-        if record.DESCRIPTOR.name == Relationship().DESCRIPTOR.name:
+        if record.DESCRIPTOR.name == lbsn.Relationship().DESCRIPTOR.name:
             # we need the complete uuid of both entities for
             # relationships because they can span different origin_ids
             self.key_hashes[record.DESCRIPTOR.name].add(
@@ -679,13 +828,13 @@ class LBSNRecordDicts():
         """ Get dictionary by type name
         """
         dict_switcher = {
-            Post().DESCRIPTOR.name: self.lbsn_post_dict,
-            Country().DESCRIPTOR.name: self.lbsn_country_dict,
-            City().DESCRIPTOR.name: self.lbsn_city_dict,
-            Place().DESCRIPTOR.name: self.lbsn_place_dict,
-            PostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
-            User().DESCRIPTOR.name: self.lbsn_user_dict,
-            UserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
+            lbsn.Post().DESCRIPTOR.name: self.lbsn_post_dict,
+            lbsn.Country().DESCRIPTOR.name: self.lbsn_country_dict,
+            lbsn.City().DESCRIPTOR.name: self.lbsn_city_dict,
+            lbsn.Place().DESCRIPTOR.name: self.lbsn_place_dict,
+            lbsn.PostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
+            lbsn.User().DESCRIPTOR.name: self.lbsn_user_dict,
+            lbsn.UserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
         }
         return dict_switcher.get(record.DESCRIPTOR.name)
 

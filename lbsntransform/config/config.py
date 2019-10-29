@@ -12,7 +12,7 @@ import os
 import sys
 from shapely import geos
 import logging
-from lbsnstructure.lbsnstructure_pb2 import Post
+from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 from lbsntransform import __version__
 
@@ -35,8 +35,14 @@ class BaseConfig():
         self.dbserverport_input = 5432
         self.dbformat_input = 'json'
         self.dbname_input = 'test_db2'
+        self.dbname_hllworker = None
+        self.dbuser_hllworker = None
+        self.dbpassword_hllworker = None
+        self.dbserveraddress_hllworker = None
+        self.dbserverport_hllworker = 5432
+        self.dbname_hllworker = None
         self.dbuser_output = None
-        self.dbformat_output = 'raw'
+        self.dbformat_output = 'lbsn'
         self.dbpassword_output = None
         self.dbserveraddress_output = None
         self.dbserverport_output = 5432
@@ -82,22 +88,29 @@ class BaseConfig():
                             type=int)
         # Local Input
         local_input_args = parser.add_argument_group('Local Input')
-        local_input_args.add_argument('-l', "--local_input",
+        local_input_args.add_argument('-l', "--file_input",
                                       action='store_true',
                                       default=False,
-                                      help='Process data from local folder, '
-                                      'e.g. json or csv')
-        local_input_args.add_argument("--local_file_type",
+                                      help='Process data from files, e.g. json '
+                                      'or csv (including '
+                                      'urls to files or a folder). '
+                                      'Otherwise database input will '
+                                      'be assumed.')
+        local_input_args.add_argument("--file_type",
                                       default=self.local_file_type,
-                                      help='If "--local_input" is set, '
+                                      help='If "--file_input" is set, '
                                       'specify filetype (json, csv etc.)',
                                       type=str)
-        local_input_args.add_argument("--input_path",
+        local_input_args.add_argument("--input_path_url",
                                       default=self.input_path,
                                       help='Optionally provide path to '
-                                      'input folder, otherwise '
+                                      'input folder, otherwise subfolder '
                                       './Input/ will be used. You can also '
-                                      'provide a web-url starting with http',
+                                      'provide a web-url starting with http, '
+                                      'which will be accessed using '
+                                      'requests.get(url, stream=True). '
+                                      'To separate multiple urls, use '
+                                      'semicolon (;).',
                                       type=str)
         local_input_args.add_argument("--is_stacked_json",
                                       action='store_true',
@@ -115,6 +128,27 @@ class BaseConfig():
                                       'if is_line_separated_json is set: '
                                       'will process stacked jsons in the form '
                                       'of {json1}\n{json2} (linebreak)')
+        # HLL Worker
+        hllworker_args = parser.add_argument_group('HLL Worker')
+        hllworker_args.add_argument("--dbpassword_hllworker",
+                                    default=self.dbpassword_hllworker,
+                                    help='Password for hllworker db',
+                                    type=str)
+        hllworker_args.add_argument("--dbuser_hllworker",
+                                    default=self.dbuser_hllworker,
+                                    help='Username for hllworker db. ',
+                                    type=str)
+        hllworker_args.add_argument("--dbserveraddress_hllworker",
+                                    default=self.dbserveraddress_hllworker,
+                                    help='IP Address for hllworker db, '
+                                    'e.g. 111.11.11.11 . Optionally add '
+                                    'port to use, e.g. 111.11.11.11:5432. '
+                                    '5432 is the default port',
+                                    type=str)
+        hllworker_args.add_argument("--dbname_hllworker",
+                                    default=self.dbname_hllworker,
+                                    help='DB name for hllworker db, ',
+                                    type=str)
         # DB Output
         dboutput_args = parser.add_argument_group('DB Output')
         dboutput_args.add_argument('-p', "--dbpassword_output",
@@ -284,22 +318,22 @@ class BaseConfig():
                                    type=str)
 
         args = parser.parse_args()
-        if args.local_input:
+        if args.file_input:
             self.is_local_input = True
-            self.local_file_type = args.local_file_type
+            self.local_file_type = args.file_type
             if args.is_stacked_json:
                 self.is_stacked_json = True
             if args.is_line_separated_json:
                 self.is_line_separated_json = True
-            if not args.input_path:
+            if not args.input_path_url:
                 self.input_path = Path.cwd() / "01_Input"
-                print(f'Using Path: {self.input_path}')
+                print(f'Using Path: {self.input_path_url}')
             else:
-                if str(args.input_path).startswith('http'):
-                    self.input_path = str(args.input_path)
+                if str(args.input_path_url).startswith('http'):
+                    self.input_path = args.input_path_url.split(";")
                     self.source_web = True
                 else:
-                    input_path = Path(args.input_path)
+                    input_path = Path(args.input_path_url)
                     self.input_path = input_path
         else:
             self.dbuser_input = args.dbuser_input
@@ -331,6 +365,22 @@ class BaseConfig():
             self.dbname_output = args.dbname_output
         if args.dbformat_output:
             self.dbformat_output = args.dbformat_output
+            if self.dbformat_output == "hll":
+                try:
+                    self.dbname_hllworker = args.dbname_hllworker
+                    self.dbuser_hllworker = args.dbuser_hllworker
+                    self.dbpassword_hllworker = args.dbpassword_hllworker
+                    hllworker_ip, hllworker_port = BaseConfig.get_ip_port(
+                        args.dbserveraddress_hllworker)
+                    self.dbserveraddress_hllworker = hllworker_ip
+                    if hllworker_port:
+                        self.dbserverport_hllworker = hllworker_port
+                except ValueError:
+                    raise ValueError(
+                        "If '--dbformat_output hll' is used, also provide "
+                        "a HLL Worker Connection (--dbname_hllworker, "
+                        "--dbuser_hllworker, --dbpassword_hllworker, "
+                        "--dbserveraddress_hllworker)")
         if args.transferlimit:
             self.transferlimit = args.transferlimit
             if self.transferlimit == 0:
@@ -375,11 +425,11 @@ class BaseConfig():
         against proto buf spec
         """
         if geoaccuracy_string == 'latlng':
-            return Post.LATLNG
+            return lbsn.Post.LATLNG
         elif geoaccuracy_string == 'place':
-            return Post.PLACE
+            return lbsn.Post.PLACE
         elif geoaccuracy_string == 'city':
-            return Post.CITY
+            return lbsn.Post.CITY
         else:
             print("Unknown geoaccuracy.")
             return None

@@ -30,8 +30,9 @@ from lbsntransform.lbsntransform_ import LBSNTransform
 
 
 def main():
-    """ Main function to process data from postgres db or local file input
-        to postgres db or local file output
+    """ Main function for cli-mode to process data
+    from postgres db or local file input
+    to postgres db or local file output
     """
 
     # Load Config, will be overwritten if args are given
@@ -52,11 +53,17 @@ def main():
         dbname_output=config.dbname_output,
         dbpassword_output=config.dbpassword_output,
         dbserverport_output=config.dbserverport_output,
+        dbformat_output=config.dbformat_output,
         dbuser_input=config.dbuser_input,
         dbserveraddress_input=config.dbserveraddress_input,
         dbname_input=config.dbname_input,
         dbpassword_input=config.dbpassword_input,
-        dbserverport_input=config.dbserverport_input)
+        dbserverport_input=config.dbserverport_input,
+        dbuser_hllworker=config.dbuser_hllworker,
+        dbserveraddress_hllworker=config.dbserveraddress_hllworker,
+        dbname_hllworker=config.dbname_hllworker,
+        dbpassword_hllworker=config.dbpassword_hllworker,
+        dbserverport_hllworker=config.dbserverport_hllworker)
 
     # initialize converter class
     # depending on lbsn origin
@@ -99,32 +106,19 @@ def main():
     # read and process unfiltered input records from csv
     # start settings
     with input_data as records:
-        try:
-            for record in records:
-                lbsntransform.add_processed_records(record)
-                # report progress
-                if lbsntransform.processed_total % 1000 == 0:
-                    stats_str = HF.report_stats(
-                        input_data.count_glob,
-                        input_data.continue_number,
-                        lbsntransform.lbsn_records)
-                    print(stats_str, end='\r')
-                    sys.stdout.flush()
-                if (config.transferlimit and
-                        lbsntransform.processed_total >= config.transferlimit):
-                    break
-        except Exception as e:
-            # catch any exception and output additional information
-            lbsntransform.log.warning(
-                f"\nError while reading records: "
-                f"{e}\n{e.args}\n{traceback.format_exc()}\n")
-            lbsntransform.log.warning(
-                f"Current source: \n {input_data.current_source}\n")
-            stats_str = HF.report_stats(
-                input_data.count_glob,
-                input_data.continue_number,
-                lbsntransform.lbsn_records)
-            lbsntransform.log.warning(stats_str)
+        for record in records:
+            lbsntransform.add_processed_records(record)
+            # report progress
+            if lbsntransform.processed_total % 1000 == 0:
+                stats_str = HF.report_stats(
+                    input_data.count_glob,
+                    input_data.continue_number,
+                    lbsntransform.lbsn_records)
+                print(stats_str, end='\r')
+                sys.stdout.flush()
+            if (config.transferlimit and
+                    lbsntransform.processed_total >= config.transferlimit):
+                break
 
     # finalize output (close db connection, submit remaining)
     lbsntransform.log.info(

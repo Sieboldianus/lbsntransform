@@ -15,6 +15,7 @@ dependencies:
   - shapely
   - requests
   - bitarray
+  - nltk
   - pip:
     - anybadge
     - pylint-exit
