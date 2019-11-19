@@ -9,7 +9,7 @@ Shared structure and mapping between DB and Proto LBSN Structure.
 import sys
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
-from .helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 
 class ProtoLBSNMapping():

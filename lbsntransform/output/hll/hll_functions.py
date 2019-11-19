@@ -8,7 +8,7 @@ import datetime as dt
 from collections import namedtuple
 from typing import Any, Generator, List, Set, Tuple, Union, Dict
 from lbsnstructure import lbsnstructure_pb2 as lbsn
-from .helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 
 class HLLFunctions():

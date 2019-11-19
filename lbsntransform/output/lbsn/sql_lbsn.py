@@ -4,9 +4,10 @@
 Module for sql insert functions for LBSN (raw) db
 """
 
-from .helper_functions import HelperFunctions as HF
-from .shared_structure_proto_lbsndb import ProtoLBSNMapping
 from lbsnstructure import lbsnstructure_pb2 as lbsn
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+
+from .shared_structure_proto_lbsndb import ProtoLBSNMapping
 
 
 class LBSNSql():

@@ -23,15 +23,16 @@ from psycopg2 import sql
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from lbsntransform.classes import hll_bases as hll
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
-from .hll_functions import HLLFunctions as HLF
-from .shared_structure_proto_hlldb import ProtoHLLMapping
-from .shared_structure_proto_lbsndb import ProtoLBSNMapping
-from .sql_hll import HLLSql
-from .sql_lbsn import LBSNSql
-from .store_csv import LBSNcsv
+from lbsntransform.output.hll import hll_bases as hll
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import LBSNRecordDicts
+from lbsntransform.output.hll.hll_functions import HLLFunctions as HLF
+from lbsntransform.output.hll.shared_structure_proto_hlldb import ProtoHLLMapping
+from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
+from lbsntransform.output.hll.sql_hll import HLLSql
+from lbsntransform.output.lbsn.sql_lbsn import LBSNSql
+from lbsntransform.output.csv.store_csv import LBSNcsv
+from lbsntransform.output.hll.base import social, spatial, temporal, topical
 
 
 class LBSNTransfer():
@@ -71,13 +72,13 @@ class LBSNTransfer():
         # this is the global dict of measures that will be collected,
         # bases not registered here will not be measured
         self.batched_hll_records = {
-            hll.LatLngBase.NAME: dict(),
-            hll.PlaceBase.NAME: dict(),
-            hll.DateBase.NAME: dict(),
-            hll.MonthBase.NAME: dict(),
-            hll.YearBase.NAME: dict(),
-            hll.TermBase.NAME: dict(),
-            hll.HashtagBase.NAME: dict(),
+            spatial.LatLngBase.NAME: dict(),
+            spatial.PlaceBase.NAME: dict(),
+            temporal.DateBase.NAME: dict(),
+            temporal.MonthBase.NAME: dict(),
+            temporal.YearBase.NAME: dict(),
+            topical.TermBase.NAME: dict(),
+            topical.HashtagBase.NAME: dict(),
         }
         self.count_round = 0
         # Records are batched and submitted in

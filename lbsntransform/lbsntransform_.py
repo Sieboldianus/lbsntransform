@@ -15,10 +15,10 @@ import logging
 import sys
 from pathlib import Path
 
-from .classes.helper_functions import HelperFunctions as HF
-from .classes.helper_functions import LBSNRecordDicts
-from .classes.load_data import LoadData
-from .classes.submit_data import LBSNTransfer
+from .tools.helper_functions import HelperFunctions as HF
+from .tools.helper_functions import LBSNRecordDicts
+from .input.load_data import LoadData
+from .output.submit_data import LBSNTransfer
 from .config.config import BaseConfig
 
 

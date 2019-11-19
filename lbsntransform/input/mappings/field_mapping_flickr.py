@@ -13,8 +13,8 @@ from decimal import Decimal
 # from google.protobuf import text_format
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
+from ...tools.helper_functions import HelperFunctions as HF
+from ...tools.helper_functions import LBSNRecordDicts
 
 
 class FieldMappingFlickr():

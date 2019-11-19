@@ -12,9 +12,10 @@ from typing import Tuple, List, Any, Dict, Union
 from collections import defaultdict, namedtuple
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
-from .helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 from .hll_functions import HLLFunctions as HLF
-from lbsntransform.classes import hll_bases as hll
+from lbsntransform.output.hll.base import social, spatial, temporal, topical
+from lbsntransform.output.hll import hll_bases as hll
 
 
 class ProtoHLLMapping():
@@ -23,13 +24,15 @@ class ProtoHLLMapping():
     @staticmethod
     def update_hll_dicts(
             batched_hll_bases: Dict[Tuple[str, str], Dict[str, Union[
-                hll.LatLngBase, hll.PlaceBase, hll.CityBase,
-                hll.CountryBase, hll.DateBase,
-                hll.MonthBase, hll.YearBase, hll.TermBase]]],
+                spatial.LatLngBase, spatial.PlaceBase,
+                spatial.CityBase, spatial.CountryBase,
+                temporal.DateBase, temporal.MonthBase,
+                temporal.YearBase, topical.TermBase]]],
             hll_base_metrics: List[Union[
-                hll.LatLngBase, hll.PlaceBase, hll.CityBase,
-                hll.CountryBase, hll.DateBase,
-                hll.MonthBase, hll.YearBase, hll.TermBase]]):
+                spatial.LatLngBase, spatial.PlaceBase,
+                spatial.CityBase, spatial.CountryBase,
+                temporal.DateBase, temporal.MonthBase,
+                temporal.YearBase, topical.TermBase]]):
         """Update batched hll bases with new list of bases, merged metrics
 
         batched_hll_bases:
@@ -57,18 +60,11 @@ class ProtoHLLMapping():
             else:
                 base_dict[metric_key] |= hll_base_metric
 
-    @staticmethod
-    def get_header_for_type(desc_name: Tuple[str, str]) -> str:
-        """Get hll-db headers for hll base types
-
-        - in correct order
-        - ready for copy-from pg import
-        """
-        return hll.BASE_HEADER.get(desc_name)
-
     def extract_hll_base_metrics(self, record, record_type) -> Union[
-            hll.LatLngBase, hll.PlaceBase, hll.CityBase, hll.CountryBase, hll.DateBase,
-            hll.MonthBase, hll.YearBase, hll.TermBase]:
+            spatial.LatLngBase, spatial.PlaceBase,
+            spatial.CityBase, spatial.CountryBase,
+            temporal.DateBase, temporal.MonthBase,
+            temporal.YearBase, topical.TermBase]:
         """Combine bases and metrics from Proto LBSN record"""
         record_hll_metrics = self.get_hll_metrics(record)
         if record_hll_metrics is None:
@@ -83,14 +79,16 @@ class ProtoHLLMapping():
 
     @staticmethod
     def update_bases_metrics(
-        bases: List[Union[
-            hll.LatLngBase, hll.PlaceBase, hll.CityBase,
-            hll.CountryBase, hll.DateBase,
-            hll.MonthBase, hll.YearBase, hll.TermBase]],
-        metrics: hll.HllMetrics) -> Union[
-            hll.LatLngBase, hll.PlaceBase, hll.CityBase,
-            hll.CountryBase, hll.DateBase,
-            hll.MonthBase, hll.YearBase, hll.TermBase]:
+            bases: List[Union[
+                spatial.LatLngBase, spatial.PlaceBase,
+                spatial.CityBase, spatial.CountryBase,
+                temporal.DateBase, temporal.MonthBase,
+                temporal.YearBase, topical.TermBase]],
+            metrics: hll.HllMetrics) -> Union[
+            spatial.LatLngBase, spatial.PlaceBase,
+            spatial.CityBase, spatial.CountryBase,
+            temporal.DateBase, temporal.MonthBase,
+            temporal.YearBase, topical.TermBase]:
         """Adds/updates metrics to hll_bases"""
         # iterate Namedtuple field names and values
         for key, value in zip(metrics._fields, metrics):
@@ -113,8 +111,10 @@ class ProtoHLLMapping():
     def extract_hll_bases(
         self, record, record_type
     ) -> List[Union[
-            hll.LatLngBase, hll.PlaceBase, hll.CityBase, hll.CountryBase,
-            hll.DateBase, hll.MonthBase, hll.YearBase, hll.TermBase]]:
+            spatial.LatLngBase, spatial.PlaceBase,
+            spatial.CityBase, spatial.CountryBase,
+            temporal.DateBase, temporal.MonthBase,
+            temporal.YearBase, topical.TermBase]]:
         """Extract hll bases from Proto LBSN record
 
         Depending on LBSNType, multiple bases can be extracted

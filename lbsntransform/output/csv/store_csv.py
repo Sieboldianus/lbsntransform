@@ -21,8 +21,8 @@ from sys import exit
 from google.protobuf import text_format
 from google.protobuf.timestamp_pb2 import Timestamp
 
-from .helper_functions import HelperFunctions, LBSNRecordDicts
-from .shared_structure_proto_lbsndb import ProtoLBSNMapping
+from lbsntransform.tools.helper_functions import HelperFunctions, LBSNRecordDicts
+from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
 
 
 class LBSNcsv():

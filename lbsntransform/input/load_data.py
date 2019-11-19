@@ -21,9 +21,9 @@ import ntpath
 import requests
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from .db_connection import DBConnection
-from .helper_functions import GeocodeLocations
-from .helper_functions import HelperFunctions as HF
+from ..tools.db_connection import DBConnection
+from ..tools.helper_functions import GeocodeLocations
+from ..tools.helper_functions import HelperFunctions as HF
 
 
 class LoadData():
@@ -195,7 +195,8 @@ class LoadData():
                             delimiter=self.csv_delim,
                             quotechar='"', quoting=csv.QUOTE_NONE)
                         for zipped_record in zip_longest(r1, r2):
-                            yield zipped_record
+                            # two combine lists
+                            yield zipped_record[0] + zipped_record[1]
                     return
                 else:
                     raise ValueError(

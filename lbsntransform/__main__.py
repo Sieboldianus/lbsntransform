@@ -21,10 +21,10 @@ import logging
 import sys
 import traceback
 
-from lbsntransform.classes.helper_functions import HelperFunctions as HF
-from lbsntransform.classes.helper_functions import TimeMonitor
-from lbsntransform.classes.load_data import LoadData
-from lbsntransform.classes.submit_data import LBSNTransfer
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import TimeMonitor
+from lbsntransform.input.load_data import LoadData
+from lbsntransform.output.submit_data import LBSNTransfer
 from lbsntransform.config.config import BaseConfig
 from lbsntransform.lbsntransform_ import LBSNTransform
 

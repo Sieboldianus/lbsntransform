@@ -7,27 +7,28 @@ Collection of helper functions being used in lbsntransform package.
 
 import csv
 import datetime as dt
-import logging
-import re
-import sys
-import time
-import string
-from typing import Tuple, Any, Iterator, Union, List, Set
-from datetime import timezone
 import json
-from json import JSONDecodeError, JSONDecoder
-
-import emoji
-from google.protobuf.timestamp_pb2 import Timestamp
-from lbsnstructure import lbsnstructure_pb2 as lbsn
-
-from .shared_structure import Coordinates
-from shapely import geos, wkt
-from shapely.geometry import Point, Polygon
-
+import logging
 # due to different protocol buffers implementations on Unix, MacOS and Windows
 # import types based on OS
 import platform
+import re
+import string
+import sys
+import time
+from datetime import timezone
+from json import JSONDecodeError, JSONDecoder
+from typing import Any, Iterator, List, Set, Tuple, Union
+
+import emoji
+from google.protobuf.timestamp_pb2 import Timestamp
+from shapely import geos, wkt
+from shapely.geometry import Point, Polygon
+
+from lbsnstructure import lbsnstructure_pb2 as lbsn
+
+from ..output.shared_structure import Coordinates
+
 PLATFORM_SYS = platform.system()
 if PLATFORM_SYS == 'Linux':
     from google.protobuf.pyext._message import RepeatedCompositeContainer  # pylint: disable=no-name-in-module
@@ -637,14 +638,14 @@ class HelperFunctions():
             1 - Instagram, 2 - Flickr, 3 - Twitter, 4 - Facebook
         """
         if origin == 2:
-            from .field_mapping_flickr import FieldMappingFlickr as importer
+            from lbsntransform.input.mappings.field_mapping_flickr import FieldMappingFlickr as importer
         elif origin == 21:
             # Flickr YFCC100M dataset
-            from .field_mapping_yfcc100m import FieldMappingYFCC100M as importer
+            from lbsntransform.input.mappings.field_mapping_yfcc100m import FieldMappingYFCC100M as importer
         elif origin == 3:
-            from .field_mapping_twitter import FieldMappingTwitter as importer
+            from lbsntransform.input.mappings.field_mapping_twitter import FieldMappingTwitter as importer
         elif origin == 41:
-            from .field_mapping_fb import FieldMappingFBPlace as importer
+            from lbsntransform.input.mappings.field_mapping_fb import FieldMappingFBPlace as importer
         else:
             raise ValueError("Input type not supported")
         return importer

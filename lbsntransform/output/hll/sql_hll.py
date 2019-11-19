@@ -4,8 +4,8 @@
 Module for sql insert functions for LBSN (hll) db
 """
 
-from .helper_functions import HelperFunctions as HF
-from lbsntransform.classes import hll_bases as hll
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+from lbsntransform.output.hll import hll_bases as hll
 
 
 class HLLSql():

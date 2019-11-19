@@ -17,8 +17,8 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from shapely.geometry.polygon import Polygon
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
+from ...tools.helper_functions import HelperFunctions as HF
+from ...tools.helper_functions import LBSNRecordDicts
 
 
 class FieldMappingFBPlace():
