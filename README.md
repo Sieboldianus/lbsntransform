@@ -38,7 +38,7 @@ lbsntransform --origin 3 --file_input --file_type '*.json' --transferlimit 1000 
 - read local json from /01_Input/
 - and store lbsn records as CSV and ProtoBuf in /02_Output/
 
-A full list of possible input args is available with `lbsntransform --help` [config.py](/lbsntransform/config/config.py)
+A full list of possible input args is available with `lbsntransform --help` [config.py](/lbsn/lbsntransform/config/config.py)
 
 ## Built With
 
@@ -51,7 +51,7 @@ A full list of possible input args is available with `lbsntransform --help` [con
 
 ## Contributing
 
-Field mapping from and to ProtoBuffers from different Social Media sites is provided in classes [field_mapping_xxx.py](/lbsntransform/input/mapping/).
+Field mapping from and to ProtoBuffers from different Social Media sites is provided in classes [field_mapping_xxx.py](/lbsn/lbsntransform/input/mapping/).
 As an example, mapping of the Twitter json structure is given (see class `FieldMappingTwitter`). This class may be used to extend
 functionality to cover other networks such as Flickr or Foursquare.
 
