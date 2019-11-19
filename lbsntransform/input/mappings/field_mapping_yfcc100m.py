@@ -11,25 +11,20 @@ import sys
 from codecs import escape_decode
 from decimal import Decimal
 from urllib.parse import unquote
+from typing import List
 
 # for debugging only:
 from google.protobuf import text_format
-from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
-                                             RelationshipKey, City,
-                                             Country, Origin,
-                                             Place, Post,
-                                             PostReaction,
-                                             Relationship, User,
-                                             UserGroup)
+from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
+from ...tools.helper_functions import HelperFunctions as HF
+from ...output.shared_structure import LBSNRecordDicts
 
 # pylint: disable=no-member
 
 
 class FieldMappingYFCC100M():
-    """ Provides mapping function from Flickr endpoints to
+    """ Provides mapping function from Flickr YFCC100m to
         protobuf lbsnstructure
     """
     ORIGIN_NAME = "Flickr yfcc100m"
@@ -46,8 +41,8 @@ class FieldMappingYFCC100M():
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
-        origin = Origin()
-        origin.origin_id = Origin.FLICKR
+        origin = lbsn.Origin()
+        origin.origin_id = lbsn.Origin.FLICKR
         self.origin = origin
         self.null_island = 0
         self.log = logging.getLogger('__main__')  # get the main logger object
@@ -76,17 +71,18 @@ class FieldMappingYFCC100M():
 
     def parse_csv_record(self, record):
         """Entry point for flickr CSV data:
-            - Decide if CSV record contains user-info or post-info
+            - Decide if CSV record contains place-info or post-info
             - Skip empty or malformed records
 
         Attributes:
         record    A single row from CSV, stored as list type.
         """
+        # Flickr photo CSV has length of 25 columns
+        # if more, then we're dealing with concat photo+place pipe
         if len(record) == 2:
-            # Flickr place record dirty detection
-            lbsn_records = self.extract_flickr_place(
-                record)
-            return lbsn_records
+            # only YFCC100m place record
+            lbsn_records_place = self.extract_flickr_place(record)
+            return lbsn_records_place
         elif len(record) < 12 or not record[0].isdigit():
             # skip erroneous entries + log
             self.skipped_count += 1
@@ -109,16 +105,16 @@ class FieldMappingYFCC100M():
 
         Overview of available columns and examples:
         0 row-number    -   0
-        1 unknown - 4e2f7a26a1dfbf165a7e30bdabf7e72a
-        2 Photo/video identifier    -   6985418911
-        3 User NSID     -   4e2f7a26a1dfbf165a7e30bdabf7e72a
-        4 User nickname     -   39089491@N00
+        1 Photo/video identifier    -   6985418911
+        2 lbsn.User NSID(PostID?)     -   4e2f7a26a1dfbf165a7e30bdabf7e72a
+        3 lbsn.User ID     -   39089491@N00
+        4 lbsn.User nickname     -   gnuckx
         5 Date taken    -   2012-02-16 09:56:37.0
         6 Date uploaded     -   1331840483
         7 Capture device    -   Canon+PowerShot+ELPH+310+HS
         8 Title     -   IMG_0520
         9 Description      -     My vacation
-        10 User tags (comma-separated)   -   canon,canon+powershot+hs+310
+        10 tags (comma-separated)   -   canon,canon+powershot+hs+310
         11 Machine tags (comma-separated)   - landscape, hills, water
         12 Longitude    -   -81.804885
         13 Latitude     -   24.550558
@@ -133,6 +129,9 @@ class FieldMappingYFCC100M():
         22 Photo/video secret original  -   692d7e0a7f
         23 Extension of the original photo  -   jpg
         24 Marker (0 ¼ photo, 1 ¼ video)    -   0
+        if concat:
+            25 Photo/video identifier
+            26 Place references (null to multiple)
         """
         # note that one input record may contain many lbsn records
         # therefore, return list of processed records
@@ -141,10 +140,10 @@ class FieldMappingYFCC100M():
         post_guid = record[1]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        post_record = HF.new_lbsn_record_with_id(Post(),
+        post_record = HF.new_lbsn_record_with_id(lbsn.Post(),
                                                  post_guid,
                                                  self.origin)
-        user_record = HF.new_lbsn_record_with_id(User(),
+        user_record = HF.new_lbsn_record_with_id(lbsn.User(),
                                                  record[3],
                                                  self.origin)
         user_record.user_name = unquote(record[4]).replace(
@@ -163,7 +162,7 @@ class FieldMappingYFCC100M():
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            # place_record = HF.new_lbsn_record_with_id(Place(),
+            # place_record = HF.new_lbsn_record_with_id(lbsn.Place(),
             #                                           record[1],
             #                                           self.origin)
             # lbsn_records.append(place_record)
@@ -192,7 +191,7 @@ class FieldMappingYFCC100M():
         record_tags_list = list(
             set(filter(
                 None,
-                [unquote(tag)
+                [HF.remove_prefix(unquote(tag), "#")
                  for tag in re.split("[,+]+", record[10])]
             )))
         if record_tags_list:
@@ -203,18 +202,26 @@ class FieldMappingYFCC100M():
             set(filter(None, [unquote(mtag) for mtag in re.split("[,+]+", record[11])])))
         if 'video' in record_machine_tags:
             # all videos appear to have 'video' in machine tags
-            post_record.post_type = Post.VIDEO
+            post_record.post_type = lbsn.Post.VIDEO
         else:
-            post_record.post_type = Post.IMAGE
+            post_record.post_type = lbsn.Post.IMAGE
         # replace text-string of content license by integer-id
         post_record.post_content_license = self.get_license_number_from_license_name(
             record[17])
-        lbsn_records.append(post_record)
+        # place record available in separate yfcc100m dataset
+        # if records parsed as joined urls, length is larger than 25
+        if len(record) > 25:
+            post_plus_place_records = self.extract_flickr_place(
+                record[25:], post_record=post_record)
+        if post_plus_place_records is None:
+            lbsn_records.append(post_record)
+        else:
+            lbsn_records.extend(post_plus_place_records)
         return lbsn_records
 
-    def extract_flickr_place(self, record):
-        """Main function for processing Flickr YFCC100M Place CSV entry
-        Place records are available from a separate yfcc100m dataset
+    def extract_flickr_place(self, record, post_record: lbsn.Post = None):
+        """Main function for processing Flickr YFCC100M lbsn.Place CSV entry
+        lbsn.Place records are available from a separate yfcc100m dataset
         and are joined based on photo guid
         """
         # note that one input record may contain many lbsn records
@@ -222,35 +229,59 @@ class FieldMappingYFCC100M():
         lbsn_records = []
         # start mapping input to lbsn_records
         post_guid = record[0]
+        if post_record is not None:
+            # verify matching guids
+            if not post_record.pkey.id == post_guid:
+                raise ValueError(
+                    f"Post_guids not in sync: {post_record.pkey.id} "
+                    f"/ {post_guid}")
         if not record[1]:
             # skip empty records
             return None
         # place records in yfcc100m contain multiple entries, e.g.
-        # 24703176:Admiralty:Suburb,24703128:Central+and+Western:Territory,24865698:Hong+Kong:Special Administrative Region,28350827:Asia%2FHong_Kong:Timezone
+        # 24703176:Admiralty:Suburb,24703128:Central+and+Western:Territory,
+        # 24865698:Hong+Kong:Special Administrative Region,
+        # 28350827:Asia%2FHong_Kong:Timezone
         place_records = record[1].split(",")
         for place_record in place_records:
             lbsn_place_record = \
                 FieldMappingYFCC100M.process_place_record(
                     place_record, self.origin)
             lbsn_records.append(lbsn_place_record)
-        # update post record with entries from place record
-        post_record = HF.new_lbsn_record_with_id(
-            Post(), post_guid, self.origin)
-        for place_record in lbsn_records:
-            if isinstance(place_record, Country):
-                post_record.country_pkey.CopyFrom(place_record.pkey)
-            if isinstance(place_record, City):
-                post_record.city_pkey.CopyFrom(place_record.pkey)
-            # either city or place, Twitter user cannot attach both (?)
-            elif isinstance(place_record, Place):
-                post_record.place_pkey.CopyFrom(place_record.pkey)
+        # create or update post record with entries from place record
+        post_record = self.update_post_with_place(
+            post_record=post_record,
+            post_guid=post_guid,
+            place_records=lbsn_records)
         lbsn_records.append(post_record)
         return lbsn_records
+
+    def update_post_with_place(
+            self, post_record: lbsn.Post = None, post_guid: str = None,
+            place_records: List[lbsn.Place] = None):
+        """Update post record with entries from place record"""
+        if post_record is None:
+            if post_guid is None:
+                raise ValueError("Cannot create lbsn.Post without post_guid")
+            # create new post record
+            post_record = HF.new_lbsn_record_with_id(
+                lbsn.Post(), post_guid, self.origin)
+        if place_records is None:
+            return post_record
+        for place_record in place_records:
+            if isinstance(place_record, lbsn.Country):
+                post_record.country_pkey.CopyFrom(place_record.pkey)
+            if isinstance(place_record, lbsn.City):
+                post_record.city_pkey.CopyFrom(place_record.pkey)
+            # either city or place, Twitter user cannot attach both (?)
+            elif isinstance(place_record, lbsn.Place):
+                post_record.place_pkey.CopyFrom(place_record.pkey)
+        return post_record
 
     @staticmethod
     def process_place_record(place_record, origin):
         """Assignment of Flickr place types to lbsnstructure
-        hierarchy: Country, City, Place
+        hierarchy: lbsn.Country, lbsn.City, lbsn.Place
         Original Flickr place types, which are more detailed,
         are stored in sub_type field
         """
@@ -262,7 +293,7 @@ class FieldMappingYFCC100M():
         ])
         FLICKR_CITY_MATCH = set([
             "city", "town", "region", "special administrative region",
-            "county", "district", "zip", "province", "suburb",
+            "county", "district", "zip", "province",
             "district/county", "autonomous community", "municipality",
             "department", "district/town/township", "township",
             "historical town", "governorate", "commune", "canton",
@@ -276,7 +307,7 @@ class FieldMappingYFCC100M():
         ])
         FLICKR_PLACE_MATCH = set([
             "poi", "land feature", "estate", "airport", "drainage",
-            "miscellaneous"
+            "miscellaneous", "suburb"
         ])
         place_record_split = place_record.split(":")
         if not len(place_record_split) == 3:
@@ -292,25 +323,25 @@ class FieldMappingYFCC100M():
         # assignment
         if any(ptls in FLICKR_COUNTRY_MATCH for ptls in place_type_lw_split):
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                Country(), place_guid, origin)
+                lbsn.Country(), place_guid, origin)
         elif any(ptls in FLICKR_CITY_MATCH for ptls in place_type_lw_split):
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                City(), place_guid, origin)
+                lbsn.City(), place_guid, origin)
         elif any(ptls in FLICKR_PLACE_MATCH for ptls in place_type_lw_split):
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                Place(), place_guid, origin)
+                lbsn.Place(), place_guid, origin)
         else:
             logging.getLogger('__main__').WARNING(
                 f'Could not assign place type {place_type_lw}\n'
                 f'found in place_record: {place_record}\n'
-                f'Will assign default "Place"')
+                f'Will assign default "lbsn.Place"')
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                Place(), place_guid, origin)
+                lbsn.Place(), place_guid, origin)
         lbsn_place_record.name = place_name
-        if isinstance(lbsn_place_record, City):
+        if isinstance(lbsn_place_record, lbsn.City):
             # record sub types only for city and place
             lbsn_place_record.sub_type = place_type
-        elif isinstance(lbsn_place_record, Place):
+        elif isinstance(lbsn_place_record, lbsn.Place):
             lbsn_place_record.place_description = place_type
         # place_record.url (not provided)
         # need to consult post data for lat/lng coordinates
@@ -341,13 +372,13 @@ class FieldMappingYFCC100M():
 
     @staticmethod
     def flickr_map_geoaccuracy(flickr_geo_accuracy_level):
-        """Flickr Geoaccuracy Levels (16) are mapped to four LBSNstructure levels:
-           LBSN PostGeoaccuracy: UNKNOWN = 0; LATLNG = 1; PLACE = 2; CITY = 3;
-           COUNTRY = 4
-           Fickr: World level is 1, Country is ~3, Region ~6, City ~11,
-           Street ~16.
+        """Flickr Geoaccuracy Levels (16) are mapped to four
+           LBSNstructure levels (LBSN PostGeoaccuracy):
+           UNKNOWN = 0; LATLNG = 1; PLACE = 2; CITY = 3; COUNTRY = 4
+           Fickr: World level is 1, lbsn.Country is ~3, Region ~6,
+           lbsn.City ~11, Street ~16.
 
-           Flickr Current range is 1-16. Defaults to 16 if not specified.
+           Flickr current range is 1-16. Defaults to 16 if not specified.
 
         Attributes:
         flickr_geo_accuracy_level   Geoaccuracy Level returned from Flickr
@@ -358,20 +389,20 @@ class FieldMappingYFCC100M():
         if stripped_level.isdigit():
             stripped_level = int(stripped_level)
             if stripped_level >= 15:
-                lbsn_geoaccuracy = Post.LATLNG
+                lbsn_geoaccuracy = lbsn.Post.LATLNG
             elif stripped_level >= 12:
-                lbsn_geoaccuracy = Post.PLACE
+                lbsn_geoaccuracy = lbsn.Post.PLACE
             elif stripped_level >= 8:
-                lbsn_geoaccuracy = Post.CITY
+                lbsn_geoaccuracy = lbsn.Post.CITY
             else:
-                lbsn_geoaccuracy = Post.COUNTRY
+                lbsn_geoaccuracy = lbsn.Post.COUNTRY
         else:
             if flickr_geo_accuracy_level == "Street":
-                lbsn_geoaccuracy = Post.LATLNG
-            elif flickr_geo_accuracy_level in ("City", "Region"):
-                lbsn_geoaccuracy = Post.CITY
-            elif flickr_geo_accuracy_level in ("Country", "World"):
-                lbsn_geoaccuracy = Post.COUNTRY
+                lbsn_geoaccuracy = lbsn.Post.LATLNG
+            elif flickr_geo_accuracy_level in ("lbsn.City", "Region"):
+                lbsn_geoaccuracy = lbsn.Post.CITY
+            elif flickr_geo_accuracy_level in ("lbsn.Country", "World"):
+                lbsn_geoaccuracy = lbsn.Post.COUNTRY
         return lbsn_geoaccuracy
 
     def flickr_extract_postlatlng(self, record):

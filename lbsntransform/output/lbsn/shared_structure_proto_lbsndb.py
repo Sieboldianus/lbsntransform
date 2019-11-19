@@ -8,12 +8,8 @@ Shared structure and mapping between DB and Proto LBSN Structure.
 
 import sys
 
-from lbsnstructure.lbsnstructure_pb2 import (City, Country, Place,
-                                             Post, PostReaction,
-                                             Relationship, User,
-                                             UserGroup)
-
-from .helper_functions import HelperFunctions as HF
+from lbsnstructure import lbsnstructure_pb2 as lbsn
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 
 class ProtoLBSNMapping():
@@ -27,18 +23,18 @@ class ProtoLBSNMapping():
         - ready for copy-from pg import
         """
         dict_switcher = \
-            {City.DESCRIPTOR.name:
+            {lbsn.City.DESCRIPTOR.name:
              'origin_id, city_guid, name, name_alternatives, geom_center, '
              'geom_area, url, country_guid, sub_type',
-             Country.DESCRIPTOR.name:
+             lbsn.Country.DESCRIPTOR.name:
              'origin_id, country_guid, name, name_alternatives, geom_center, '
              'geom_area, url',
-             Place.DESCRIPTOR.name:
+             lbsn.Place.DESCRIPTOR.name:
              'origin_id, place_guid, name, name_alternatives, geom_center, '
              'geom_area, url, city_guid, post_count, place_description, '
              'place_website, place_phone, address, zip_code, attributes, '
              'checkin_count, like_count, parent_places',
-             Post.DESCRIPTOR.name:
+             lbsn.Post.DESCRIPTOR.name:
              'origin_id, post_guid, post_latlng, place_guid, city_guid, '
              'country_guid, post_geoaccuracy, user_guid, post_create_date, '
              'post_publish_date, post_body, post_language, user_mentions, '
@@ -46,19 +42,19 @@ class ProtoLBSNMapping():
              'post_views_count, post_title, post_thumbnail_url, post_url, '
              'post_type, post_filter, post_quote_count, post_share_count, '
              'input_source, post_content_license',
-             PostReaction.DESCRIPTOR.name:
+             lbsn.PostReaction.DESCRIPTOR.name:
              'origin_id, reaction_guid, reaction_latlng, user_guid, '
              'referencedPost_guid, referencedPostreaction_guid, '
              'reaction_type, reaction_date, reaction_content, '
              'reaction_like_count, user_mentions',
-             User.DESCRIPTOR.name:
+             lbsn.User.DESCRIPTOR.name:
              'origin_id, user_guid, user_name, user_fullname, follows, '
              'followed, group_count, biography, post_count, is_private, '
              'url, is_available, user_language, user_location, '
              'user_location_geom, liked_count, active_since, '
              'profile_image_url, user_timezone, user_utc_offset, '
              'user_groups_member, user_groups_follows',
-             UserGroup.DESCRIPTOR.name:
+             lbsn.UserGroup.DESCRIPTOR.name:
              'origin_id, usergroup_guid, usergroup_name, '
              'usergroup_description, member_count, '
              'usergroup_createdate, user_owner',
@@ -78,20 +74,20 @@ class ProtoLBSNMapping():
     def func_prepare_selector(self, record):
         """Select correct prepare function according to record type"""
         dict_switcher = {
-            Country().DESCRIPTOR.name: self.prepare_lbsn_country,
-            City().DESCRIPTOR.name: self.prepare_lbsn_city,
-            Place().DESCRIPTOR.name: self.prepare_lbsn_place,
-            User().DESCRIPTOR.name: self.prepare_lbsn_user,
-            UserGroup().DESCRIPTOR.name: self.prepare_lbsn_usergroup,
-            Post().DESCRIPTOR.name: self.prepare_lbsn_post,
-            PostReaction().DESCRIPTOR.name: self.prepare_lbsn_postreaction,
-            Relationship().DESCRIPTOR.name: self.prepare_lbsn_relation
+            lbsn.Country().DESCRIPTOR.name: self.prepare_lbsn_country,
+            lbsn.City().DESCRIPTOR.name: self.prepare_lbsn_city,
+            lbsn.Place().DESCRIPTOR.name: self.prepare_lbsn_place,
+            lbsn.User().DESCRIPTOR.name: self.prepare_lbsn_user,
+            lbsn.UserGroup().DESCRIPTOR.name: self.prepare_lbsn_usergroup,
+            lbsn.Post().DESCRIPTOR.name: self.prepare_lbsn_post,
+            lbsn.PostReaction().DESCRIPTOR.name: self.prepare_lbsn_postreaction,
+            lbsn.Relationship().DESCRIPTOR.name: self.prepare_lbsn_relation
         }
         prepare_function = dict_switcher.get(record.DESCRIPTOR.name)
         return prepare_function(record)
 
     def prepare_lbsn_country(self, record):
-        """Get common attributes for records of type Place"""
+        """Get common attributes for records of type lbsn.Place"""
         place_record = PlaceBaseAttrShared(record)
         prepared_record = (place_record.origin_id,
                            place_record.guid,
@@ -104,7 +100,7 @@ class ProtoLBSNMapping():
         return prepared_record
 
     def prepare_lbsn_city(self, record):
-        """Get common attributes for records of type City"""
+        """Get common attributes for records of type lbsn.City"""
         place_record = PlaceBaseAttrShared(record)
         country_guid = HF.null_check(record.country_pkey.id)
         sub_type = HF.null_check(record.sub_type)
@@ -122,7 +118,7 @@ class ProtoLBSNMapping():
         return prepared_record
 
     def prepare_lbsn_place(self, record):
-        """Get common attributes for records of type Place"""
+        """Get common attributes for records of type lbsn.Place"""
         place_record = PlaceBaseAttrShared(record)
         # get additional attributes specific to places
         city_guid = HF.null_check(record.city_pkey.id)
@@ -159,7 +155,7 @@ class ProtoLBSNMapping():
         return prepared_record
 
     def prepare_lbsn_user(self, record):
-        """Get common attributes for records of type User"""
+        """Get common attributes for records of type lbsn.User"""
         user_record = UserAttrShared(record)
         prepared_record = (user_record.origin_id,
                            user_record.guid,
@@ -199,7 +195,7 @@ class ProtoLBSNMapping():
         return prepared_record
 
     def prepare_lbsn_post(self, record):
-        """Get common attributes for records of type Post"""
+        """Get common attributes for records of type lbsn.Post"""
         post_record = PostAttrShared(record)
         prepared_record = (post_record.origin_id,
                            post_record.guid,
@@ -232,7 +228,7 @@ class ProtoLBSNMapping():
         return prepared_record
 
     def prepare_lbsn_postreaction(self, record):
-        """Get common attributes for records of type PostReaction"""
+        """Get common attributes for records of type lbsn.PostReaction"""
         post_reaction_record = PostreactionAttrShared(record)
         prepared_record = (post_reaction_record.origin_id,
                            post_reaction_record.guid,
@@ -260,15 +256,15 @@ class ProtoLBSNMapping():
 
 
 class PlaceBaseAttrShared():
-    """Shared structure for Place Attributes
+    """Shared structure for lbsn.Place Attributes
 
     Contains attributes shared among PG DB and LBSN ProtoBuf spec.
-    Note that Country, City and Place have the same structure.
+    Note that lbsn.Country, lbsn.City and lbsn.Place have the same structure.
     """
 
     def __init__(self, record=None):
         if record is None:
-            record = Place()  # init empty structure
+            record = lbsn.Place()  # init empty structure
         self.origin_id = record.pkey.origin.origin_id  # = 3
         self.guid = record.pkey.id
         self.name = HF.null_check(record.name)
@@ -283,14 +279,14 @@ class PlaceBaseAttrShared():
 
 
 class UserAttrShared():
-    """Shared structure for User Attributes
+    """Shared structure for lbsn.User Attributes
 
     Contains attributes shared among PG DB and LBSN ProtoBuf spec.
     """
 
     def __init__(self, record=None):
         if record is None:
-            record = User()
+            record = lbsn.User()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.user_name = HF.null_check(record.user_name)
@@ -323,7 +319,7 @@ class UsergroupAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = UserGroup()
+            record = lbsn.UserGroup()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.usergroup_name = HF.null_check(record.usergroup_name)
@@ -336,14 +332,14 @@ class UsergroupAttrShared():
 
 
 class PostAttrShared():
-    """Shared structure for Post Attributes
+    """Shared structure for lbsn.Post Attributes
 
     Contains attributes shared among PG DB and LBSN ProtoBuf spec.
     """
 
     def __init__(self, record=None):
         if record is None:
-            record = Post()
+            record = lbsn.Post()
 
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
@@ -352,7 +348,7 @@ class PostAttrShared():
         self.city_guid = HF.null_check(record.city_pkey.id)
         self.country_guid = HF.null_check(record.country_pkey.id)
         self.post_geoaccuracy = HF.turn_lower(HF.null_check(
-            Post().PostGeoaccuracy.Name(record.post_geoaccuracy)))
+            lbsn.Post().PostGeoaccuracy.Name(record.post_geoaccuracy)))
         self.user_guid = HF.null_check(record.user_pkey.id)
         self.post_create_date = HF.null_check_datetime(record.post_create_date)
         self.post_publish_date = HF.null_check_datetime(
@@ -370,7 +366,7 @@ class PostAttrShared():
         self.post_thumbnail_url = HF.null_check(record.post_thumbnail_url)
         self.post_url = HF.null_check(record.post_url)
         self.post_type = HF.turn_lower(HF.null_check(
-            Post().PostType.Name(record.post_type)))
+            lbsn.Post().PostType.Name(record.post_type)))
         self.post_filter = HF.null_check(record.post_filter)
         self.post_quote_count = HF.null_check(record.post_quote_count)
         self.post_share_count = HF.null_check(record.post_share_count)
@@ -389,7 +385,7 @@ class PostreactionAttrShared():
 
     def __init__(self, record=None):
         if record is None:
-            record = PostReaction()
+            record = lbsn.PostReaction()
         self.origin_id = record.pkey.origin.origin_id
         self.guid = record.pkey.id
         self.reaction_latlng = HF.null_geom_check(record.reaction_latlng)
@@ -398,7 +394,7 @@ class PostreactionAttrShared():
         self.referenced_postreaction = HF.null_check(
             record.referencedPostreaction_pkey.id)
         self.reaction_type = HF.turn_lower(HF.null_check(
-            PostReaction().ReactionType.Name(record.reaction_type)))
+            lbsn.PostReaction().ReactionType.Name(record.reaction_type)))
         self.reaction_date = HF.null_check_datetime(record.reaction_date)
         self.reaction_content = HF.null_check(record.reaction_content)
         self.reaction_like_count = HF.null_check(record.reaction_like_count)
@@ -414,9 +410,9 @@ class RelationAttrShared():
 
     def __init__(self, relationship=None):
         if relationship is None:
-            relationship = Relationship()
+            relationship = lbsn.Relationship()
         self.origin_id = relationship.pkey.relation_to.origin.origin_id
         self.guid = relationship.pkey.relation_to.id
         self.guid_rel = relationship.pkey.relation_from.id
-        self.rel_type = HF.null_check(Relationship().RelationshipType.Name(
+        self.rel_type = HF.null_check(lbsn.Relationship().RelationshipType.Name(
             relationship.relationship_type)).lower()

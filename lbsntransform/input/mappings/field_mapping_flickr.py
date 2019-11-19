@@ -10,17 +10,11 @@ import logging
 from decimal import Decimal
 
 # for debugging only:
-from google.protobuf import text_format
-from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
-                                             RelationshipKey, City,
-                                             Country, Origin,
-                                             Place, Post,
-                                             PostReaction,
-                                             Relationship, User,
-                                             UserGroup)
+# from google.protobuf import text_format
+from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
+from ...tools.helper_functions import HelperFunctions as HF
+from ...output.shared_structure import LBSNRecordDicts
 
 
 class FieldMappingFlickr():
@@ -41,8 +35,8 @@ class FieldMappingFlickr():
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
-        origin = Origin()
-        origin.origin_id = Origin.FLICKR
+        origin = lbsn.Origin()
+        origin.origin_id = lbsn.Origin.FLICKR
         self.origin = origin
         self.null_island = 0
         # this is where all the data will be stored
@@ -85,10 +79,10 @@ class FieldMappingFlickr():
         post_guid = record[5]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        post_record = HF.new_lbsn_record_with_id(Post(),
+        post_record = HF.new_lbsn_record_with_id(lbsn.Post(),
                                                  post_guid,
                                                  self.origin)
-        user_record = HF.new_lbsn_record_with_id(User(),
+        user_record = HF.new_lbsn_record_with_id(lbsn.User(),
                                                  record[7],
                                                  self.origin)
         user_record.user_name = record[6]
@@ -104,7 +98,7 @@ class FieldMappingFlickr():
             # we need some information from postRecord to create placeRecord
             # (e.g.  user language, geoaccuracy, post_latlng)
             # some of the information from place will also modify postRecord
-            place_record = HF.new_lbsn_record_with_id(Place(),
+            place_record = HF.new_lbsn_record_with_id(lbsn.Place(),
                                                       record[19],
                                                       self.origin)
             self.lbsn_records.append(place_record)
@@ -132,9 +126,9 @@ class FieldMappingFlickr():
                 post_record.hashtags.append(tag)
         record_media_type = record[16]
         if record_media_type and record_media_type == "video":
-            post_record.post_type = Post.VIDEO
+            post_record.post_type = lbsn.Post.VIDEO
         else:
-            post_record.post_type = Post.IMAGE
+            post_record.post_type = lbsn.Post.IMAGE
         post_record.post_content_license = value_count(record[14])
         self.lbsn_records.append(post_record)
 
@@ -159,7 +153,7 @@ class FieldMappingFlickr():
         """Flickr Geoaccuracy Levels (16) are mapped to four LBSNstructure levels:
            LBSN PostGeoaccuracy: UNKNOWN = 0; LATLNG = 1; PLACE = 2; CITY = 3;
            COUNTRY = 4
-           Fickr: World level is 1, Country is ~3, Region ~6, City ~11,
+           Fickr: World level is 1, lbsn.Country is ~3, Region ~6, lbsn.City ~11,
            Street ~16.
 
            Flickr Current range is 1-16. Defaults to 16 if not specified.
@@ -173,20 +167,20 @@ class FieldMappingFlickr():
         if stripped_level.isdigit():
             stripped_level = int(stripped_level)
             if stripped_level >= 15:
-                lbsn_geoaccuracy = Post.LATLNG
+                lbsn_geoaccuracy = lbsn.Post.LATLNG
             elif stripped_level >= 12:
-                lbsn_geoaccuracy = Post.PLACE
+                lbsn_geoaccuracy = lbsn.Post.PLACE
             elif stripped_level >= 8:
-                lbsn_geoaccuracy = Post.CITY
+                lbsn_geoaccuracy = lbsn.Post.CITY
             else:
-                lbsn_geoaccuracy = Post.COUNTRY
+                lbsn_geoaccuracy = lbsn.Post.COUNTRY
         else:
             if flickr_geo_accuracy_level == "Street":
-                lbsn_geoaccuracy = Post.LATLNG
-            elif flickr_geo_accuracy_level in ("City", "Region"):
-                lbsn_geoaccuracy = Post.CITY
-            elif flickr_geo_accuracy_level in ("Country", "World"):
-                lbsn_geoaccuracy = Post.COUNTRY
+                lbsn_geoaccuracy = lbsn.Post.LATLNG
+            elif flickr_geo_accuracy_level in ("lbsn.City", "Region"):
+                lbsn_geoaccuracy = lbsn.Post.CITY
+            elif flickr_geo_accuracy_level in ("lbsn.Country", "World"):
+                lbsn_geoaccuracy = lbsn.Post.COUNTRY
         return lbsn_geoaccuracy
 
     def flickr_extract_postlatlng(self, record):

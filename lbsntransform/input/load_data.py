@@ -9,24 +9,21 @@ import csv
 import json
 import os
 import sys
+import logging
+import traceback
 from contextlib import closing
+from itertools import zip_longest
 from glob import glob
 from pathlib import Path
 from typing import Dict, TextIO, List, Union, Any, Generator, Iterator
 
 import ntpath
 import requests
-from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
-                                             RelationshipKey, City,
-                                             Country, Origin,
-                                             Place, Post,
-                                             PostReaction,
-                                             Relationship, User,
-                                             UserGroup)
+from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from .db_connection import DBConnection
-from .helper_functions import GeocodeLocations
-from .helper_functions import HelperFunctions as HF
+from ..tools.db_connection import DBConnection
+from ..output.shared_structure import GeocodeLocations
+from ..tools.helper_functions import HelperFunctions as HF
 
 
 class LoadData():
@@ -44,7 +41,8 @@ class LoadData():
             input_lbsn_type=None, geocode_locations=None,
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
-            ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None):
+            ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
+            web_zip=None):
         self.is_local_input = is_local_input
         self.start_number = None
 
@@ -59,6 +57,9 @@ class LoadData():
                 self.continue_number = skip_until_file
             self.start_number = 1
         self.source_web = source_web
+        if web_zip is None:
+            web_zip = True
+        self.web_zip = web_zip
         self.cursor_input = None
         if self.is_local_input and not self.source_web:
             self.filelist = LoadData._read_local_files(
@@ -67,7 +68,7 @@ class LoadData():
                 skip_until_file=skip_until_file)
             self.cursor_input = cursor_input
         elif self.is_local_input and self.source_web:
-            self.filelist = [input_path]
+            self.filelist = input_path
         else:
             self.filelist = None
             # self.cursor_input = LoadData.initialize_connection(
@@ -109,22 +110,38 @@ class LoadData():
         self.finished = False
 
     def __enter__(self) -> Iterator[Union[
-            CompositeKey, Language, RelationshipKey, City,
-            Country, Origin, Place, Post,
-            PostReaction, Relationship, User,
-            UserGroup]]:
+            lbsn.CompositeKey, lbsn.Language, lbsn.RelationshipKey, lbsn.City,
+            lbsn.Country, lbsn.Origin, lbsn.Place, lbsn.Post,
+            lbsn.PostReaction, lbsn.Relationship, lbsn.User,
+            lbsn.UserGroup]]:
         """Main pipeline for reading input data
 
         Combine multiple generators to single pipeline,
         returned for being processed by with-statement
         """
+
         record_pipeline = self.convert_records(self._process_input(
             self._open_input_files()))
         return record_pipeline
         # return record_pipeline
 
-    def __exit__(self, c_type, value, traceback):
-        """Contextmanager exit: nothing to do here"""
+    def __exit__(self, exception_type, exception_value, tb):
+        """Contextmanager exit: nothing to do here if no exception is raised"""
+        if any(
+            v is not None for v in [
+                exception_type, exception_value, tb]):
+            # only if any of these variables is not None
+            # catch exception and output additional information
+            logging.getLogger('__main__').warning(
+                f"\nError while reading records: "
+                f"{exception_type}\n{exception_value}\n"
+                f"{traceback.print_tb(tb)}\n")
+            logging.getLogger('__main__').warning(
+                f"Current source: \n {self.current_source}\n")
+            stats_str = HF.report_stats(
+                self.count_glob,
+                self.continue_number)
+            logging.getLogger('__main__').warning(stats_str)
         return False
 
     def _open_input_files(self, count: bool = None):
@@ -148,16 +165,43 @@ class LoadData():
         Output: produces a list of post that can be parsed
         """
         if self.source_web:
-            # single web file query
-            url = self.filelist[0]
-            with closing(requests.get(url, stream=True)) as file_handle:
-                record_reader = csv.reader(
-                    codecs.iterdecode(
-                        file_handle.iter_lines(), 'utf-8'),  # pylint: disable=maybe-no-member
-                    delimiter=self.csv_delim,
-                    quotechar='"', quoting=csv.QUOTE_NONE)
-                for record in record_reader:
-                    yield record
+            if len(self.filelist) == 1:
+                # single web file query
+                url = self.filelist[0]
+                with closing(requests.get(url, stream=True)) as file_handle:
+                    record_reader = csv.reader(
+                        codecs.iterdecode(
+                            file_handle.iter_lines(), 'utf-8'),  # pylint: disable=maybe-no-member
+                        delimiter=self.csv_delim,
+                        quotechar='"', quoting=csv.QUOTE_NONE)
+                    for record in record_reader:
+                        # for record in zip_longest(r1, r2)
+                        yield record
+            else:
+                # multiple web file query
+                if self.web_zip == True and len(self.filelist) == 2:
+                    # zip 2 web csv sources in parallel, e.g.
+                    # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
+                    url1 = self.filelist[0]
+                    url2 = self.filelist[1]
+                    with closing(requests.get(url1, stream=True)) as f1, \
+                            closing(requests.get(url2, stream=True)) as f2:
+                        r1 = csv.reader(
+                            codecs.iterdecode(f1.iter_lines(), 'utf-8'),
+                            delimiter=self.csv_delim,
+                            quotechar='"', quoting=csv.QUOTE_NONE)
+                        r2 = csv.reader(
+                            codecs.iterdecode(f2.iter_lines(), 'utf-8'),
+                            delimiter=self.csv_delim,
+                            quotechar='"', quoting=csv.QUOTE_NONE)
+                        for zipped_record in zip_longest(r1, r2):
+                            # two combine lists
+                            yield zipped_record[0] + zipped_record[1]
+                    return
+                else:
+                    raise ValueError(
+                        "Iteration of multiple web sources "
+                        "is currently not supported.")
         elif self.is_local_input:
             # local file loop
             for file_handle in file_handles:
@@ -185,10 +229,10 @@ class LoadData():
                 yield record
 
     def convert_records(self, records: Dict[str, Any]) -> Iterator[List[Union[
-            CompositeKey, Language, RelationshipKey, City,
-            Country, Origin, Place, Post,
-            PostReaction, Relationship, User,
-            UserGroup]]]:
+            lbsn.CompositeKey, lbsn.Language, lbsn.RelationshipKey, lbsn.City,
+            lbsn.Country, lbsn.Origin, lbsn.Place, lbsn.Post,
+            lbsn.PostReaction, lbsn.Relationship, lbsn.User,
+            lbsn.UserGroup]]]:
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 

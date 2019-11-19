@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Module for mapping public Facebook Place Graph to common LBSN Structure.
+Module for mapping public Facebook lbsn.Place Graph to common LBSN Structure.
 """
 
 # pylint: disable=no-member
@@ -14,21 +14,15 @@ import shapely.geometry as geometry
 # for debugging only:
 from google.protobuf import text_format
 from google.protobuf.timestamp_pb2 import Timestamp
-from lbsnstructure.lbsnstructure_pb2 import (CompositeKey, Language,
-                                             RelationshipKey, City,
-                                             Country, Origin,
-                                             Place, Post,
-                                             PostReaction,
-                                             Relationship, User,
-                                             UserGroup)
+from lbsnstructure import lbsnstructure_pb2 as lbsn
 from shapely.geometry.polygon import Polygon
 
-from .helper_functions import HelperFunctions as HF
-from .helper_functions import LBSNRecordDicts
+from ...tools.helper_functions import HelperFunctions as HF
+from ...output.shared_structure import LBSNRecordDicts
 
 
 class FieldMappingFBPlace():
-    """ Provides mapping function from Facebook Place Graph endpoints to
+    """ Provides mapping function from Facebook lbsn.Place Graph endpoints to
         protobuf lbsnstructure
     """
     ORIGIN_NAME = "Facebook"
@@ -42,8 +36,8 @@ class FieldMappingFBPlace():
                  ignore_non_geotagged=False,
                  ignore_sources_set=set(),
                  min_geoaccuracy=None):
-        origin = Origin()
-        origin.origin_id = Origin.FACEBOOK
+        origin = lbsn.Origin()
+        origin.origin_id = lbsn.Origin.FACEBOOK
         self.origin = origin
         # this is where all the data will be stored
         self.lbsn_records = []
@@ -102,15 +96,15 @@ class FieldMappingFBPlace():
             first_cat_name = first_cat.get("name")
             if first_cat_name == "country":
                 place_record = HF.new_lbsn_record_with_id(
-                    Country(), place_id, self.origin)
+                    lbsn.Country(), place_id, self.origin)
             elif first_cat_name in ("city", "neighborhood", "admin"):
                 place_record = HF.new_lbsn_record_with_id(
-                    City(), place_id, self.origin)
+                    lbsn.City(), place_id, self.origin)
             else:
                 # all other cat types
                 place_record = HF.new_lbsn_record_with_id(
-                    Place(), place_id, self.origin)
-        if isinstance(place_record, Place):
+                    lbsn.Place(), place_id, self.origin)
+        if isinstance(place_record, lbsn.Place):
             # place specific
             if place_cat_list:
                 for cat in place_cat_list:
@@ -144,7 +138,7 @@ class FieldMappingFBPlace():
             place_phone = place.get('place_phone')
             if place_phone:
                 place_record.place_phone = place_phone
-        # same for Country, City and Place
+        # same for lbsn.Country, lbsn.City and lbsn.Place
         place_name = place.get('name').replace('\n\r', '')
         # remove multiple whitespace
         place_name = re.sub(' +', ' ', place_name)

@@ -15,10 +15,10 @@ import logging
 import sys
 from pathlib import Path
 
-from .classes.helper_functions import HelperFunctions as HF
-from .classes.helper_functions import LBSNRecordDicts
-from .classes.load_data import LoadData
-from .classes.submit_data import LBSNTransfer
+from .tools.helper_functions import HelperFunctions as HF
+from .output.shared_structure import LBSNRecordDicts
+from .input.load_data import LoadData
+from .output.submit_data import LBSNTransfer
 from .config.config import BaseConfig
 
 
@@ -55,7 +55,10 @@ class LBSNTransform():
             dbuser_output=None, dbserveraddress_output=None, dbname_output=None,
             dbpassword_output=None, dbserverport_output=None,
             dbuser_input=None, dbserveraddress_input=None, dbname_input=None,
-            dbpassword_input=None, dbserverport_input=None):
+            dbpassword_input=None, dbserverport_input=None,
+            dbformat_output=None, dbuser_hllworker=None,
+            dbserveraddress_hllworker=None, dbname_hllworker=None,
+            dbpassword_hllworker=None, dbserverport_hllworker=None):
         """Init settings for LBSNTransform"""
 
         # init logger level
@@ -82,13 +85,23 @@ class LBSNTransform():
         conn_output, cursor_output = LoadData.initialize_connection(
             dbuser_output, dbserveraddress_output,
             dbname_output, dbpassword_output, dbserverport_output)
+        if dbformat_output == "hll":
+            __, cursor_hllworker = LoadData.initialize_connection(
+                dbuser_hllworker, dbserveraddress_hllworker,
+                dbname_hllworker, dbpassword_hllworker, dbserverport_hllworker,
+                readonly=True)
+        else:
+            cursor_hllworker = None
+
         # store global for closing connection later
         self.cursor_output = cursor_output
         self.output = LBSNTransfer(
             db_cursor=cursor_output,
             db_connection=conn_output,
             store_csv=csv_output,
-            SUPPRESS_LINEBREAKS=csv_suppress_linebreaks)
+            SUPPRESS_LINEBREAKS=csv_suppress_linebreaks,
+            dbformat_output=dbformat_output,
+            hllworker_cursor=cursor_hllworker)
         # load from local json/csv or from PostgresDB
         self.cursor_input = None
         self.is_local_input = is_local_input
@@ -125,8 +138,10 @@ class LBSNTransform():
         # or after 50.000 (default) processed records,
         # store results
         if self.initial_loop:
-            self.output.store_origin(self.origin_id, self.origin_name)
-            self.store_lbsn_records()
+            if self.output.dbformat_output == 'lbsn':
+                self.output.store_origin(
+                    self.origin_id, self.origin_name)
+                self.store_lbsn_records()
             self.initial_loop = False
         if self.lbsn_records.count_glob >= self.transfer_count:
             self.store_lbsn_records()
