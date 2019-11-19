@@ -22,7 +22,7 @@ import sys
 import traceback
 
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
-from lbsntransform.tools.helper_functions import TimeMonitor
+from lbsntransform.output.shared_structure import TimeMonitor
 from lbsntransform.input.load_data import LoadData
 from lbsntransform.output.submit_data import LBSNTransfer
 from lbsntransform.config.config import BaseConfig

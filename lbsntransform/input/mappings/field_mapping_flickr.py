@@ -14,7 +14,7 @@ from decimal import Decimal
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 from ...tools.helper_functions import HelperFunctions as HF
-from ...tools.helper_functions import LBSNRecordDicts
+from ...output.shared_structure import LBSNRecordDicts
 
 
 class FieldMappingFlickr():

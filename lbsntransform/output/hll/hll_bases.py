@@ -54,14 +54,14 @@ crowd-sourced photo-graphs. Journal of Environmental Management,
 A privacy-aware model to process data from location-based social media.
 """
 
-import sys
 import inspect
-from collections import namedtuple, OrderedDict
-from typing import Tuple, List, Any, Dict, Union
+import sys
+from collections import OrderedDict, namedtuple
+from typing import Any, Dict, List, Tuple, Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
-
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
+
 from .hll_functions import HLLFunctions as HLF
 
 # named tuple of defined hll metrics

@@ -22,7 +22,7 @@ import requests
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 from ..tools.db_connection import DBConnection
-from ..tools.helper_functions import GeocodeLocations
+from ..output.shared_structure import GeocodeLocations
 from ..tools.helper_functions import HelperFunctions as HF
 
 

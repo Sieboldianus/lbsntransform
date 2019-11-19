@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 from .tools.helper_functions import HelperFunctions as HF
-from .tools.helper_functions import LBSNRecordDicts
+from .output.shared_structure import LBSNRecordDicts
 from .input.load_data import LoadData
 from .output.submit_data import LBSNTransfer
 from .config.config import BaseConfig

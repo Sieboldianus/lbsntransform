@@ -6,7 +6,8 @@ Collection of functions used in hll transformation
 
 import datetime as dt
 from collections import namedtuple
-from typing import Any, Generator, List, Set, Tuple, Union, Dict
+from typing import Any, Dict, Generator, List, Set, Tuple, Union
+
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 

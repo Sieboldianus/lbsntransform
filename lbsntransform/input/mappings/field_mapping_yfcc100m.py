@@ -18,7 +18,7 @@ from google.protobuf import text_format
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 from ...tools.helper_functions import HelperFunctions as HF
-from ...tools.helper_functions import LBSNRecordDicts
+from ...output.shared_structure import LBSNRecordDicts
 
 # pylint: disable=no-member
 

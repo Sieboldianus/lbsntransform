@@ -21,8 +21,10 @@ from sys import exit
 from google.protobuf import text_format
 from google.protobuf.timestamp_pb2 import Timestamp
 
-from lbsntransform.tools.helper_functions import HelperFunctions, LBSNRecordDicts
-from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
+from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import \
+    ProtoLBSNMapping
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+from lbsntransform.output.shared_structure import LBSNRecordDicts
 
 
 class LBSNcsv():
@@ -160,7 +162,7 @@ class LBSNcsv():
     def create_proto_by_descriptor_name(self, desc_name):
         """Create new proto record by name
         """
-        new_record = HelperFunctions.dict_type_switcher(desc_name)
+        new_record = HF.dict_type_switcher(desc_name)
         return new_record
 
     # def parse_message(self,msgType,stringMessage):
@@ -227,7 +229,7 @@ class LBSNcsv():
                     record = self.get_record_from_base64_encoded_string(
                         duprecord, type_name)
                     # will modify/overwrite prev_duprecord
-                    HelperFunctions.merge_existing_records(
+                    HF.merge_existing_records(
                         prev_duprecord, record)
                 merged_record = self.serialize_encode_record(prev_duprecord)
             else:
