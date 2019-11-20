@@ -331,7 +331,7 @@ class FieldMappingYFCC100M():
             lbsn_place_record = HF.new_lbsn_record_with_id(
                 lbsn.Place(), place_guid, origin)
         else:
-            logging.getLogger('__main__').WARNING(
+            logging.getLogger('__main__').debug(
                 f'Could not assign place type {place_type_lw}\n'
                 f'found in place_record: {place_record}\n'
                 f'Will assign default "lbsn.Place"')
