@@ -532,6 +532,3 @@ class LBSNTransfer():
         """
         if self.store_csv:
             self.csv_output.clean_csv_batches(self.batched_lbsn_records)
-        file = open("hll.txt", "w")
-        file.write(f'{self.batched_hll_records}')
-        file.close()  # This close() is important
