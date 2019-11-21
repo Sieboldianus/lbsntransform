@@ -61,6 +61,10 @@ class HelperFunctions():
     # for improving performance in PostGIS Upserts
     NULL_GEOM_HEX = '0101000020E610000000000000000000000000000000000000'
 
+    def value_count(value_x): 
+        """Turn none values into 0, otherwise return value"""
+        return int(x) if x.isdigit() else 0
+
     @staticmethod
     def remove_prefix(text_str: str, prefix: str):
         """Remove prefix from string"""

@@ -8,17 +8,10 @@ Module for mapping public Facebook lbsn.Place Graph to common LBSN Structure.
 
 import logging
 import re
-import sys
 
-import shapely.geometry as geometry
-# for debugging only:
-from google.protobuf import text_format
-from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure import lbsnstructure_pb2 as lbsn
-from shapely.geometry.polygon import Polygon
 
 from ...tools.helper_functions import HelperFunctions as HF
-from ...output.shared_structure import LBSNRecordDicts
 
 
 class FieldMappingFBPlace():
@@ -34,7 +27,7 @@ class FieldMappingFBPlace():
                  mapFullRelations=False,
                  map_reactions=True,
                  ignore_non_geotagged=False,
-                 ignore_sources_set=set(),
+                 ignore_sources_set=None,
                  min_geoaccuracy=None):
         origin = lbsn.Origin()
         origin.origin_id = lbsn.Origin.FACEBOOK
@@ -76,6 +69,7 @@ class FieldMappingFBPlace():
         return self.lbsn_records
 
     def extract_place(self, postplace_json):
+        """Extract lbsn.Place from fb place json"""
         place = postplace_json
         place_id = place.get('id')
 
@@ -149,14 +143,14 @@ class FieldMappingFBPlace():
         return place_record
 
     @staticmethod
-    def compile_address(fb_place_dict):
+    def compile_address(fb_place_dict) -> str:
+        """Concat single line address from fb place dict"""
         single_line_address = fb_place_dict.get("single_line_address")
         if single_line_address:
             return single_line_address
-        else:
-            fb_city = fb_place_dict.get("city")
-            fb_country = fb_place_dict.get("country")
-            fb_street = fb_place_dict.get("street")
-            fb_address = ', '.join(
-                filter(None, [fb_street, fb_city, fb_country]))
-            return fb_address
+        fb_city = fb_place_dict.get("city")
+        fb_country = fb_place_dict.get("country")
+        fb_street = fb_place_dict.get("street")
+        fb_address = ', '.join(
+            filter(None, [fb_street, fb_city, fb_country]))
+        return fb_address

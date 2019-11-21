@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 LBSNTransform: Convert Raw Social Media data
          to common LBSN interchange format (ProtoBuf) and
@@ -10,7 +12,6 @@ __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
 
 import io
-import os
 import logging
 import sys
 from pathlib import Path
@@ -19,7 +20,6 @@ from .tools.helper_functions import HelperFunctions as HF
 from .output.shared_structure import LBSNRecordDicts
 from .input.load_data import LoadData
 from .output.submit_data import LBSNTransfer
-from .config.config import BaseConfig
 
 
 class LBSNTransform():
@@ -164,7 +164,8 @@ class LBSNTransform():
         if self.dbuser_output:
             self.cursor_output.close()
 
-    def close_log(self):
+    @staticmethod
+    def close_log():
         """"Closes log and writes to archive file
         """
         logging.shutdown()

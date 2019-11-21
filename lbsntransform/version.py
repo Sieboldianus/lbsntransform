@@ -1,1 +1,4 @@
-__version__ = '0.10.0'
+# -*- coding: utf-8 -*-
+"""Version of lbsntransform package"""
+
+__version__ = '0.10.1'

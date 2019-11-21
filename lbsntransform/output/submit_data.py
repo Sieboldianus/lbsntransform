@@ -7,19 +7,10 @@ Module for storing common Proto LBSN Structure to PG DB.
 # pylint: disable=no-member
 
 import logging
-import os
 import sys
-import traceback
-from collections import defaultdict
-from glob import glob
-from sys import exit
 from typing import Any, Dict, List, Tuple, Union
 
 import psycopg2
-# for debugging only:
-from google.protobuf import text_format
-from google.protobuf.timestamp_pb2 import Timestamp
-from psycopg2 import sql
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
@@ -32,10 +23,13 @@ from .hll.shared_structure_proto_hlldb import ProtoHLLMapping
 from .hll.sql_hll import HLLSql
 from .lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
 from .lbsn.sql_lbsn import LBSNSql
-from .shared_structure import LBSNRecordDicts
 
 
 class LBSNTransfer():
+    """Transfer converted lbsn records
+    to various output formats (CSV, raw-db, hll-db)
+    """
+
     def __init__(self, db_cursor=None,
                  db_connection=None,
                  commit_volume=10000,
@@ -110,6 +104,7 @@ class LBSNTransfer():
             self.count_entries_store = 0
 
     def store_origin(self, origin_id, name):
+        """Store origin of input source sql"""
         insert_sql = \
             f'''
             INSERT INTO social."origin" (
@@ -192,6 +187,7 @@ class LBSNTransfer():
                 self.submit_all_batches()
 
     def submit_all_batches(self):
+        """Hook to submit either lbsn or hll records"""
         if self.dbformat_output == 'lbsn':
             self.submit_batches(self.batched_lbsn_records)
         else:
@@ -208,10 +204,8 @@ class LBSNTransfer():
                 #    self.headersWritten.add(record_type)
                 func_select = self.get_prepare_records_func(
                     self.dbformat_output)
-                prepared_records = func_select(
-                    record_type, batch_item)
+                prepared_records = func_select(batch_item)
                 self.submit_records(record_type, prepared_records)
-                # self.funcSubmitSelector(record_type)
                 batch_item.clear()
 
     def get_prepare_records_func(self, dbformat_outpur: str):
@@ -219,12 +213,11 @@ class LBSNTransfer():
         """
         if dbformat_outpur == 'lbsn':
             return self.get_prepared_lbsn_records
-        else:
-            return self.get_prepared_hll_records
+        # hll
+        return self.get_prepared_hll_records
 
     def get_prepared_lbsn_records(
-            self, record_type: str,
-            batch_item: List[Any]):
+            self, batch_item: List[Any]):
         """Turns propietary lbsn classes into prepared sql value tuples
 
         For hll output, this includes calculation of
@@ -239,8 +232,7 @@ class LBSNTransfer():
         return prepared_records
 
     def get_prepared_hll_records(
-            self, record_type: Tuple[str, str],
-            batch_item: Dict[str, Any]):
+            self, batch_item: Dict[str, Any]):
         """Turns propietary hll classes into prepared sql value tuples
 
         This includes calculation of shards from individual items
@@ -266,13 +258,10 @@ class LBSNTransfer():
                 hll_items.extend(value_str)
         # format sql for shard generation
         # get sql escaped values list
-        values_str = HF.concat_values_str([value_str for
-                                           value_str in hll_items])
-        # input(values_str)
-
+        values_str = HF.concat_values_str(hll_items)
+        # calculate hll shards from raw values
         hll_shards = HLF.calculate_item_shards(
             self.hllworker_cursor, values_str)
-        # input(hll_shards)
         prepared_records = HLF.concat_base_shards(
             hll_base_records, hll_shards)
         return prepared_records
@@ -280,6 +269,7 @@ class LBSNTransfer():
     def submit_records(
             self, record_type: Union[Tuple[str, str], str],
             prepared_records: List[Tuple[Any]]):
+            """Submit/save prepared records to db or csv"""
         if self.store_csv:
             self.csv_output.store_append_batch_to_csv(
                 self.batched_lbsn_records[record_type],
@@ -312,107 +302,107 @@ class LBSNTransfer():
             prepare_function = HLLSql.hll_insertsql
         return prepare_function(values_str, record_type)
 
-    def submitLbsnRelationships(self):
+    def submit_lbsn_relationships(self):
         """submit relationships of different types
 
         record[1] is the PostgresQL formatted list of values,
         record[0] is the type of relationship that determines
             the table selection
         """
-        selectFriends = [relationship[1] for relationship in
+        select_friends = [relationship[1] for relationship in
                          self.batched_lbsn_records[lbsn.Relationship(
                          ).DESCRIPTOR.name] if relationship[0] == "isfriend"]
-        if selectFriends:
+        if select_friends:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectFriends, self.count_round, '_user_friends_user')
+                    select_friends, self.count_round, '_user_friends_user')
             if self.db_cursor:
-                args_isFriend = ','.join(selectFriends)
+                args_isfriend = ','.join(select_friends)
                 insert_sql = \
                     f'''
                     INSERT INTO social."_user_friends_user" (
                         {self.typeNamesHeaderDict["_user_friends_user"]})
-                    VALUES {args_isFriend}
+                    VALUES {args_isfriend}
                     ON CONFLICT (origin_id, user_guid, friend_guid)
                     DO NOTHING
                     '''
                 self.submit_batch(insert_sql)
-        selectConnected = [relationship[1] for relationship in
+        select_connected = [relationship[1] for relationship in
                            self.batched_lbsn_records[lbsn.Relationship(
                            ).DESCRIPTOR.name] if
                            relationship[0] == "isconnected"]
-        if selectConnected:
+        if select_connected:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectConnected, self.count_round, '_user_connectsto_user')
+                    select_connected, self.count_round, '_user_connectsto_user')
             if self.db_cursor:
-                args_isConnected = ','.join(selectConnected)
+                args_isconnected = ','.join(select_connected)
                 insert_sql = \
                     f'''
                         INSERT INTO social."_user_connectsto_user" (
                             {self.typeNamesHeaderDict["_user_connectsto_user"]})
-                        VALUES {args_isConnected}
+                        VALUES {args_isconnected}
                         ON CONFLICT (origin_id, user_guid,
                             connectedto_user_guid)
                         DO NOTHING
                     '''
                 self.submit_batch(insert_sql)
-        selectUserGroupMember = [relationship[1] for relationship in
+        select_usergroupmember = [relationship[1] for relationship in
                                  self.batched_lbsn_records[lbsn.Relationship(
                                  ).DESCRIPTOR.name] if
                                  relationship[0] == "ingroup"]
-        if selectUserGroupMember:
+        if select_usergroupmember:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectUserGroupMember, self.count_round,
+                    select_usergroupmember, self.count_round,
                     '_user_memberof_group')
             if self.db_cursor:
-                args_isInGroup = ','.join(selectUserGroupMember)
+                args_isingroup = ','.join(select_usergroupmember)
                 insert_sql = \
                     f'''
                     INSERT INTO social."_user_memberof_group" (
                         {self.typeNamesHeaderDict["_user_memberof_group"]})
-                    VALUES {args_isInGroup}
+                    VALUES {args_isingroup}
                     ON CONFLICT (origin_id, user_guid, group_guid)
                     DO NOTHING
                     '''
                 self.submit_batch(insert_sql)
-        selectUserGroupMember = [relationship[1] for relationship in
+        select_usergroupmember = [relationship[1] for relationship in
                                  self.batched_lbsn_records[lbsn.Relationship(
                                  ).DESCRIPTOR.name] if
                                  relationship[0] == "followsgroup"]
-        if selectUserGroupMember:
+        if select_usergroupmember:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectUserGroupMember, self.count_round,
+                    select_usergroupmember, self.count_round,
                     '_user_follows_group')
             if self.db_cursor:
-                args_isInGroup = ','.join(selectUserGroupMember)
+                args_isingroup = ','.join(select_usergroupmember)
                 insert_sql = \
                     f'''
                     INSERT INTO social."_user_follows_group" (
                         {self.typeNamesHeaderDict["_user_follows_group"]})
-                    VALUES {args_isInGroup}
+                    VALUES {args_isingroup}
                     ON CONFLICT (origin_id, user_guid, group_guid)
                     DO NOTHING
                     '''
                 self.submit_batch(insert_sql)
-        selectUserMentions = [relationship[1] for relationship in
+        select_usermentions = [relationship[1] for relationship in
                               self.batched_lbsn_records[lbsn.Relationship(
                               ).DESCRIPTOR.name] if
                               relationship[0] == "mentions_user"]
-        if selectUserMentions:
+        if select_usermentions:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
-                    selectUserMentions, self.count_round,
+                    select_usermentions, self.count_round,
                     '_user_mentions_user')
             if self.db_cursor:
-                args_isInGroup = ','.join(selectUserMentions)
+                args_isingroup = ','.join(select_usermentions)
                 insert_sql = \
                     f'''
                     INSERT INTO social."_user_mentions_user" (
                         {self.typeNamesHeaderDict["_user_mentions_user"]})
-                    VALUES {args_isInGroup}
+                    VALUES {args_isingroup}
                     ON CONFLICT (origin_id, user_guid, mentioneduser_guid)
                     DO NOTHING
                     '''
@@ -434,12 +424,12 @@ class LBSNTransfer():
         while not tsuccessful:
             try:
                 self.db_cursor.execute(insert_sql)
-            except psycopg2.IntegrityError as e:
-                if '(post_language)' in e.diag.message_detail or \
-                        '(user_language)' in e.diag.message_detail:
+            except psycopg2.IntegrityError as einteg:
+                if '(post_language)' in einteg.diag.message_detail or \
+                        '(user_language)' in einteg.diag.message_detail:
                     # If language does not exist, we'll trust Twitter
                     # and add this to our language list
-                    missingLanguage = e.diag.message_detail.partition(
+                    missingLanguage = einteg.diag.message_detail.partition(
                         "language)=(")[2].partition(") is not present")[0]
                     print(
                         f'TransactionIntegrityError, inserting language "'
@@ -461,11 +451,11 @@ class LBSNTransfer():
                     # recreate SAVEPOINT after language insert
                     self.db_cursor.execute("SAVEPOINT submit_recordBatch")
                 else:
-                    sys.exit(f'{e}')
-            except psycopg2.DataError as e:
-                sys.exit(f'{e}\nINSERT SQL WAS: {insert_sql}')
-            except ValueError as e:
-                self.log.warning(f'{e}')
+                    sys.exit(f'{einteg}')
+            except psycopg2.DataError as edata:
+                sys.exit(f'{edata}\nINSERT SQL WAS: {insert_sql}')
+            except ValueError as evalue:
+                self.log.warning(f'{evalue}')
                 input("Press Enter to continue... (entry will be skipped)")
                 self.log.warning(f'{insert_sql}')
                 input("args:... ")
@@ -473,12 +463,12 @@ class LBSNTransfer():
                 self.db_cursor.execute(
                     "ROLLBACK TO SAVEPOINT submit_recordBatch")
                 tsuccessful = True
-            except psycopg2.ProgrammingError as e:
+            except psycopg2.ProgrammingError as epsyco:
                 file = open("hll_exc.txt", "w")
-                file.write(f'{e}\nINSERT SQL WAS: {insert_sql}')
+                file.write(f'{epsyco}\nINSERT SQL WAS: {insert_sql}')
                 file.close()  # This close() is important
-                sys.exit(f'{e}\nINSERT SQL WAS: {insert_sql}')
-            except psycopg2.errors.DiskFull as e:
+                sys.exit(f'{epsyco}\nINSERT SQL WAS: {insert_sql}')
+            except psycopg2.errors.DiskFull as espace:
                 input("Disk space full. Clean files and continue..")
             else:
                 # executed if the try clause does not raise an exception
@@ -492,13 +482,14 @@ class LBSNTransfer():
         """
         record_sql = f'''{','.join('%s' for x in range(0, len(args)))}'''
         # inject values
-        preparedSQLRecord = self.db_cursor.mogrify(record_sql, tuple(args))
+        prepared_sql_record = self.db_cursor.mogrify(record_sql, tuple(args))
         # mogrify returns a byte object,
         # we decode it so it can be used as a string again
-        preparedSQLRecord = preparedSQLRecord.decode()
-        return preparedSQLRecord
+        prepared_sql_record = prepared_sql_record.decode()
+        return prepared_sql_record
 
-    def sort_clean_proto_repeated_field(self, record):
+    @classmethod
+    def sort_clean_proto_repeated_field(cls, record):
         """Remove duplicate values in repeated field, sort alphabetically
 
         ProtocolBuffers has no unique list field type. This function will
@@ -516,15 +507,16 @@ class LBSNTransfer():
         """
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
-                x = getattr(record, descriptor.name)
-                if x and not HF.is_composite_field_container(x):
-                    xCleaned = set(x)
-                    xSorted = sorted(xCleaned)
+                x_attr = getattr(record, descriptor.name)
+                if x_attr and not HF.is_composite_field_container(
+                    x_attr):
+                    x_attr_cleaned = set(x_attr)
+                    x_attr_sorted = sorted(x_attr_cleaned)
                     # Complete clear of repeated field
-                    for _ in range(0, len(x)):
-                        x.pop()
+                    for _ in range(0, len(x_attr)):
+                        x_attr.pop()
                     # add sorted list
-                    x.extend(xSorted)
+                    x_attr.extend(x_attr_sorted)
 
     def finalize(self):
         """ Final procedure calls:
@@ -532,6 +524,3 @@ class LBSNTransfer():
         """
         if self.store_csv:
             self.csv_output.clean_csv_batches(self.batched_lbsn_records)
-        file = open("hll.txt", "w")
-        file.write(f'{self.batched_hll_records}')
-        file.close()  # This close() is important
