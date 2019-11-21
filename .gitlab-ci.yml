@@ -1,6 +1,3 @@
-before_script:
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-
 test:
   image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
   stage: test
