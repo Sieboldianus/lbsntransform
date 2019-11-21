@@ -9,12 +9,9 @@ Module for mapping Flickr to common LBSN Structure.
 import logging
 from decimal import Decimal
 
-# for debugging only:
-# from google.protobuf import text_format
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 from ...tools.helper_functions import HelperFunctions as HF
-from ...output.shared_structure import LBSNRecordDicts
 
 
 class FieldMappingFlickr():
@@ -30,7 +27,7 @@ class FieldMappingFlickr():
                  map_full_relations=False,
                  map_reactions=True,
                  ignore_non_geotagged=False,
-                 ignore_sources_set=set(),
+                 ignore_sources_set=None,
                  min_geoaccuracy=None):
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
@@ -61,8 +58,7 @@ class FieldMappingFlickr():
             # skip
             self.skipped_count += 1
             return
-        else:
-            self.extract_flickr_post(record)
+        self.extract_flickr_post(record)
         return self.lbsn_records
 
     def extract_flickr_post(self, record):
@@ -109,10 +105,9 @@ class FieldMappingFlickr():
             HF.parse_csv_datestring_to_protobuf(record[8]))
         # valueCount = lambda x: 0 if x is None else x
 
-        def value_count(x): return int(x) if x.isdigit() else 0
-        post_record.post_views_count = value_count(record[10])
-        post_record.post_comment_count = value_count(record[18])
-        post_record.post_like_count = value_count(record[17])
+        post_record.post_views_count = HF.value_count(record[10])
+        post_record.post_comment_count = HF.value_count(record[18])
+        post_record.post_like_count = HF.value_count(record[17])
         post_record.post_url = f'http://flickr.com/photo.gne?id={post_guid}'
         post_record.post_body = FieldMappingFlickr.reverse_csv_comma_replace(
             record[21])
@@ -129,7 +124,7 @@ class FieldMappingFlickr():
             post_record.post_type = lbsn.Post.VIDEO
         else:
             post_record.post_type = lbsn.Post.IMAGE
-        post_record.post_content_license = value_count(record[14])
+        post_record.post_content_license = HF.value_count(record[14])
         self.lbsn_records.append(post_record)
 
     @staticmethod
@@ -196,7 +191,7 @@ class FieldMappingFlickr():
             try:
                 l_lng = Decimal(lng_entry)
                 l_lat = Decimal(lat_entry)
-            except:
+            except ValueError:
                 l_lat, l_lng = 0, 0
 
         if (l_lat == 0 and l_lng == 0) \

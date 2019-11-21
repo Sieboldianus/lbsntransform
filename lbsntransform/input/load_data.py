@@ -6,16 +6,13 @@ Module for loding data from different sources (CSV, DB, JSON etc.).
 
 import codecs
 import csv
-import json
 import os
 import sys
 import logging
 import traceback
 from contextlib import closing
 from itertools import zip_longest
-from glob import glob
-from pathlib import Path
-from typing import Dict, TextIO, List, Union, Any, Generator, Iterator
+from typing import Dict, TextIO, List, Union, Any, Iterator
 
 import ntpath
 import requests
@@ -125,17 +122,16 @@ class LoadData():
         return record_pipeline
         # return record_pipeline
 
-    def __exit__(self, exception_type, exception_value, tb):
+    def __exit__(self, exception_type, exception_value, tb_value):
         """Contextmanager exit: nothing to do here if no exception is raised"""
-        if any(
-            v is not None for v in [
-                exception_type, exception_value, tb]):
+        if any(v is not None for v in [
+            exception_type, exception_value, tb_value]):
             # only if any of these variables is not None
             # catch exception and output additional information
             logging.getLogger('__main__').warning(
                 f"\nError while reading records: "
                 f"{exception_type}\n{exception_value}\n"
-                f"{traceback.print_tb(tb)}\n")
+                f"{traceback.print_tb(tb_value)}\n")
             logging.getLogger('__main__').warning(
                 f"Current source: \n {self.current_source}\n")
             stats_str = HF.report_stats(
@@ -144,7 +140,7 @@ class LoadData():
             logging.getLogger('__main__').warning(stats_str)
         return False
 
-    def _open_input_files(self, count: bool = None):
+    def _open_input_files(self):
         """Loops input input filelist and
         returns opened file handles
         """
@@ -179,22 +175,22 @@ class LoadData():
                         yield record
             else:
                 # multiple web file query
-                if self.web_zip == True and len(self.filelist) == 2:
+                if self.web_zip and len(self.filelist) == 2:
                     # zip 2 web csv sources in parallel, e.g.
                     # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
                     url1 = self.filelist[0]
                     url2 = self.filelist[1]
-                    with closing(requests.get(url1, stream=True)) as f1, \
-                            closing(requests.get(url2, stream=True)) as f2:
-                        r1 = csv.reader(
-                            codecs.iterdecode(f1.iter_lines(), 'utf-8'),
+                    with closing(requests.get(url1, stream=True)) as fhandle1, \
+                            closing(requests.get(url2, stream=True)) as fhandle2:
+                        reader1 = csv.reader(
+                            codecs.iterdecode(fhandle1.iter_lines(), 'utf-8'),
                             delimiter=self.csv_delim,
                             quotechar='"', quoting=csv.QUOTE_NONE)
-                        r2 = csv.reader(
-                            codecs.iterdecode(f2.iter_lines(), 'utf-8'),
+                        reader2 = csv.reader(
+                            codecs.iterdecode(fhandle2.iter_lines(), 'utf-8'),
                             delimiter=self.csv_delim,
                             quotechar='"', quoting=csv.QUOTE_NONE)
-                        for zipped_record in zip_longest(r1, r2):
+                        for zipped_record in zip_longest(reader1, reader2):
                             # two combine lists
                             yield zipped_record[0] + zipped_record[1]
                     return
@@ -256,7 +252,7 @@ class LoadData():
                 lbsn_records = self.import_mapper.parse_csv_record(
                     single_record)
             else:
-                exit(f'Format {self.local_file_type} not supportet.')
+                sys.exit(f'Format {self.local_file_type} not supportet.')
             # return record as pipe
             if lbsn_records is None:
                 continue
@@ -313,12 +309,12 @@ class LoadData():
             record_reader = self.fetch_csv_data_from_file(
                 file_handle)
         else:
-            exit(f'Format {self.file_format} not supported.')
+            sys.exit(f'Format {self.file_format} not supported.')
         # return record pipeline
         for record in record_reader:
             yield record
 
-    def fetch_json_data_from_file(self, file_handle, start_file_id=0):
+    def fetch_json_data_from_file(self, file_handle):
         """Read json entries from file.
 
         Typical form is [{json1},{json2}], if is_stacked_json is True:
@@ -450,8 +446,6 @@ class LoadData():
     @staticmethod
     def load_ignore_sources(list_source=None):
         """Loads list of source types to be ignored"""
-        if list_source is None:
-            return
         ignore_source_list = set()
         with open(list_source, newline='', encoding='utf8') as file_handle:
             for ignore_source in file_handle:

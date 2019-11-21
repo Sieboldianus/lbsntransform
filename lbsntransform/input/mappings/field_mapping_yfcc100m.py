@@ -7,18 +7,13 @@ Module for mapping Flickr YFCC100M dataset to common LBSN Structure.
 import csv
 import logging
 import re
-import sys
-from codecs import escape_decode
 from decimal import Decimal
 from urllib.parse import unquote
 from typing import List
 
-# for debugging only:
-from google.protobuf import text_format
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 from ...tools.helper_functions import HelperFunctions as HF
-from ...output.shared_structure import LBSNRecordDicts
 
 # pylint: disable=no-member
 
@@ -29,6 +24,30 @@ class FieldMappingYFCC100M():
     """
     ORIGIN_NAME = "Flickr yfcc100m"
     ORIGIN_ID = 2
+    FLICKR_COUNTRY_MATCH = set([
+            "country", "timezone", "state", "territory",
+            "state/territory", "land", "arrondissement", "prefecture",
+            "island", "disputed territory", "overseas collectivity",
+            "overseas region", "island group"
+        ])
+    FLICKR_CITY_MATCH = set([
+        "city", "town", "region", "special administrative region",
+        "county", "district", "zip", "province",
+        "district/county", "autonomous community", "municipality",
+        "department", "district/town/township", "township",
+        "historical town", "governorate", "commune", "canton",
+        "muhafazah", "local government area", "division", "periphery",
+        "zone", "sub-region", "district/town/county", "sub-district",
+        "parish", "federal district", "neighborhood", "chome", "ward",
+        "sub-division", "community", "autonomous region",
+        "municipal region", "emirate", "autonomous province",
+        "historical county", "constituency", "entity", "colloquial",
+        "circle", "quarter", "dependency", "sub-prefecture"
+    ])
+    FLICKR_PLACE_MATCH = set([
+        "poi", "land feature", "estate", "airport", "drainage",
+        "miscellaneous", "suburb"
+    ])
 
     def __init__(self,
                  disable_reaction_post_referencing=False,
@@ -36,7 +55,7 @@ class FieldMappingYFCC100M():
                  map_full_relations=False,
                  map_reactions=True,
                  ignore_non_geotagged=False,
-                 ignore_sources_set=set(),
+                 ignore_sources_set=None,
                  min_geoaccuracy=None):
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
@@ -83,14 +102,13 @@ class FieldMappingYFCC100M():
             # only YFCC100m place record
             lbsn_records_place = self.extract_flickr_place(record)
             return lbsn_records_place
-        elif len(record) < 12 or not record[0].isdigit():
+        if len(record) < 12 or not record[0].isdigit():
             # skip erroneous entries + log
             self.skipped_count += 1
             return
-        else:
-            # process regular Flickr yfcc100m record
-            lbsn_records = self.extract_flickr_post(record)
-            return lbsn_records
+        # process regular Flickr yfcc100m record
+        lbsn_records = self.extract_flickr_post(record)
+        return lbsn_records
 
     def extract_flickr_post(self, record):
         """Main function for processing Flickr YFCC100M CSV entry.
@@ -285,30 +303,6 @@ class FieldMappingYFCC100M():
         Original Flickr place types, which are more detailed,
         are stored in sub_type field
         """
-        FLICKR_COUNTRY_MATCH = set([
-            "country", "timezone", "state", "territory",
-            "state/territory", "land", "arrondissement", "prefecture",
-            "island", "disputed territory", "overseas collectivity",
-            "overseas region", "island group"
-        ])
-        FLICKR_CITY_MATCH = set([
-            "city", "town", "region", "special administrative region",
-            "county", "district", "zip", "province",
-            "district/county", "autonomous community", "municipality",
-            "department", "district/town/township", "township",
-            "historical town", "governorate", "commune", "canton",
-            "muhafazah", "local government area", "division", "periphery",
-            "zone", "sub-region", "district/town/county", "sub-district",
-            "parish", "federal district", "neighborhood", "chome", "ward",
-            "sub-division", "community", "autonomous region",
-            "municipal region", "emirate", "autonomous province",
-            "historical county", "constituency", "entity", "colloquial",
-            "circle", "quarter", "dependency", "sub-prefecture"
-        ])
-        FLICKR_PLACE_MATCH = set([
-            "poi", "land feature", "estate", "airport", "drainage",
-            "miscellaneous", "suburb"
-        ])
         place_record_split = place_record.split(":")
         if not len(place_record_split) == 3:
             raise ValueError(
@@ -418,14 +412,13 @@ class FieldMappingYFCC100M():
             try:
                 l_lng = Decimal(lng_entry)
                 l_lat = Decimal(lat_entry)
-            except:
+            except ValueError:
                 l_lat, l_lng = 0, 0
-
         if ((l_lat == 0 and l_lng == 0)
                 or l_lat > 90 or l_lat < -90
                 or l_lng > 180 or l_lng < -180):
             l_lat, l_lng = 0, 0
-            self.send_to_null_island(lat_entry, lng_entry, record[5])
+            self.send_to_null_island()
         return FieldMappingYFCC100M.lat_lng_to_wkt(l_lat, l_lng)
 
     @staticmethod
@@ -435,10 +428,8 @@ class FieldMappingYFCC100M():
         point_latlng_string = "POINT(%s %s)" % (lng, lat)
         return point_latlng_string
 
-    def send_to_null_island(self, lat_entry, lng_entry, record_guid):
+    def send_to_null_island(self):
         """Logs entries with problematic lat/lng's,
            increases Null Island Counter by 1.
         """
-        # self.log.debug(f'NULL island: Guid {record_guid} - '
-        #               f'Coordinates: {lat_entry}, {lng_entry}')
         self.null_island += 1
