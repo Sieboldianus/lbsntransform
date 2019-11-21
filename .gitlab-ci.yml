@@ -2,7 +2,7 @@ before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
 
 test:
-  image: tud_ifk/miniconda-cidefault
+  image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
   stage: test
   script:
     - conda env create -f environment_dev.yml
