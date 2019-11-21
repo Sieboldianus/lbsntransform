@@ -191,6 +191,11 @@ class LoadData():
                             delimiter=self.csv_delim,
                             quotechar='"', quoting=csv.QUOTE_NONE)
                         for zipped_record in zip_longest(reader1, reader2):
+                            # catch any type-error None record
+                            if zipped_record[0] is None:
+                                yield zipped_record[1]
+                            if zipped_record[1] is None:
+                                yield zipped_record[0]
                             # two combine lists
                             yield zipped_record[0] + zipped_record[1]
                     return
