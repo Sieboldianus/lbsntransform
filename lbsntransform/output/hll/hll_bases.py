@@ -57,12 +57,9 @@ A privacy-aware model to process data from location-based social media.
 import inspect
 import sys
 from collections import OrderedDict, namedtuple
-from typing import Any, Dict, List, Tuple, Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
-
-from .hll_functions import HLLFunctions as HLF
 
 # named tuple of defined hll metrics
 HllMetrics = namedtuple(  # pylint: disable=C0103
@@ -202,26 +199,26 @@ class HllBase():
     def get_key(self):
         """Returns key name for base
         """
-        return [key for key in self.key.keys()]
+        return list(self.key.keys())
 
     def get_attr_keys(self):
         """Returns attr keys for base
         """
-        return [key for key in self.attrs.keys()]
+        return list(self.attrs.keys())
 
     def get_metric_keys(self):
         """Returns metric keys for base
         """
-        return [key for key in self.metrics.keys()]
+        return list(self.metrics.keys())
 
     def get_sql_header(self) -> str:
         """Get joined header for hll upsert sql
         Concat column names for key, attrs and metrics, e.g.:
         latitude, longitude, latlng_geom, user_hll, post_hll, date_hll, utl_hll
         """
-        base_key_cols = [key for key in self.key.keys()]
-        base_attr_cols = [key for key in self.attrs.keys()]
-        base_metrics_cols = [key for key in self.metrics.keys()]
+        base_key_cols = [self.key.keys()]
+        base_attr_cols = [self.attrs.keys()]
+        base_metrics_cols = [self.metrics.keys()]
         return base_key_cols + base_attr_cols + base_metrics_cols
 
     def get_prepared_record(self):

@@ -269,13 +269,13 @@ class LBSNTransfer():
     def submit_records(
             self, record_type: Union[Tuple[str, str], str],
             prepared_records: List[Tuple[Any]]):
-            """Submit/save prepared records to db or csv"""
+        """Submit/save prepared records to db or csv"""
         if self.store_csv:
             self.csv_output.store_append_batch_to_csv(
                 self.batched_lbsn_records[record_type],
                 self.count_round, record_type)
         if self.db_cursor:
-            # get sql escaped values list
+                # get sql escaped values list
             sql_escaped_values_list = [
                 self.prepare_sqlescaped_values(record) for
                 record in prepared_records]
@@ -310,8 +310,8 @@ class LBSNTransfer():
             the table selection
         """
         select_friends = [relationship[1] for relationship in
-                         self.batched_lbsn_records[lbsn.Relationship(
-                         ).DESCRIPTOR.name] if relationship[0] == "isfriend"]
+                          self.batched_lbsn_records[lbsn.Relationship(
+                          ).DESCRIPTOR.name] if relationship[0] == "isfriend"]
         if select_friends:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
@@ -328,9 +328,9 @@ class LBSNTransfer():
                     '''
                 self.submit_batch(insert_sql)
         select_connected = [relationship[1] for relationship in
-                           self.batched_lbsn_records[lbsn.Relationship(
-                           ).DESCRIPTOR.name] if
-                           relationship[0] == "isconnected"]
+                            self.batched_lbsn_records[lbsn.Relationship(
+                            ).DESCRIPTOR.name] if
+                            relationship[0] == "isconnected"]
         if select_connected:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
@@ -348,9 +348,9 @@ class LBSNTransfer():
                     '''
                 self.submit_batch(insert_sql)
         select_usergroupmember = [relationship[1] for relationship in
-                                 self.batched_lbsn_records[lbsn.Relationship(
-                                 ).DESCRIPTOR.name] if
-                                 relationship[0] == "ingroup"]
+                                  self.batched_lbsn_records[lbsn.Relationship(
+                                  ).DESCRIPTOR.name] if
+                                  relationship[0] == "ingroup"]
         if select_usergroupmember:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
@@ -368,9 +368,9 @@ class LBSNTransfer():
                     '''
                 self.submit_batch(insert_sql)
         select_usergroupmember = [relationship[1] for relationship in
-                                 self.batched_lbsn_records[lbsn.Relationship(
-                                 ).DESCRIPTOR.name] if
-                                 relationship[0] == "followsgroup"]
+                                  self.batched_lbsn_records[lbsn.Relationship(
+                                  ).DESCRIPTOR.name] if
+                                  relationship[0] == "followsgroup"]
         if select_usergroupmember:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
@@ -388,9 +388,9 @@ class LBSNTransfer():
                     '''
                 self.submit_batch(insert_sql)
         select_usermentions = [relationship[1] for relationship in
-                              self.batched_lbsn_records[lbsn.Relationship(
-                              ).DESCRIPTOR.name] if
-                              relationship[0] == "mentions_user"]
+                               self.batched_lbsn_records[lbsn.Relationship(
+                               ).DESCRIPTOR.name] if
+                               relationship[0] == "mentions_user"]
         if select_usermentions:
             if self.store_csv:
                 self.csv_output.store_append_batch_to_csv(
@@ -509,7 +509,7 @@ class LBSNTransfer():
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x_attr = getattr(record, descriptor.name)
                 if x_attr and not HF.is_composite_field_container(
-                    x_attr):
+                        x_attr):
                     x_attr_cleaned = set(x_attr)
                     x_attr_sorted = sorted(x_attr_cleaned)
                     # Complete clear of repeated field

@@ -125,7 +125,7 @@ class FieldMappingTwitter():
         return self.lbsn_records
 
     def extract_related_users(
-        self, related_user_list, input_lbsn_type, user_record):
+            self, related_user_list, input_lbsn_type, user_record):
         """Extract related users from user list"""
         for related_user in related_user_list:
             related_record = HF.new_lbsn_record_with_id(lbsn.User(),
@@ -238,13 +238,13 @@ class FieldMappingTwitter():
                 ref_post_record = \
                     HF.new_lbsn_record_with_id(
                         lbsn.Post(), json_string_dict.get(
-                        'in_reply_to_status_id_str'),
+                            'in_reply_to_status_id_str'),
                         self.origin)
                 ref_user_record = \
                     HF.new_lbsn_record_with_id(
                         lbsn.User(),
                         json_string_dict.get(
-                        'in_reply_to_user_id_str'),
+                            'in_reply_to_user_id_str'),
                         self.origin)
                 ref_user_record.user_name = json_string_dict.get(
                     'in_reply_to_screen_name')  # Needs to be saved
@@ -548,9 +548,10 @@ class FieldMappingTwitter():
             post_record.user_mentions_pkey)
         return post_reaction_record
 
-    def extract_place(self, postplace_json,
-                      post_geoaccuracy, user_language=None):
-                      """Extract lbsn.Place from twitter json"""
+    def extract_place(
+            self, postplace_json,
+            post_geoaccuracy, user_language=None):
+        """Extract lbsn.Place from twitter json"""
         place = postplace_json
         place_id = place.get('id')
         if not place_id:
@@ -606,7 +607,7 @@ class FieldMappingTwitter():
                 'id'),
                 self.origin)
             if not post_geoaccuracy or post_geoaccuracy in (
-                lbsn.Post.COUNTRY, lbsn.Post.CITY):
+                    lbsn.Post.COUNTRY, lbsn.Post.CITY):
                 post_geoaccuracy = lbsn.Post.PLACE
         else:
             self.log.warning(f'No lbsn.Place Type Detected: {place}')

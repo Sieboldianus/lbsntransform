@@ -6,15 +6,11 @@ Shared structure and mapping between HLL DB and Proto LBSN Structure.
 
 # pylint: disable=no-member
 
-import inspect
-import sys
-from collections import defaultdict, namedtuple
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
 from lbsntransform.output.hll.base import social, spatial, temporal, topical
-from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 from .hll_functions import HLLFunctions as HLF
 
@@ -72,10 +68,9 @@ class ProtoHLLMapping():
             return
         hll_bases = self.extract_hll_bases(
             record, record_type)
-        #input(f'record_type: {record_type} hll_bases: {hll_bases}')
-        hll_base_metrics = [a for a in ProtoHLLMapping.update_bases_metrics(
-            bases=hll_bases, metrics=record_hll_metrics)]
-        #input(f'Updated: hll_bases: {hll_base_metrics}')
+        # turn generator into list
+        hll_base_metrics = list(ProtoHLLMapping.update_bases_metrics(
+            bases=hll_bases, metrics=record_hll_metrics))
         return hll_base_metrics
 
     @staticmethod
@@ -86,10 +81,10 @@ class ProtoHLLMapping():
                 temporal.DateBase, temporal.MonthBase,
                 temporal.YearBase, topical.TermBase]],
             metrics: hll.HllMetrics) -> Union[
-            spatial.LatLngBase, spatial.PlaceBase,
-            spatial.CityBase, spatial.CountryBase,
-            temporal.DateBase, temporal.MonthBase,
-            temporal.YearBase, topical.TermBase]:
+                spatial.LatLngBase, spatial.PlaceBase,
+                spatial.CityBase, spatial.CountryBase,
+                temporal.DateBase, temporal.MonthBase,
+                temporal.YearBase, topical.TermBase]:
         """Adds/updates metrics to hll_bases"""
         # iterate Namedtuple field names and values
         for key, value in zip(metrics._fields, metrics):
@@ -109,9 +104,8 @@ class ProtoHLLMapping():
                 # return updated base as iterator
                 yield base
 
-    def extract_hll_bases(
-        self, record, record_type
-    ) -> List[Union[
+    def extract_hll_bases(self, record, record_type) -> List[
+        Union[
             spatial.LatLngBase, spatial.PlaceBase,
             spatial.CityBase, spatial.CountryBase,
             temporal.DateBase, temporal.MonthBase,
@@ -228,28 +222,34 @@ class ProtoHLLMapping():
 
     @staticmethod
     def get_country_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.Country record"""
         return
 
     @staticmethod
     def get_city_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.City record"""
         return
 
     @staticmethod
     def get_place_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.Place record"""
         place_hll = HLF.hll_concat_origin_guid(record)
         hll_metrics = hll.HllMetrics(place_hll=place_hll)
         return hll_metrics
 
     @staticmethod
     def get_user_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.User record"""
         return
 
     @staticmethod
     def get_usergroup_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.UserGroup record"""
         return
 
     @staticmethod
     def get_post_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.Post record"""
         post_hll = HLF.hll_concat_origin_guid(record)
         user_hll = HLF.hll_concat_user(record)
         date_hll = HLF.hll_concat_date(record)
@@ -264,8 +264,10 @@ class ProtoHLLMapping():
 
     @staticmethod
     def get_postreaction_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.PostReaction record"""
         return
 
     @staticmethod
     def get_relationship_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.Relationship record"""
         return

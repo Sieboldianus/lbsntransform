@@ -31,6 +31,7 @@ class LBSNSql():
 
     @staticmethod
     def postreaction_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.PostReaction"""
         insert_sql = \
             f'''
             INSERT INTO topical."post_reaction" (
@@ -146,6 +147,7 @@ class LBSNSql():
 
     @staticmethod
     def user_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.User"""
         insert_sql = \
             f'''
             INSERT INTO social."user" (
@@ -204,6 +206,7 @@ class LBSNSql():
 
     @staticmethod
     def usergroup_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.UserGroup"""
         insert_sql = \
             f'''
             INSERT INTO social."user_groups" (
@@ -232,6 +235,7 @@ class LBSNSql():
 
     @staticmethod
     def place_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.Place"""
         insert_sql = \
             f'''
             INSERT INTO spatial."place" (
@@ -282,6 +286,7 @@ class LBSNSql():
 
     @staticmethod
     def city_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.City"""
         insert_sql = \
             f'''
             INSERT INTO spatial."city" (
@@ -311,6 +316,7 @@ class LBSNSql():
 
     @staticmethod
     def country_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.Country"""
         insert_sql = \
             f'''
             INSERT INTO spatial."country" (

@@ -8,23 +8,15 @@ Module for storing common Proto LBSN Structure to CSV.
 
 import base64
 import csv
-import logging
 import os
-import sys
-import traceback
 from contextlib import ExitStack
 from glob import glob
 from heapq import merge as heapq_merge
-from sys import exit
 
-# for debugging only:
-from google.protobuf import text_format
-from google.protobuf.timestamp_pb2 import Timestamp
 
 from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import \
     ProtoLBSNMapping
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
-from lbsntransform.output.shared_structure import LBSNRecordDicts
 
 
 class LBSNcsv():
@@ -75,7 +67,8 @@ class LBSNcsv():
                 file_handle.write(
                     f'{record.pkey.id},{serialized_record_b64}\n')
 
-    def serialize_encode_record(self, record):
+    @classmethod
+    def serialize_encode_record(cls, record):
         """ Serializes protobuf record as string and
             encodes in base64 for corrupt-resistant backup/store/transfer
         """
@@ -126,7 +119,8 @@ class LBSNcsv():
                         os.rename(filelist[0], new_filename)
                 self.remove_merge_duplicate_records_format_csv(type_name)
 
-    def sort_files(self, filelist):
+    @classmethod
+    def sort_files(cls, filelist):
         """ Function for sorting files
             (precursor to remove duplicates)
         """
@@ -159,7 +153,8 @@ class LBSNcsv():
         for file in filelist:
             os.remove(file)
 
-    def create_proto_by_descriptor_name(self, desc_name):
+    @classmethod
+    def create_proto_by_descriptor_name(cls, desc_name):
         """Create new proto record by name
         """
         new_record = HF.dict_type_switcher(desc_name)

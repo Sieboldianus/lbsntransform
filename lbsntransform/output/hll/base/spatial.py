@@ -3,8 +3,7 @@
 """Hll bases for spatial facet
 """
 
-from collections import OrderedDict, namedtuple
-from typing import Any, Dict, List, Tuple, Union
+from typing import Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll

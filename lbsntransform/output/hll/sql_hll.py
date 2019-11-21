@@ -22,10 +22,9 @@ class HLLSql():
                 {facet}."{base}".{attr_key},
                 '{HF.NULL_GEOM_HEX}')
                 '''
-        else:
-            return f'''{attr_key} = COALESCE(
-                EXCLUDED.{attr_key}, {facet}."{base}".{attr_key})
-                '''
+        return f'''{attr_key} = COALESCE(
+            EXCLUDED.{attr_key}, {facet}."{base}".{attr_key})
+            '''
 
     @staticmethod
     def get_sql_hll_coalesce(hll_key: str, facet: str, base: str) -> str:

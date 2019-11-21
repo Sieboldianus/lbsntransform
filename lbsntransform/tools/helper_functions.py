@@ -5,7 +5,6 @@ Collection of helper functions being used in lbsntransform package.
 """
 
 
-import csv
 import datetime as dt
 import json
 import logging
@@ -14,11 +13,9 @@ import logging
 import platform
 import re
 import string
-import sys
-import time
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
-from typing import Any, Iterator, List, Set, Tuple, Union
+from typing import List, Set, Union
 
 import emoji
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -39,12 +36,14 @@ else:
 
 NLTK_AVAIL = True
 try:
+    # check if nltk is installed
     import nltk
 except ImportError:
     NLTK_AVAIL = False
 
 if NLTK_AVAIL:
     try:
+        # check if stopwords corpus is available
         from nltk.corpus import stopwords
     except LookupError:
         print(
@@ -57,13 +56,16 @@ if NLTK_AVAIL:
 
 
 class HelperFunctions():
+    """Collection of helper functions being used in lbsntransform package"""
+
     # Null Geometry String (4326)
     # for improving performance in PostGIS Upserts
     NULL_GEOM_HEX = '0101000020E610000000000000000000000000000000000000'
 
-    def value_count(value_x): 
+    @staticmethod
+    def value_count(value_x: str):
         """Turn none values into 0, otherwise return value"""
-        return int(x) if x.isdigit() else 0
+        return int(value_x) if value_x.isdigit() else 0
 
     @staticmethod
     def remove_prefix(text_str: str, prefix: str):
@@ -142,10 +144,11 @@ class HelperFunctions():
         # - stoplist/selectionlist
         # - length (3+ character)
         # - type: no numbers
-        resultwords = {word for word in querywords if (
-            selection_list is None or word in selection_list)
+        resultwords = {
+            word for word in querywords if (
+                selection_list is None or word in selection_list)
             and len(word) > 2
-            and HelperFunctions.nltk_stopword_filter(word) == True
+            and HelperFunctions.nltk_stopword_filter(word)
             and not word.isdigit()}
         return resultwords
 
@@ -208,11 +211,9 @@ class HelperFunctions():
                 # no further items produced by the iterator
                 raise
             except json.decoder.JSONDecodeError:
-                HelperFunctions._log_JSONDecodeError(gen)
-                pass
+                HelperFunctions._log_json_decodeerror(gen)
             except Exception as e:
                 HelperFunctions._log_unhandled_exception(e)
-                pass
 
     @staticmethod
     def json_load_wrapper(gen, single: bool = None):
@@ -223,18 +224,15 @@ class HelperFunctions():
             if single:
                 record = json.loads(gen)
                 return record
-            else:
-                records = json.load(gen)
-                return records
+            records = json.load(gen)
+            return records
         except json.decoder.JSONDecodeError:
-            HelperFunctions._log_JSONDecodeError(gen)
-            pass
-        except Exception as e:
-            HelperFunctions._log_unhandled_exception(e)
-            pass
+            HelperFunctions._log_json_decodeerror(gen)
+        except Exception as exc_general:
+            HelperFunctions._log_unhandled_exception(exc_general)
 
     @staticmethod
-    def _log_JSONDecodeError(record_str: str):
+    def _log_json_decodeerror(record_str: str):
         logging.getLogger('__main__').warning(
             f"\nJSONDecodeError: skipping entry\n{record_str}\n\n")
 
@@ -301,10 +299,7 @@ class HelperFunctions():
         else:
             return True
         # check post geoaccuracy
-        if post_geoaccuracy in allowed_geoaccuracies:
-            return True
-        else:
-            return False
+        return bool(post_geoaccuracy in allowed_geoaccuracies)
 
     @staticmethod
     def get_version():
@@ -321,31 +316,34 @@ class HelperFunctions():
         logging.getLogger('__main__').debug(debug_text)
 
     @staticmethod
-    def null_notice(x):
+    def null_notice(x_value: int) -> str:
         """Reporting: Suppresses null notice (for Null island)
         if value is zero.
         """
-        def null_notice_x(x): return f'(Null Island: {x})' if x > 0 else ''
-        return null_notice_x(x)
+        return f'(Null Island: {x_value})' if x_value > 0 else ''
 
     @staticmethod
     def utc_to_local(utc_dt):
+        """Convert utc to local time"""
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
 
     @staticmethod
-    def cleanhtml(raw_html):
+    def cleanhtml(raw_html: str) -> str:
+        """Remove any html tags from string"""
         cleanr = re.compile('<.*?>')
         cleantext = re.sub(cleanr, '', raw_html)
         return cleantext
 
     @staticmethod
-    def extract_emoji(str):
+    def extract_emoji(str_text: str):
+        """Extract list of emoji from string"""
         # str = str.decode('utf-32').encode('utf-32', 'surrogatepass')
         # return list(c for c in str if c in emoji.UNICODE_EMOJI)
-        return list(c for c in str if c in emoji.UNICODE_EMOJI)
+        return list(c for c in str_text if c in emoji.UNICODE_EMOJI)
 
     @staticmethod
     def get_rectangle_bounds(points):
+        """Get rectangle boundary from list of points"""
         lats = []
         lngs = []
         for point in points:
@@ -359,7 +357,7 @@ class HelperFunctions():
 
     @staticmethod
     def new_lbsn_record_with_id(record, id, origin):
-            # initializes new record with composite ID
+        """Initialize new lbsn record with composite ID"""
         c_key = lbsn.CompositeKey()
         c_key.origin.CopyFrom(origin)
         c_key.id = id
@@ -367,11 +365,12 @@ class HelperFunctions():
         return record
 
     @staticmethod
-    def new_lbsn_relation_with_id(lbsn_relationship,
-                                  relation_to_id,
-                                  relation_from_id,
-                                  relation_origin):
-        # initializes new relationship with 2 composite IDs for one origin
+    def new_lbsn_relation_with_id(
+            lbsn_relationship, relation_to_id,
+            relation_from_id, relation_origin):
+        """Initialize new lbsn relationship with 2 composite IDs
+        for one origin
+        """
         c_key_to = lbsn.CompositeKey()
         c_key_to.origin.CopyFrom(relation_origin)
         c_key_to.id = relation_to_id
@@ -385,16 +384,16 @@ class HelperFunctions():
         return lbsn_relationship
 
     @staticmethod
-    def is_post_reaction(jsonString):
-        if 'quoted_status' in jsonString \
-                or 'retweeted_status' in jsonString \
-                or jsonString.get('in_reply_to_status_id_str'):
-            # The retweeted field will return true if a tweet _got_ retweeted
-            # To detect if a tweet is a retweet of other tweet,
-            # check the retweeted_status field
-            return True
-        else:
-            return False
+    def is_post_reaction(json_string):
+        """Determine if post is post reaction
+
+        The retweeted field will return true if a tweet _got_ retweeted
+        To detect if a tweet is a retweet of other tweet,
+        check the retweeted_status field
+        """
+        return bool('quoted_status' in json_string
+                    or 'retweeted_status' in json_string
+                    or json_string.get('in_reply_to_status_id_str'))
 
     @staticmethod
     def assign_media_post_type(json_media_string):
@@ -416,10 +415,10 @@ class HelperFunctions():
         return post_type
 
     @staticmethod
-    def json_date_string_to_proto(json_date_string):
-        # Parse String -Timestamp Format found in Twitter json
-        date_time_record = dt.datetime.strptime(json_date_string,
-                                                '%a %b %d %H:%M:%S +0000 %Y')
+    def json_date_string_to_proto(json_date_string: str):
+        """Parse String -Date Format found in Twitter json"""
+        date_time_record = dt.datetime.strptime(
+            json_date_string, '%a %b %d %H:%M:%S +0000 %Y')
         protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
         protobuf_timestamp_record.FromDatetime(date_time_record)
@@ -427,8 +426,9 @@ class HelperFunctions():
 
     @staticmethod
     def json_date_timestamp_to_proto(json_date_timestamp):
-        # Parse String -Timestamp Format found in Twitter json
-        date_time_record = dt.datetime.fromtimestamp(json_date_timestamp)
+        """Parse String -Timestamp Format found in Twitter json"""
+        date_time_record = dt.datetime.fromtimestamp(
+            json_date_timestamp)
         protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
         protobuf_timestamp_record.FromDatetime(date_time_record)
@@ -463,6 +463,7 @@ class HelperFunctions():
 
     @staticmethod
     def get_mentioned_users(userMentions_jsonString, origin):
+        """Return list of mentioned users from json"""
         mentioned_users_list = []
         for user_mention in userMentions_jsonString:  # iterate over the list
             ref_user_record = \
@@ -476,7 +477,7 @@ class HelperFunctions():
 
     @staticmethod
     def substitute_referenced_user(main_post, origin, log):
-        # Look for mentioned userRecords
+        """Look for mentioned userRecords"""
         ref_user_pkey = None
         user_mentions_json = main_post.get('entities').get('user_mentions')
         if user_mentions_json:
@@ -531,6 +532,7 @@ class HelperFunctions():
 
     @staticmethod
     def null_check_datetime(recordAttr):
+        """Check if date is null or empty and replace with default value"""
         if not recordAttr:
             # will catch empty and None
             return None
@@ -540,8 +542,7 @@ class HelperFunctions():
             return None
         if dt_attr == dt.datetime(1970, 1, 1, 0, 0, 0):
             return None
-        else:
-            return recordAttr.ToDatetime()
+        return recordAttr.ToDatetime()
 
     @staticmethod
     def return_ewkb_from_geotext(text):
@@ -564,9 +565,10 @@ class HelperFunctions():
 
     @staticmethod
     def decode_stacked(document, pos=0, decoder=JSONDecoder()):
-        NOT_WHITESPACE = re.compile(r'[^\s]')
+        """Decode stacked json"""
+        not_whitespace = re.compile(r'[^\s]')
         while True:
-            match = NOT_WHITESPACE.search(document, pos)
+            match = not_whitespace.search(document, pos)
             if not match:
                 return
             pos = match.start()
@@ -574,33 +576,31 @@ class HelperFunctions():
             try:
                 obj, pos = decoder.raw_decode(document, pos)
             except JSONDecodeError:
-                # do something sensible if there's some error
                 raise
             yield obj
 
     @staticmethod
-    def clean_null_bytes_from_str(str):
-        str_without_null_byte = str.replace('\x00', '')
+    def clean_null_bytes_from_str(text_str: str):
+        """Remove null bytes from string for pg compatibility"""
+        str_without_null_byte = text_str.replace('\x00', '')
         return str_without_null_byte
 
     @staticmethod
-    def turn_lower(str):
+    def turn_lower(text_str):
         """Returns lower but keeps none values"""
-        if str:
-            return (str.lower())
-        else:
-            return str
+        if text_str:
+            return text_str.lower()
+        return text_str
 
     @staticmethod
-    def empty_list(list):
+    def empty_list(list_str):
         """Returns lower but keeps none values"""
-        if list:
-            if len(list) == 0:
+        if list_str:
+            if len(list_str) == 0:
                 return None
             else:
-                return list
-        else:
-            return None
+                return list_str
+        return None
 
     @staticmethod
     def is_composite_field_container(in_obj):
@@ -609,10 +609,10 @@ class HelperFunctions():
             if isinstance(
                     in_obj, (RepeatedCompositeContainer, ScalarMapContainer)):
                 return True
-        else:
-            if isinstance(
-                    in_obj, (RepeatedCompositeFieldContainer, ScalarMapContainer)):
-                return True
+            return False
+        if isinstance(
+                in_obj, (RepeatedCompositeFieldContainer, ScalarMapContainer)):
+            return True
         return False
 
     @staticmethod
@@ -630,22 +630,25 @@ class HelperFunctions():
             1 - Instagram, 2 - Flickr, 3 - Twitter, 4 - Facebook
         """
         if origin == 2:
-            from lbsntransform.input.mappings.field_mapping_flickr import FieldMappingFlickr as importer
+            from lbsntransform.input.mappings.field_mapping_flickr import \
+                FieldMappingFlickr as importer
         elif origin == 21:
             # Flickr YFCC100M dataset
-            from lbsntransform.input.mappings.field_mapping_yfcc100m import FieldMappingYFCC100M as importer
+            from lbsntransform.input.mappings.field_mapping_yfcc100m import \
+                FieldMappingYFCC100M as importer
         elif origin == 3:
-            from lbsntransform.input.mappings.field_mapping_twitter import FieldMappingTwitter as importer
+            from lbsntransform.input.mappings.field_mapping_twitter import \
+                FieldMappingTwitter as importer
         elif origin == 41:
-            from lbsntransform.input.mappings.field_mapping_fb import FieldMappingFBPlace as importer
+            from lbsntransform.input.mappings.field_mapping_fb import \
+                FieldMappingFBPlace as importer
         else:
             raise ValueError("Input type not supported")
         return importer
 
     @staticmethod
     def dict_type_switcher(desc_name):
-        """ Create protoBuf messages by name
-        """
+        """ Create protoBuf messages by name"""
         dict_switcher = {
             lbsn.Country().DESCRIPTOR.name: lbsn.Country(),
             lbsn.City().DESCRIPTOR.name: lbsn.City(),
@@ -660,13 +663,13 @@ class HelperFunctions():
 
     @staticmethod
     def check_notice_empty_post_guid(post_guid):
+        """Check if post_guid empty and if, raise warning"""
         if not post_guid:
             logging.getLogger('__main__').warning(f'No PostGuid\n\n'
                                                   f'{post_guid}')
             # input("Press Enter to continue... (entry will be skipped)")
             return False
-        else:
-            return True
+        return True
 
     @staticmethod
     def get_skipped_report(import_mapper):

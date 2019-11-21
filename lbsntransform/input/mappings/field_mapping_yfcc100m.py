@@ -17,6 +17,30 @@ from ...tools.helper_functions import HelperFunctions as HF
 
 # pylint: disable=no-member
 
+# module level constants
+# for FLickr yfcc100m mapping
+FLICKR_COUNTRY_MATCH = {
+    "country", "timezone", "state", "territory",
+    "state/territory", "land", "arrondissement", "prefecture",
+    "island", "disputed territory", "overseas collectivity",
+    "overseas region", "island group"}
+FLICKR_CITY_MATCH = {
+    "city", "town", "region", "special administrative region",
+    "county", "district", "zip", "province",
+    "district/county", "autonomous community", "municipality",
+    "department", "district/town/township", "township",
+    "historical town", "governorate", "commune", "canton",
+    "muhafazah", "local government area", "division", "periphery",
+    "zone", "sub-region", "district/town/county", "sub-district",
+    "parish", "federal district", "neighborhood", "chome", "ward",
+    "sub-division", "community", "autonomous region",
+    "municipal region", "emirate", "autonomous province",
+    "historical county", "constituency", "entity", "colloquial",
+    "circle", "quarter", "dependency", "sub-prefecture"}
+FLICKR_PLACE_MATCH = {
+    "poi", "land feature", "estate", "airport", "drainage",
+    "miscellaneous", "suburb"}
+
 
 class FieldMappingYFCC100M():
     """ Provides mapping function from Flickr YFCC100m to
@@ -24,30 +48,6 @@ class FieldMappingYFCC100M():
     """
     ORIGIN_NAME = "Flickr yfcc100m"
     ORIGIN_ID = 2
-    FLICKR_COUNTRY_MATCH = set([
-            "country", "timezone", "state", "territory",
-            "state/territory", "land", "arrondissement", "prefecture",
-            "island", "disputed territory", "overseas collectivity",
-            "overseas region", "island group"
-        ])
-    FLICKR_CITY_MATCH = set([
-        "city", "town", "region", "special administrative region",
-        "county", "district", "zip", "province",
-        "district/county", "autonomous community", "municipality",
-        "department", "district/town/township", "township",
-        "historical town", "governorate", "commune", "canton",
-        "muhafazah", "local government area", "division", "periphery",
-        "zone", "sub-region", "district/town/county", "sub-district",
-        "parish", "federal district", "neighborhood", "chome", "ward",
-        "sub-division", "community", "autonomous region",
-        "municipal region", "emirate", "autonomous province",
-        "historical county", "constituency", "entity", "colloquial",
-        "circle", "quarter", "dependency", "sub-prefecture"
-    ])
-    FLICKR_PLACE_MATCH = set([
-        "poi", "land feature", "estate", "airport", "drainage",
-        "miscellaneous", "suburb"
-    ])
 
     def __init__(self,
                  disable_reaction_post_referencing=False,

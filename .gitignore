@@ -1,5 +1,6 @@
 lbsnstructure/
 backup/
+build/
 tests/
 scripts/
 scripts/*

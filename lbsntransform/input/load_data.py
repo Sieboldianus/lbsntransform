@@ -125,7 +125,7 @@ class LoadData():
     def __exit__(self, exception_type, exception_value, tb_value):
         """Contextmanager exit: nothing to do here if no exception is raised"""
         if any(v is not None for v in [
-            exception_type, exception_value, tb_value]):
+                exception_type, exception_value, tb_value]):
             # only if any of these variables is not None
             # catch exception and output additional information
             logging.getLogger('__main__').warning(

@@ -5,20 +5,20 @@ Collection of functions used in hll transformation
 """
 
 import datetime as dt
-from collections import namedtuple
-from typing import Any, Dict, Generator, List, Set, Tuple, Union
+from typing import Dict, Generator, List, Set, Tuple, Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 
 class HLLFunctions():
+    """Collection of functions used in hll transformation"""
 
     @staticmethod
     def merge_hll_tuples(
         base_tuples: List[Tuple[Union[str, int], ...]],
-        hll_tuples: List[Tuple[Union[str, int], ...]]
-    ) -> Generator[Tuple[Union[int, str], ...], None, None]:
+        hll_tuples: List[Tuple[Union[str, int], ...]]) -> Generator[
+            Tuple[Union[int, str], ...], None, None]:
         """Merges two lists of tuples,
         whereby only the third part of hll_tuples (the hll shard)
         is appended. The first part of base_tuples is used to collect hll
@@ -51,9 +51,9 @@ class HLLFunctions():
 
     @staticmethod
     def concat_base_shards(
-            records: List[Tuple[Union[str, int], ...]],
-            hll_shards: List[Tuple[Union[str, int], ...]]
-    ) -> List[Tuple[Union[int, str], ...]]:
+        records: List[Tuple[Union[str, int], ...]],
+        hll_shards: List[Tuple[Union[str, int], ...]]) -> List[
+            Tuple[Union[int, str], ...]]:
         """Concat records with list of hll_shards
 
         For ease of calculation, hll_shards are reduced to
@@ -120,18 +120,21 @@ class HLLFunctions():
 
     @staticmethod
     def hll_concat_origin_guid(record) -> str:
+        """Concat origin and pkey (guid) to string"""
         origin_guid = HLLFunctions.hll_concat(
             [record.pkey.origin.origin_id, record.pkey.id])
         return origin_guid
 
     @staticmethod
     def hll_concat_user(record: lbsn.Post) -> str:
+        """Concat origin and user pkey (guid) to string"""
         user_hll = HLLFunctions.hll_concat(
             [record.pkey.origin.origin_id, record.user_pkey.id])
         return user_hll
 
     @staticmethod
     def hll_concat_date(record: lbsn.Post) -> str:
+        """Merge create and publish date and concat to string"""
         date_merged = HLLFunctions.merge_dates_post(record)
         if date_merged is None:
             return
@@ -140,12 +143,14 @@ class HLLFunctions():
 
     @staticmethod
     def hll_concat_yearmonth(record: lbsn.Post) -> str:
+        """Concat year and month of post date to string"""
         date_merged = HLLFunctions.merge_dates_post(record)
         date_formatted = date_merged.strftime('%Y-%m')
         return date_formatted
 
     @staticmethod
     def hll_concat_latlng(record: lbsn.Post) -> str:
+        """Concat post lat lng coordinates to string"""
         if record.post_geoaccuracy == 'latlng':
             coordinates_geom = HF.null_check(
                 record.post_latlng)
@@ -153,19 +158,19 @@ class HLLFunctions():
                 coordinates_geom
             )
             return f'{coordinates.lat}:{coordinates.lng}'
-        else:
-            return '0:0'
+        return '0:0'
 
     @staticmethod
     def hll_concat_place(record: lbsn.Post) -> str:
+        """Concat origin and post place guid to string"""
         if record.post_geoaccuracy == 'place':
             return HLLFunctions.hll_concat(
                 [record.pkey.origin.origin_id, record.place_pkey.id])
-        else:
-            return None
+        return None
 
     @staticmethod
     def hll_concat_upt_hll(record: lbsn.Post) -> List[str]:
+        """Concat all post terms (body, title, hashtags) and return list"""
         body_terms = HF.select_terms(
             record.post_body)
         title_terms = HF.select_terms(
@@ -181,6 +186,7 @@ class HLLFunctions():
 
     @staticmethod
     def hll_concat_user_terms(user: str, terms: List[str]) -> Set[str]:
+        """Concat user and list of terms to set of unique user:terms"""
         concat_user_terms = set()
         for term in terms:
             concat_user_terms.add(":".join([user, term]))
@@ -200,5 +206,4 @@ class HLLFunctions():
             record.post_publish_date)
         if post_create_date is None:
             return post_publish_date
-        else:
-            return post_create_date
+        return post_create_date

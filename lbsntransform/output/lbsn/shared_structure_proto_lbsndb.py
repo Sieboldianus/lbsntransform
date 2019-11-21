@@ -6,7 +6,6 @@ Shared structure and mapping between DB and Proto LBSN Structure.
 
 # pylint: disable=no-member
 
-import sys
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
@@ -86,7 +85,8 @@ class ProtoLBSNMapping():
         prepare_function = dict_switcher.get(record.DESCRIPTOR.name)
         return prepare_function(record)
 
-    def prepare_lbsn_country(self, record):
+    @classmethod
+    def prepare_lbsn_country(cls, record):
         """Get common attributes for records of type lbsn.Place"""
         place_record = PlaceBaseAttrShared(record)
         prepared_record = (place_record.origin_id,
@@ -99,7 +99,8 @@ class ProtoLBSNMapping():
                            place_record.url)
         return prepared_record
 
-    def prepare_lbsn_city(self, record):
+    @classmethod
+    def prepare_lbsn_city(cls, record):
         """Get common attributes for records of type lbsn.City"""
         place_record = PlaceBaseAttrShared(record)
         country_guid = HF.null_check(record.country_pkey.id)
@@ -117,7 +118,8 @@ class ProtoLBSNMapping():
                            sub_type)
         return prepared_record
 
-    def prepare_lbsn_place(self, record):
+    @classmethod
+    def prepare_lbsn_place(cls, record):
         """Get common attributes for records of type lbsn.Place"""
         place_record = PlaceBaseAttrShared(record)
         # get additional attributes specific to places
@@ -154,7 +156,8 @@ class ProtoLBSNMapping():
                            parent_places)
         return prepared_record
 
-    def prepare_lbsn_user(self, record):
+    @classmethod
+    def prepare_lbsn_user(cls, record):
         """Get common attributes for records of type lbsn.User"""
         user_record = UserAttrShared(record)
         prepared_record = (user_record.origin_id,
@@ -182,7 +185,8 @@ class ProtoLBSNMapping():
                            user_record.user_groups_follows)
         return prepared_record
 
-    def prepare_lbsn_usergroup(self, record):
+    @classmethod
+    def prepare_lbsn_usergroup(cls, record):
         """Get common attributes for records of type Userroup"""
         user_group_record = UsergroupAttrShared(record)
         prepared_record = (user_group_record.origin_id,
@@ -194,7 +198,8 @@ class ProtoLBSNMapping():
                            user_group_record.user_owner)
         return prepared_record
 
-    def prepare_lbsn_post(self, record):
+    @classmethod
+    def prepare_lbsn_post(cls, record):
         """Get common attributes for records of type lbsn.Post"""
         post_record = PostAttrShared(record)
         prepared_record = (post_record.origin_id,
@@ -227,7 +232,8 @@ class ProtoLBSNMapping():
                            post_record.post_content_license)
         return prepared_record
 
-    def prepare_lbsn_postreaction(self, record):
+    @classmethod
+    def prepare_lbsn_postreaction(cls, record):
         """Get common attributes for records of type lbsn.PostReaction"""
         post_reaction_record = PostreactionAttrShared(record)
         prepared_record = (post_reaction_record.origin_id,
@@ -244,14 +250,15 @@ class ProtoLBSNMapping():
                            post_reaction_record.user_mentions)
         return prepared_record
 
-    def prepare_lbsn_relation(self, record):
+    @classmethod
+    def prepare_lbsn_relation(cls, record):
         """Get common attributes for records of type lbsn Relation"""
         relations_record = RelationAttrShared(record)
         prepared_typerecord_tuple = \
             (relations_record.rel_type,
-             self.prepareRecordValues(relations_record.origin_id,
-                                      relations_record.guid,
-                                      relations_record.guid_rel))
+             cls.prepareRecordValues(relations_record.origin_id,
+                                     relations_record.guid,
+                                     relations_record.guid_rel))
         return prepared_typerecord_tuple
 
 

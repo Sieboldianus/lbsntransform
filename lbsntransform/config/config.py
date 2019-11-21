@@ -6,20 +6,19 @@ Config module for parsing input args for lbsntransform package.
 
 # pylint: disable=no-member
 
-from pathlib import Path
 import argparse
-import os
-import sys
-from shapely import geos
 import logging
+from pathlib import Path
+
+from shapely import geos
+
 from lbsnstructure import lbsnstructure_pb2 as lbsn
-
-from lbsntransform import __version__
-
 from lbsntransform import __version__
 
 
 class BaseConfig():
+    """Base config class for handling typical input params"""
+
     def __init__(self):
         """Set Default Config options here
 
@@ -73,7 +72,7 @@ class BaseConfig():
 
         BaseConfig.set_options()
 
-    def parseArgs(self):
+    def parse_args(self):
         """Process input *args
 
         All args are optional, but some groups need to be defined together.
@@ -428,13 +427,12 @@ class BaseConfig():
         """
         if geoaccuracy_string == 'latlng':
             return lbsn.Post.LATLNG
-        elif geoaccuracy_string == 'place':
+        if geoaccuracy_string == 'place':
             return lbsn.Post.PLACE
-        elif geoaccuracy_string == 'city':
+        if geoaccuracy_string == 'city':
             return lbsn.Post.CITY
-        else:
-            print("Unknown geoaccuracy.")
-            return None
+        print("Unknown geoaccuracy.")
+        return None
 
     @staticmethod
     def get_ip_port(ip_string: str):
@@ -445,14 +443,14 @@ class BaseConfig():
             possibly port attached with : character
         """
         port = None
-        ip = None
+        ip_addr = None
         ip_string_spl = ip_string.split(":")
         if len(ip_string_spl) == 2:
-            ip = ip_string_spl[0]
+            ip_addr = ip_string_spl[0]
             port = ip_string_spl[1]
         else:
-            ip = ip_string
-        return ip, port
+            ip_addr = ip_string
+        return ip_addr, port
 
     @staticmethod
     def set_options():

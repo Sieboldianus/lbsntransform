@@ -34,7 +34,7 @@ def main():
     # Load Config, will be overwritten if args are given
     config = BaseConfig()
     # Parse args
-    config.parseArgs()
+    config.parse_args()
 
     # initialize lbsntransform
     lbsntransform = LBSNTransform(
