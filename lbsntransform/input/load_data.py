@@ -39,7 +39,7 @@ class LoadData():
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
-            web_zip=None, skip_until_record=None):
+            zip_records=None, skip_until_record=None):
         self.is_local_input = is_local_input
         self.start_number = 1
         self.continue_number = 0
@@ -53,9 +53,9 @@ class LoadData():
             if skip_until_record is not None:
                 self.start_number = skip_until_record
         self.source_web = source_web
-        if web_zip is None:
-            web_zip = True
-        self.web_zip = web_zip
+        if zip_records is None:
+            zip_records = False
+        self.zip_records = zip_records
         self.cursor_input = None
         if self.is_local_input and not self.source_web:
             self.filelist = LoadData._read_local_files(
@@ -167,7 +167,7 @@ class LoadData():
                         yield record
             else:
                 # multiple web file query
-                if self.web_zip and len(self.filelist) == 2:
+                if self.zip_records and len(self.filelist) == 2:
                     # zip 2 web csv sources in parallel, e.g.
                     # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
                     url1 = self.filelist[0]
@@ -201,24 +201,37 @@ class LoadData():
                         "Iteration of multiple web sources "
                         "is currently not supported.")
         elif self.is_local_input:
-            # local file loop
-            for file_handle in file_handles:
-                if not self.file_format == 'json':
-                    # csv or txt
-                    for record in self.fetch_record_from_file(
-                            file_handle):
-                        if record:
-                            yield record
-                        else:
-                            continue
+            if file_handles is None:
+                raise ValueError("Input is empty")
+            if self.zip_records:
+                if len(self.filelist) == 2:
+                    filehandle1 = next(file_handles)
+                    filehandle2 = next(file_handles)
+                    for zipped_record in zip_longest(
+                        self.fetch_record_from_file(filehandle1),
+                            self.fetch_record_from_file(filehandle2)):
+                        yield zipped_record[0] + zipped_record[1]
                 else:
-                    # json
-                    for record in self.fetch_json_data_from_file(
-                            file_handle):
-                        if record:
-                            yield record
-                        else:
-                            continue
+                    raise ValueError("Zipping only supported for 2 files.")
+            else:
+                # local file loop
+                for file_handle in file_handles:
+                    if not self.file_format == 'json':
+                        # csv or txt
+                        for record in self.fetch_record_from_file(
+                                file_handle):
+                            if record:
+                                yield record
+                            else:
+                                continue
+                    else:
+                        # json
+                        for record in self.fetch_json_data_from_file(
+                                file_handle):
+                            if record:
+                                yield record
+                            else:
+                                continue
         else:
             # db query
             while self.cursor:

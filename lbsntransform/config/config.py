@@ -70,6 +70,7 @@ class BaseConfig():
         self.logging_level = logging.INFO
         self.source_web = False
         self.skip_until_record = None
+        self.zip_records = None
 
         BaseConfig.set_options()
 
@@ -318,6 +319,12 @@ class BaseConfig():
                                    'until record x '
                                    '(default: start with first)',
                                    type=int)
+        settings_args.add_argument("--zip_records",
+                                   action='store_true', default=False,
+                                   help='Use this flag to zip records of '
+                                   'multiple input files, e.g. '
+                                   'List1[A,B,C], List2[1,2,3] -> '
+                                   'List[A1,B2,C3]')
         settings_args.add_argument("--min_geoaccuracy",
                                    default=self.min_geoaccuracy,
                                    help='Set to "latlng", "place", '
@@ -335,7 +342,7 @@ class BaseConfig():
                 self.is_line_separated_json = True
             if not args.input_path_url:
                 self.input_path = Path.cwd() / "01_Input"
-                print(f'Using Path: {self.input_path_url}')
+                print(f'Using Path: {self.input_path}')
             else:
                 if str(args.input_path_url).startswith('http'):
                     self.input_path = args.input_path_url.split(";")
@@ -423,6 +430,8 @@ class BaseConfig():
             self.recursive_load = True
         if args.skip_until_file:
             self.skip_until_file = args.skip_until_file
+        if args.zip_records:
+            self.zip_records = True
         if args.skip_until_record:
             self.skip_until_record = args.skip_until_record
         if args.min_geoaccuracy:
