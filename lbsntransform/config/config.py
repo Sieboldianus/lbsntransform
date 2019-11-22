@@ -69,6 +69,7 @@ class BaseConfig():
         self.min_geoaccuracy = None
         self.logging_level = logging.INFO
         self.source_web = False
+        self.skip_until_record = None
 
         BaseConfig.set_options()
 
@@ -311,6 +312,12 @@ class BaseConfig():
                                    'until file with name x appears '
                                    '(default: start immediately)',
                                    type=str)
+        settings_args.add_argument("--skip_until_record",
+                                   default=self.skip_until_file,
+                                   help='If local input, skip all records '
+                                   'until record x '
+                                   '(default: start with first)',
+                                   type=int)
         settings_args.add_argument("--min_geoaccuracy",
                                    default=self.min_geoaccuracy,
                                    help='Set to "latlng", "place", '
@@ -416,6 +423,8 @@ class BaseConfig():
             self.recursive_load = True
         if args.skip_until_file:
             self.skip_until_file = args.skip_until_file
+        if args.skip_until_record:
+            self.skip_until_record = args.skip_until_record
         if args.min_geoaccuracy:
             self.min_geoaccuracy = self.check_geoaccuracy_input(
                 args.min_geoaccuracy)

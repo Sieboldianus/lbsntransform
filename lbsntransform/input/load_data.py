@@ -39,7 +39,7 @@ class LoadData():
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
-            web_zip=None):
+            web_zip=None, skip_until_record=None):
         self.is_local_input = is_local_input
         self.start_number = None
 
@@ -52,7 +52,10 @@ class LoadData():
                 self.continue_number = 0
             else:
                 self.continue_number = skip_until_file
-            self.start_number = 1
+            if skip_until_record is not None:
+                self.start_number = skip_until_record
+            else:
+                self.start_number
         self.source_web = source_web
         if web_zip is None:
             web_zip = True
@@ -241,6 +244,8 @@ class LoadData():
         """
         for record in records:
             self.count_glob += 1
+            if self.start_number > self.count_glob:
+                continue
             if self.is_local_input:
                 single_record = record
             else:
