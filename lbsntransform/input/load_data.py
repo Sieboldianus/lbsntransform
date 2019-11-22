@@ -245,6 +245,7 @@ class LoadData():
         for record in records:
             self.count_glob += 1
             if self.start_number > self.count_glob:
+                print(f'Skipping record {self.count_glob}', end='\r')
                 continue
             if self.is_local_input:
                 single_record = record
