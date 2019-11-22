@@ -224,8 +224,9 @@ class FieldMappingYFCC100M():
         else:
             post_record.post_type = lbsn.Post.IMAGE
         # replace text-string of content license by integer-id
-        post_record.post_content_license = self.get_license_number_from_license_name(
-            record[17])
+        if record[17] is not None:
+            post_record.post_content_license = \
+                self.get_license_number_from_license_name(record[17])
         # place record available in separate yfcc100m dataset
         # if records parsed as joined urls, length is larger than 25
         if len(record) > 25:
