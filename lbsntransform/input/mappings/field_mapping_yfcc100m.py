@@ -232,10 +232,12 @@ class FieldMappingYFCC100M():
         if len(record) > 25:
             post_plus_place_records = self.extract_flickr_place(
                 record[25:], post_record=post_record)
-        if post_plus_place_records is None:
-            lbsn_records.append(post_record)
+            if post_plus_place_records is None:
+                lbsn_records.append(post_record)
+            else:
+                lbsn_records.extend(post_plus_place_records)
         else:
-            lbsn_records.extend(post_plus_place_records)
+            lbsn_records.append(post_record)
         return lbsn_records
 
     def extract_flickr_place(self, record, post_record: lbsn.Post = None):
