@@ -70,7 +70,7 @@ python setup.py develop
 
 Now you can run the tool in your shell with (Origin 3 = Twitter):
 ```shell
-lbsntransform --origin 3 --file_input --file_type '*.json' --transferlimit 1000 --csv_output
+lbsntransform --origin 3 --file_input --file_type 'json' --transferlimit 1000 --csv_output
 ```
 
 ..or import the package to other python projects with:
