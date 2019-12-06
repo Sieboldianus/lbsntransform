@@ -5,11 +5,13 @@
 Import, convert and export Location Based Social Media (LBSM) data, such as from Twitter and Flickr, to a common data structure format (lbsnstructure). lbsntransform can also anonymize data into a privacy-aware version of lbsnstructure using HyperLogLog.
 
 Input can be:  
+
 - local CSV or Json (stacked/regular/line separated)  
 - a web-url to CSV/Json  
 - Postgres DB connection  
 
 Output can be:  
+
 - local CSV  
 - local file with ProtoBuf encoded records  
 - local SQL file ready for "Import from" in Postgres LBSN db  
