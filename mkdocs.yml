@@ -1,0 +1,23 @@
+site_name: lbsntransform Documentation
+site_url: https://lbsn.gitlab.vgiscience.de/lbsntransform/docs
+site_author: Alexander Dunkel
+copyright: CC BY 4.0, Alexander Dunkel, vgiscience.org and contributors
+site_dir: site
+
+repo_url: https://github.com/Sieboldianus/lbsntransform
+
+theme:
+  name: 'readthedocs'
+
+markdown_extensions:
+  - admonition
+
+nav:
+    - Introduction: index.md
+    - Quick Installation: quick-guide.md
+    - Command Line Interface:
+        - Arguments: argparse/args.md
+        - Examples: argparse/examples.md
+    - API Reference (external): api/lbsntransform_.html
+    - Additional resources: resources.md
+    - About: about.md

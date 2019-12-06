@@ -1,19 +1,7 @@
-lbsnstructure/
-backup/
 build/
 tests/
 scripts/
-scripts/*
-.project
-.pydevproject
-.settings/
-.vs/
 .vscode/
-*.pyproj
-*.sln
-transferIncremental_AllJson_To_Lbsn.pyproj
-transferIncremental_AllJson_To_Lbsn.sln
-test_env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
