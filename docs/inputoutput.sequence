@@ -6,6 +6,7 @@ Input->Output: recursive subfolders
 Input->Output: zip inputs
 Input->Output: stream from web 
 Note right of Output: LBSN Raw DB
+Input->Output: anonymize
 Note right of Output: LBSN Hll DB
 Input->Output: from live DB
 Output-->Input: to live DB
