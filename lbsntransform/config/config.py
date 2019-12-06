@@ -24,7 +24,7 @@ class BaseConfig():
 
         - or define options as input args
         """
-        self.origin = 3
+        self.origin = 0
         self.is_local_input = False
         self.local_file_type = 'json'
         self.input_path = None
@@ -69,6 +69,8 @@ class BaseConfig():
         self.min_geoaccuracy = None
         self.logging_level = logging.INFO
         self.source_web = False
+        self.skip_until_record = None
+        self.zip_records = None
 
         BaseConfig.set_options()
 
@@ -82,8 +84,8 @@ class BaseConfig():
                             action='version',
                             version=f'lbsntransform {__version__}')
         parser.add_argument('-o', "--origin",
-                            default=self.origin,
-                            help='Type of input source. '
+                            default=0,
+                            help='Input source type (id). '
                             'Defaults to 3: Twitter '
                             '(1 - Instagram, 2 - Flickr, 3 - Twitter)',
                             type=int)
@@ -98,15 +100,15 @@ class BaseConfig():
                                       'Otherwise database input will '
                                       'be assumed.')
         local_input_args.add_argument("--file_type",
-                                      default=self.local_file_type,
-                                      help='If "--file_input" is set, '
-                                      'specify filetype (json, csv etc.)',
+                                      default='json',
+                                      help='filetype (json, csv etc.) '
+                                      'only applies if --file_input is used.',
                                       type=str)
         local_input_args.add_argument("--input_path_url",
-                                      default=self.input_path,
-                                      help='Optionally provide path to '
-                                      'input folder, otherwise subfolder '
-                                      './Input/ will be used. You can also '
+                                      default="01_Input",
+                                      help='Path to input folder.'
+                                      'If not provided, subfolder '
+                                      './01_Input/ will be used. You can also '
                                       'provide a web-url starting with http, '
                                       'which will be accessed using '
                                       'requests.get(url, stream=True). '
@@ -116,7 +118,8 @@ class BaseConfig():
         local_input_args.add_argument("--is_stacked_json",
                                       action='store_true',
                                       default=False,
-                                      help='Typical form is '
+                                      help='Input is stacked json. '
+                                      'The typical form of json is '
                                       '[{json1},{json2}], '
                                       'if is_stacked_json is set: '
                                       'will process stacked jsons in the form '
@@ -124,7 +127,8 @@ class BaseConfig():
         local_input_args.add_argument("--is_line_separated_json",
                                       action='store_true',
                                       default=False,
-                                      help='Typical form is '
+                                      help='Json is line separated '
+                                      'The typical form is '
                                       '[{json1},{json2}], '
                                       'if is_line_separated_json is set: '
                                       'will process stacked jsons in the form '
@@ -132,51 +136,49 @@ class BaseConfig():
         # HLL Worker
         hllworker_args = parser.add_argument_group('HLL Worker')
         hllworker_args.add_argument("--dbpassword_hllworker",
-                                    default=self.dbpassword_hllworker,
-                                    help='Password for hllworker db',
+                                    default="",
+                                    help='Password for hllworker '
+                                    'db (Default = empty)',
                                     type=str)
         hllworker_args.add_argument("--dbuser_hllworker",
-                                    default=self.dbuser_hllworker,
-                                    help='Username for hllworker db. ',
+                                    default="postgres",
+                                    help='Username for hllworker db.',
                                     type=str)
         hllworker_args.add_argument("--dbserveraddress_hllworker",
-                                    default=self.dbserveraddress_hllworker,
-                                    help='IP Address for hllworker db, '
+                                    help='IP for hllworker db, '
                                     'e.g. 111.11.11.11 . Optionally add '
                                     'port to use, e.g. 111.11.11.11:5432. '
                                     '5432 is the default port',
                                     type=str)
         hllworker_args.add_argument("--dbname_hllworker",
-                                    default=self.dbname_hllworker,
-                                    help='DB name for hllworker db, ',
+                                    help='DB name for hllworker db',
                                     type=str)
         # DB Output
         dboutput_args = parser.add_argument_group('DB Output')
         dboutput_args.add_argument('-p', "--dbpassword_output",
-                                   default=self.dbpassword_output,
-                                   help='Password for output postgres db',
+                                   default="",
+                                   help='Password for out-db '
+                                   '(postgres db)',
                                    type=str)
         dboutput_args.add_argument('-u', "--dbuser_output",
-                                   default=self.dbuser_output,
-                                   help='Username for output postgres db. '
+                                   default="postgres",
+                                   help='Username for out-db. '
                                    'Default: example-user-name2',
                                    type=str)
         dboutput_args.add_argument('-a', "--dbserveraddress_output",
-                                   default=self.dbserveraddress_output,
-                                   help='IP Address for output db, '
+                                   help='IP for output db, '
                                    'e.g. 111.11.11.11 . Optionally add '
                                    'port to use, e.g. 111.11.11.11:5432. '
                                    '5432 is the default port',
                                    type=str)
         dboutput_args.add_argument('-n', "--dbname_output",
-                                   default=self.dbname_output,
-                                   help='DB name for output db, '
+                                   help='DB name for output db '
                                    'e.g.: "test_db"',
                                    type=str)
         dboutput_args.add_argument("--dbformat_output",
-                                   default=self.dbformat_output,
-                                   help='The format of the output db, '
-                                   'either "hll" or "lbsn". This setting '
+                                   default="lbsn",
+                                   help='Format of the out-db. '
+                                   'Either "hll" or "lbsn". This setting '
                                    'affects how data is stored, either '
                                    'anonymized and aggregated (hll) or in '
                                    'its original structure (lbsn).',
@@ -184,41 +186,40 @@ class BaseConfig():
         # DB Input
         dbinput_args = parser.add_argument_group('DB Input')
         dbinput_args.add_argument("--dbpassword_input",
-                                  default=self.dbpassword_input,
-                                  help='Password for input postgres db',
+                                  default="",
+                                  help='Password for input-db',
                                   type=str)
         dbinput_args.add_argument("--dbuser_input",
-                                  default=self.dbuser_input,
-                                  help='Username for input postgres db. '
-                                  'Default: example-user-name',
+                                  default="postgres",
+                                  help='Username for input-db.',
                                   type=str)
         dbinput_args.add_argument("--dbserveraddress_input",
-                                  default=self.dbserveraddress_input,
-                                  help='IP Address for input db, '
+                                  help='IP for input-db, '
                                   'e.g. 111.11.11.11. Optionally add '
                                   'port to use, e.g. 111.11.11.11:5432. '
                                   '5432 is the default port',
                                   type=str)
         dbinput_args.add_argument("--dbname_input",
-                                  default=self.dbname_input,
-                                  help='DB name for input db, '
+                                  help='DB name for input-db, '
                                   'e.g.: test_db',
                                   type=str)
         dbinput_args.add_argument("--dbformat_input",
-                                  default=self.dbformat_input,
-                                  help='The format of the input db, '
-                                  'either "lbsn" or "json".',
+                                  default="json",
+                                  help='Format of the input-db. '
+                                  'Either "lbsn" or "json".',
                                   type=str)
         # Additional args
         settings_args = parser.add_argument_group('Additional settings')
         settings_args.add_argument('-t', "--transferlimit",
-                                   default=self.transferlimit,
-                                   help='Limit the number of records to '
-                                   'process. Defaults to None (= process all).',
+                                   help='Abort after x records. '
+                                   'This can be used to limit the number of '
+                                   'records to process. Defaults to None '
+                                   '(= process all).',
                                    type=int)
         settings_args.add_argument("--transfer_count",
-                                   default=self.transfer_count,
-                                   help='Default to 50k: After how many '
+                                   default=50000,
+                                   help='Transfer batch limit x. '
+                                   'Defaults to 50k: After how many '
                                    'parsed records should the result be '
                                    'transferred to the DB. Larger values '
                                    'improve speed, because duplicate '
@@ -227,50 +228,58 @@ class BaseConfig():
                                    'heavier on memory.',
                                    type=int)
         settings_args.add_argument("--records_tofetch",
-                                   default=self.number_of_records_to_fetch,
-                                   help='If retrieving from a db, limit the '
+                                   default=10000,
+                                   help='Fetch x records /batch. '
+                                   'If retrieving from a db, limit the '
                                    'number of records to fetch at once. '
                                    'Defaults to 10k', type=int)
         settings_args.add_argument(
             "--disable_transfer_reactions",
             action='store_true',
-            help='Disable transfer of reactions '
-            '(reactions will be skipped, only original posts are transferred)')
+            help='Disable reactions. '
+            'If set, lbsn reactions will be skipped, '
+            'only original posts are transferred. This is usefull to reduce '
+            'processing for some service data, e.g. Twitter, with a large '
+            'amount of reactions.')
         settings_args.add_argument(
             "--disable_reaction_post_referencing",
             action='store_true',
             default=False,
-            help='Enable this option in args to prevent empty posts stored '
+            help='Disable reactions-refs. Enable this option in args '
+            ' to prevent empty posts stored '
             'due to Foreign Key Exists Requirement '
             'e.g. 0 = Save Original Tweets of Retweets in "posts"; 1 = do not '
             'store Original Tweets of Retweets; !Not implemented: 2 = Store '
             'Original Tweets of Retweets as "post_reactions"')
         settings_args.add_argument("--ignore_non_geotagged",
                                    action='store_true',
-                                   help='Ignore posts that are not geotagged.')
+                                   help='Ignore none-geotagged. '
+                                   'If set, posts that are not geotagged '
+                                   'are ignored during processing.')
         settings_args.add_argument("--startwith_db_rownumber",
-                                   help='Provide a number (row-id) to start '
-                                   'processing from live db', type=int)
+                                   help='Start with db row x. '
+                                   'Provide a number (row-id) to start '
+                                   'processing from live db.', type=int)
         settings_args.add_argument("--endwith_db_rownumber",
-                                   help='Provide a number (row-id) to end '
+                                   help='End with db row x. '
+                                   'Provide a number (row-id) to end '
                                    'processing from live db', type=int)
         settings_args.add_argument("--debug_mode",
-                                   help='Enable debug mode (not implemented).',
+                                   help='Enable debug mode.',
                                    type=str)
         settings_args.add_argument("--geocode_locations",
-                                   default=self.geocode_locations,
-                                   help='Provide path to CSV file with '
-                                   'location geocodes (CSV Structure: '
-                                   'lat, lng, name. Defaults to None.',
+                                   help='Path to loc-geocodes. '
+                                   'Provide path to a CSV file with '
+                                   'location geocodes (CSV Header: '
+                                   'lat, lng, name).',
                                    type=str)
         settings_args.add_argument("--ignore_input_source_list",
-                                   default=self.ignore_input_source_list,
-                                   help='Provide a path to a list of input_source '
+                                   help='Path to input ignore. '
+                                   ' Provide a path to a list of input_source '
                                    'types that will be ignored (e.g. to '
                                    'ignore certain bots etc.)',
                                    type=str)
         settings_args.add_argument("--input_lbsn_type",
-                                   default=self.input_lbsn_type,
                                    help='Input type, e.g. "post", "profile", '
                                    '"friendslist", "followerslist" etc. '
                                    'Used to select appropiate mapping '
@@ -278,7 +287,8 @@ class BaseConfig():
                                    type=str)
         settings_args.add_argument("--map_full_relations",
                                    action='store_true',
-                                   help='Set to true to map full relations, '
+                                   help='Map full relations. '
+                                   'Set to true to map full relations, '
                                    'e.g. many-to-many relationships, '
                                    'such as user_follows, '
                                    'user_friend, user_mentions etc. are '
@@ -286,36 +296,50 @@ class BaseConfig():
                                    'Defaults to False.')
         settings_args.add_argument("--csv_output",
                                    action='store_true',
-                                   default=self.csv_output,
-                                   help='If set will output all '
+                                   help='Store to local CSV. '
+                                   'If set, will store all '
                                    'submit values to local CSV instead.')
         settings_args.add_argument("--csv_allow_linebreaks",
                                    action='store_true',
-                                   help='If set will not '
+                                   help='Disable linebreak-rem. '
+                                   'If set, will not '
                                    'remove intext-linebreaks (\r or \n) '
                                    'in output CSVs')
         settings_args.add_argument("--csv_delimiter",
-                                   default=None,
-                                   help=repr(
-                                       'Provide CSV delimiter to use. '
-                                       'Default is comma(,). Note: to pass tab, '
-                                       'use variable substitution ($"\t")'),
+                                   default=",",
+                                   help=repr('CSV delimiter. '
+                                             'Provide CSV delimiter to use. '
+                                             'Default is comma(,). Note: to pass tab, '
+                                             'use variable substitution ($"\t")'),
                                    type=str)
         settings_args.add_argument("--recursive_load",
                                    action='store_true', default=False,
-                                   help='If set, process input directories '
+                                   help='Recursive local sub dirs. '
+                                   'If set, process input directories '
                                    'recursively (default depth: 2)')
         settings_args.add_argument("--skip_until_file",
-                                   default=self.skip_until_file,
-                                   help='If local input, skip all files '
+                                   help='Skip until file x. '
+                                   'If local input, skip all files '
                                    'until file with name x appears '
                                    '(default: start immediately)',
                                    type=str)
+        settings_args.add_argument("--skip_until_record",
+                                   help='Skip until record x. '
+                                   'If local input, skip all records '
+                                   'until record x '
+                                   '(default: start with first)',
+                                   type=int)
+        settings_args.add_argument("--zip_records",
+                                   action='store_true', default=False,
+                                   help='Zip records parallel. '
+                                   'Use this flag to zip records of '
+                                   'multiple input files, e.g. '
+                                   'List1[A,B,C], List2[1,2,3] -> '
+                                   'List[A1,B2,C3]')
         settings_args.add_argument("--min_geoaccuracy",
-                                   default=self.min_geoaccuracy,
                                    help='Set to "latlng", "place", '
                                    'or "city" to limit output based '
-                                   'on min geoaccuracy',
+                                   'on min geoaccuracy (default: no limit)',
                                    type=str)
 
         args = parser.parse_args()
@@ -328,7 +352,7 @@ class BaseConfig():
                 self.is_line_separated_json = True
             if not args.input_path_url:
                 self.input_path = Path.cwd() / "01_Input"
-                print(f'Using Path: {self.input_path_url}')
+                print(f'Using Path: {self.input_path}')
             else:
                 if str(args.input_path_url).startswith('http'):
                     self.input_path = args.input_path_url.split(";")
@@ -416,6 +440,10 @@ class BaseConfig():
             self.recursive_load = True
         if args.skip_until_file:
             self.skip_until_file = args.skip_until_file
+        if args.zip_records:
+            self.zip_records = True
+        if args.skip_until_record:
+            self.skip_until_record = args.skip_until_record
         if args.min_geoaccuracy:
             self.min_geoaccuracy = self.check_geoaccuracy_input(
                 args.min_geoaccuracy)

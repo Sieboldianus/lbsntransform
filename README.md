@@ -1,8 +1,10 @@
-![PyPI version](https://lbsn.vgiscience.org/lbsntransform/pypi.svg) ![pylint](https://lbsn.vgiscience.org/lbsntransform/pylint.svg) ![pipeline](https://lbsn.vgiscience.org/lbsntransform/pipeline.svg)
+[![PyPI version](https://lbsn.vgiscience.org/lbsntransform/pypi.svg)](https://pypi.org/project/lbsntransform/) [![pylint](https://lbsn.vgiscience.org/lbsntransform/pylint.svg)](https://gitlab.vgiscience.de/lbsn/lbsntransform) [![pipeline](https://lbsn.vgiscience.org/lbsntransform/pipeline.svg)](https://gitlab.vgiscience.de/lbsn/lbsntransform) [![Documentation](https://lbsn.vgiscience.org/lbsntransform/documentation.svg)](https://lbsn.vgiscience.org/lbsntransform/docs/)
 
 # LBSNTransform
 
 A python package that uses the [common location based social network (LBSN) data structure concept](https://pypi.org/project/lbsnstructure/) (ProtoBuf) to import, transform and export Social Media data such as Twitter and Flickr.
+
+![Illustration of functions](docs/inputoutput.svg)
 
 ## Motivation
 
@@ -31,14 +33,14 @@ pip install lbsntransform
 e.g. with the following command line args
 
 ```shell
-lbsntransform --origin 3 --file_input --file_type '*.json' --transferlimit 1000 --csv_output
+lbsntransform --origin 3 --file_input --file_type 'json' --transferlimit 1000 --csv_output
 ```
 
 .. with the above input args, the the tool will:
 - read local json from /01_Input/
 - and store lbsn records as CSV and ProtoBuf in /02_Output/
 
-A full list of possible input args is available with `lbsntransform --help` [config.py](/lbsntransform/config/config.py)
+A full list of possible input args is available in the [documentation](https://lbsn.vgiscience.org/lbsntransform/docs/)
 
 ## Built With
 

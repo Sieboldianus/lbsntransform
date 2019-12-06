@@ -91,7 +91,9 @@ def main():
         transfer_reactions=config.transfer_reactions,
         ignore_non_geotagged=config.ignore_non_geotagged,
         min_geoaccuracy=config.min_geoaccuracy,
-        source_web=config.source_web)
+        source_web=config.source_web,
+        skip_until_record=config.skip_until_record,
+        zip_records=config.zip_records)
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)

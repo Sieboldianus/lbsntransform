@@ -1,0 +1,12 @@
+Title: lbsntransform
+Note left of Input: Twitter / \\nFlickr/\\nYFCC100m ...
+Input->Output: from Local CSV or JSON
+Input->Output: stacked/ regular/ line separated
+Input->Output: recursive subfolders
+Input->Output: zip inputs
+Input->Output: stream from web 
+Note right of Output: LBSN Raw DB
+Note right of Output: LBSN Hll DB
+Input->Output: from live DB
+Output-->Input: to live DB
+Note left of Input: LBSN Raw DB
