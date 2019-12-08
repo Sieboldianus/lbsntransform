@@ -1,5 +1,5 @@
 Title: lbsntransform
-Note left of Input: Twitter / \\nFlickr/\\nYFCC100m ...
+Note left of Input: Twitter / \\nFlickr/\\nYFCC100m/ \\n...
 Input->Output: from Local CSV or JSON
 Input->Output: stacked/ regular/ line separated
 Input->Output: recursive subfolders
