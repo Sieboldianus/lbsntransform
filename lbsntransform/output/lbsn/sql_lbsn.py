@@ -19,6 +19,7 @@ class LBSNSql():
     def type_sql_mapper(cls):
         """Assigns record types to SQL Insert SQLs"""
         type_sql_mapping = {
+            lbsn.Origin().DESCRIPTOR.name: cls.origin_insertsql,
             lbsn.Country().DESCRIPTOR.name: cls.country_insertsql,
             lbsn.City().DESCRIPTOR.name: cls.city_insertsql,
             lbsn.Place().DESCRIPTOR.name: cls.place_insertsql,
@@ -28,6 +29,20 @@ class LBSNSql():
             lbsn.PostReaction().DESCRIPTOR.name: cls.postreaction_insertsql,
         }
         return type_sql_mapping
+
+    @staticmethod
+    def origin_insertsql(values_str: str, record_type):
+        """SQL and value injection for lbsn.City"""
+        insert_sql = \
+            f'''
+            INSERT INTO social."origin" (
+                {LBSNSql.DB_MAPPING.get_header_for_type(record_type)})
+            VALUES {values_str}
+            ON CONFLICT (origin_id)
+            DO UPDATE SET
+                name = EXCLUDED.name;
+            '''
+        return insert_sql
 
     @staticmethod
     def postreaction_insertsql(values_str: str, record_type):

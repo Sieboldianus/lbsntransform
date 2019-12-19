@@ -10,6 +10,7 @@ import sys
 
 import psycopg2
 import psycopg2.extras
+from psycopg2.extras import DictCursor
 
 LOG = logging.getLogger()
 
@@ -29,7 +30,7 @@ class DBConnection():
         self.sslmode = sslmode  # Choose 'disable' to connect without ssl
         self.port = port
 
-    def connect(self):
+    def connect(self, dict_cursor=None):
         """Database config. """
         conf = {
             "host": self.serveraddress,
@@ -56,10 +57,13 @@ class DBConnection():
                       f"sslmode='{conf['sslmode']}'" \
                       f"port='{conf['port']}'" \
                       f"application_name='LBSN Batch Transfer'"
+        cursor_factory = None
+        if dict_cursor:
+            cursor_factory = DictCursor
         # get a connection, if a connect cannot be made an
         # exception will be raised here
         try:
-            conn = psycopg2.connect(conn_string)
+            conn = psycopg2.connect(conn_string, cursor_factory=cursor_factory)
         except Exception as err:
             print(err)
             sys.exit()

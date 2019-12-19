@@ -84,6 +84,7 @@ def main():
         is_line_separated_json=config.is_line_separated_json,
         csv_delim=config.csv_delim,
         input_lbsn_type=config.input_lbsn_type,
+        dbformat_input=config.dbformat_input,
         geocode_locations=config.geocode_locations,
         ignore_input_source_list=config.ignore_input_source_list,
         disable_reactionpost_ref=config.disable_reactionpost_ref,

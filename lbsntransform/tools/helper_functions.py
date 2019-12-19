@@ -65,6 +65,10 @@ class HelperFunctions():
     @staticmethod
     def value_count(value_x: str):
         """Turn none values into 0, otherwise return value"""
+        if value_x is None:
+            return 0
+        if isinstance(value_x, int):
+            return value_x
         return int(value_x) if value_x.isdigit() else 0
 
     @staticmethod
@@ -629,7 +633,10 @@ class HelperFunctions():
         """ Switch import module based on origin input
             1 - Instagram, 2 - Flickr, 3 - Twitter, 4 - Facebook
         """
-        if origin == 2:
+        if origin == 0:
+            from lbsntransform.input.mappings.field_mapping_lbsn import \
+                FieldMappingLBSN as importer
+        elif origin == 2:
             from lbsntransform.input.mappings.field_mapping_flickr import \
                 FieldMappingFlickr as importer
         elif origin == 21:
