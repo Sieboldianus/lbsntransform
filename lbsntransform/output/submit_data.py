@@ -74,6 +74,8 @@ class LBSNTransfer():
             temporal.YearBase.NAME: dict(),
             topical.TermBase.NAME: dict(),
             topical.HashtagBase.NAME: dict(),
+            # topical.EmojiBase.NAME: dict(),
+            topical.TermLatLngBase.NAME: dict(),
         }
         self.count_round = 0
         # Records are batched and submitted in
@@ -174,8 +176,6 @@ class LBSNTransfer():
             # update hll dicts
             self.db_mapping.update_hll_dicts(
                 self.batched_hll_records, hll_base_metrics)
-            # input(len(self.batched_hll_bases.get(('topical', 'term'))))
-            # input(self.batched_hll_bases.get(('topical', 'term')))
         # check batched records (and submit)
         self.check_batchvolume_submit()
 
@@ -420,7 +420,6 @@ class LBSNTransfer():
         psycopg2-insert-multiple-rows-with-one-query
         """
         tsuccessful = False
-        # input(insert_sql)
         self.db_cursor.execute("SAVEPOINT submit_recordBatch")
         while not tsuccessful:
             try:

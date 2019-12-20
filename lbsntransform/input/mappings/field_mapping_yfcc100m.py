@@ -9,7 +9,7 @@ import logging
 import re
 from decimal import Decimal
 from urllib.parse import unquote
-from typing import List
+from typing import List, Optional
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
@@ -88,7 +88,7 @@ class FieldMappingYFCC100M():
             "Public Domain Mark": 10
         }
 
-    def parse_csv_record(self, record):
+    def parse_csv_record(self, record, record_type: Optional[str] = None):
         """Entry point for flickr CSV data:
             - Decide if CSV record contains place-info or post-info
             - Skip empty or malformed records

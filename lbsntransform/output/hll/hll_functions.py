@@ -101,7 +101,7 @@ class HLLFunctions():
     @staticmethod
     def concat_base_metric_item(
             base_key: int,
-            hll_items: List[Dict[str, set]]) -> Tuple[int, int, str]:
+            hll_items: Dict[str, set]) -> List[Tuple[int, int, str]]:
         """Concat hll item to (base_key, metric_key, item) tuple
         Note that only ids (0, 1, 2..), not the true keys are used
         for base_key and metric_key,

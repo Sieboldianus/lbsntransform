@@ -6,7 +6,7 @@ Shared structure and mapping between HLL DB and Proto LBSN Structure.
 
 # pylint: disable=no-member
 
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Iterator, Optional
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
@@ -57,11 +57,12 @@ class ProtoHLLMapping():
             else:
                 base_dict[metric_key] |= hll_base_metric
 
-    def extract_hll_base_metrics(self, record, record_type) -> Union[
+    def extract_hll_base_metrics(self, record, record_type) -> Optional[
+            List[Union[
             spatial.LatLngBase, spatial.PlaceBase,
             spatial.CityBase, spatial.CountryBase,
             temporal.DateBase, temporal.MonthBase,
-            temporal.YearBase, topical.TermBase]:
+            temporal.YearBase, topical.TermBase]]]:
         """Combine bases and metrics from Proto LBSN record"""
         record_hll_metrics = self.get_hll_metrics(record)
         if record_hll_metrics is None:
@@ -80,18 +81,17 @@ class ProtoHLLMapping():
                 spatial.CityBase, spatial.CountryBase,
                 temporal.DateBase, temporal.MonthBase,
                 temporal.YearBase, topical.TermBase]],
-            metrics: hll.HllMetrics) -> Union[
+            metrics: hll.HllMetrics) -> Iterator[Union[
                 spatial.LatLngBase, spatial.PlaceBase,
                 spatial.CityBase, spatial.CountryBase,
                 temporal.DateBase, temporal.MonthBase,
-                temporal.YearBase, topical.TermBase]:
+                temporal.YearBase, topical.TermBase]]:
         """Adds/updates metrics to hll_bases"""
         # iterate Namedtuple field names and values
         for key, value in zip(metrics._fields, metrics):
             # key = 'utl_hll', 'upl_hll'
             # value = set/str
             if value is None:
-                # input(f' keyval: {key} {value}')
                 continue
             for base in bases:
                 if key in base.metrics:
@@ -149,7 +149,7 @@ class ProtoHLLMapping():
             if base_records:
                 base_list.extend(base_records)
             # Topical Facet
-            topical_bases = ['hashtag', 'emoji', 'term']
+            topical_bases = ['hashtag', 'emoji', 'term', '_term_latlng']
             base_records = self.make_bases(
                 facet='topical',
                 bases=topical_bases,

@@ -8,6 +8,7 @@ Module for mapping Flickr to common LBSN Structure.
 
 import logging
 from decimal import Decimal
+from typing import Optional
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
@@ -45,7 +46,7 @@ class FieldMappingFlickr():
         # self.mapFullRelations = mapFullRelations
         # self.geocodes = geocodes
 
-    def parse_csv_record(self, record):
+    def parse_csv_record(self, record, record_type: Optional[str] = None):
         """Entry point for flickr CSV data:
             - Decide if CSV record contains user-info or post-info
             - Skip empty or malformed records

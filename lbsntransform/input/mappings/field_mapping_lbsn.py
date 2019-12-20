@@ -118,7 +118,6 @@ class FieldMappingLBSN():
             1:    input_type    Type of LBSN record (User, Post, Place etc.)
         """
         record = self.get_func_record(record, input_type)
-        # input(record)
         # return list of single item
         return [record]
 
