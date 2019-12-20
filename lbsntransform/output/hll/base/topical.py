@@ -7,6 +7,7 @@ from typing import Tuple, Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 FACET = 'topical'
 
@@ -92,6 +93,7 @@ class TemplateBase(TopicalBase):
     """Example Base class that extends TopicalBase
 
     Additional steps:
+
     * in shared_structure_proto_hlldb.py: extract_hll_bases(),
         define which lbsn.records are mapped to this class
     * if multiple TemplateBase can be extracted from a single lbsn record
@@ -151,3 +153,42 @@ class TemplateBase(TopicalBase):
         extracted from record
         """
         return
+
+
+class TermLatLngBase(hll.HllBase):
+    """Composite Base (c-base) that extends from HLL base Class
+
+    Note: To distinguish c-bases which are composite bases combining
+    aspects from multiple facets, they're termed with a leading underscore
+    """
+    NAME = hll.HllBaseRef(facet=FACET, base='_term_latlng')
+
+    def __init__(self, record: lbsn.Post = None, term: str = None):
+        super().__init__()
+        self.key['latitude'] = None
+        self.key['longitude'] = None
+        self.key['term'] = None
+        self.attrs['latlng_geom'] = None
+        self.metrics['date_hll'] = set()
+        if term is None:
+            # init empty
+            return
+        self.key['term'] = term.lower()
+        if record is None:
+            # init empty
+            return
+        if isinstance(record, lbsn.Post):
+            coordinates_geom = record.post_latlng
+            coordinates = HF.get_coordinates_from_ewkt(
+                coordinates_geom
+            )
+            self.key['latitude'] = coordinates.lat
+            self.key['longitude'] = coordinates.lng
+            # additional (optional) attributes
+            # formatted ready for sql upsert
+            self.attrs['latlng_geom'] = HF.return_ewkb_from_geotext(
+                coordinates_geom)
+        else:
+            raise ValueError(
+                "Parsing of LatLngBase only supported "
+                "from lbsn.Post")

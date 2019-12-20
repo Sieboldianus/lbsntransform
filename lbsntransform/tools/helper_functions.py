@@ -15,7 +15,7 @@ import re
 import string
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
-from typing import List, Set, Union
+from typing import List, Set, Union, Optional
 
 import emoji
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -113,6 +113,20 @@ class HelperFunctions():
         pattern = r'<(a|/a).*?>'
         result = re.sub(pattern, "", text_s)
         return result
+
+    @staticmethod
+    def get_all_post_terms(
+            record: Optional[lbsn.Post] = None) -> Set[str]:
+        """Returns all post terms combined in single set"""
+        body_terms = HelperFunctions.select_terms(
+            record.post_body)
+        title_terms = HelperFunctions.select_terms(
+            record.post_title)
+        tag_terms = HelperFunctions.filter_terms(
+            record.hashtags)
+        all_post_terms = set.union(
+            body_terms, title_terms, tag_terms)
+        return all_post_terms
 
     @staticmethod
     def select_terms(

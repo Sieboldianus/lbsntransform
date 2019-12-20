@@ -26,6 +26,7 @@ needs (see class topical.TemplateBase). The general idea is that each class has
     lists will be transformed into a "hll shard".
 
 Additional Notes:
+
 * the structure here is closely aligned with the SQL hll files
     maintained in [3], if you add any classes or metrics, make youre they're
     also updated in your hll db
@@ -45,11 +46,14 @@ Additional Notes:
 E., & Purves, R. (2019). A conceptual framework for studying collective
 reactions to events in location-based social media. International
 Journal of Geographical Information Science, 33, 4, 780-804.
+
 [2] Sessions, C., Wood, S. A., Rabotyagov, S., & Fisher, D. M. (2016).
 Measuring recreational visitation at U.S. National Parks with
 crowd-sourced photo-graphs. Journal of Environmental Management,
 183, 703–711. DOI: 10.1016/j.jenvman.2016.09.018
+
 [3] https://gitlab.vgiscience.de/lbsn/databases/hlldb
+
 [4] Löchner, M., Dunkel, A., & Burghardt, D. (2018).
 A privacy-aware model to process data from location-based social media.
 """
@@ -114,6 +118,8 @@ def merge_base_metrics(base1, base2):
 def base_factory(facet=None, base=None, record: lbsn.Post = None):
     """Base is initialized based on facet-base tuple
     and constructed by parsing lbsn records
+
+    Any bases that require special hooks need to be registered here
     """
     records = []
     base_structure = BASE_REGISTER.get((facet, base))
@@ -130,26 +136,33 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
                 base_structure(tag))
     elif base == 'emoji':
         # do nothing
-        pass
+        all_post_emoji = set(HF.extract_emoji(record.post_body))
+        for emoji in all_post_emoji:
+            # create base for each term
+            records.append(
+                base_structure(emoji))
     elif base == 'term':
         # any term mentioned in title,
         # body or hashtag
-        body_terms = HF.select_terms(
-            record.post_body)
-        title_terms = HF.select_terms(
-            record.post_title)
-        tag_terms = HF.filter_terms(
-            record.hashtags)
-        all_post_terms = set.union(
-            body_terms, title_terms, tag_terms)
+        all_post_terms = HF.get_all_post_terms(record)
         for term in all_post_terms:
             # create base for each term
             records.append(
                 base_structure(term))
     elif base == 'topic':
-        pass
+        raise NotImplementedError(
+            "Parsing of Topics base is currently not implemented")
     elif base == 'domain':
-        pass
+        raise NotImplementedError(
+            "Parsing of Domains base is currently not implemented")
+    elif base == '_term_latlng':
+        # any term mentioned in title,
+        # body or hashtag
+        all_post_terms = HF.get_all_post_terms(record)
+        for term in all_post_terms:
+            # create base for each term
+            records.append(
+                base_structure(record=record, term=term))
     else:
         # init for all other bases with single lbsn record
         record = base_structure(record)
