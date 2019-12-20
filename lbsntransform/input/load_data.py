@@ -214,7 +214,7 @@ class LoadData():
                     filehandle1 = next(file_handles)
                     filehandle2 = next(file_handles)
                     for zipped_record in zip_longest(
-                        self.fetch_record_from_file(filehandle1),
+                            self.fetch_record_from_file(filehandle1),
                             self.fetch_record_from_file(filehandle2)):
                         yield zipped_record[0] + zipped_record[1], None
                 else:

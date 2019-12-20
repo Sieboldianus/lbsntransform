@@ -7,12 +7,10 @@ Module for mapping Flickr to common LBSN Structure.
 # pylint: disable=no-member
 
 import logging
-from decimal import Decimal
-from typing import Tuple, List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from google.protobuf.timestamp_pb2 import Timestamp
-import datetime as dt
-from shapely import geos, wkt, wkb
+from shapely import wkb
 
 from ...tools.helper_functions import HelperFunctions as HF
 
