@@ -52,6 +52,7 @@ class LBSNTransfer():
         self.disable_reaction_post_ref = disable_reaction_post_ref
         self.log = logging.getLogger('__main__')
         self.batched_lbsn_records = {
+            lbsn.Origin.DESCRIPTOR.name: list(),
             lbsn.Country.DESCRIPTOR.name: list(),
             lbsn.City.DESCRIPTOR.name: list(),
             lbsn.Place.DESCRIPTOR.name: list(),
@@ -125,7 +126,7 @@ class LBSNTransfer():
         order is important here, as PostGres will reject any
         records where Foreign Keys are violated
         therefore, records are processed starting from lowest
-        granularity. Order is stored in allDicts()
+        granularity. Order is stored in all_dicts()
         """
 
         self.count_round += 1
@@ -438,7 +439,7 @@ class LBSNTransfer():
                     self.db_cursor.execute(
                         "ROLLBACK TO SAVEPOINT submit_recordBatch")
                     insert_language_sql = '''
-                           INSERT INTO data."language"
+                           INSERT INTO social."language"
                             (language_short, language_name, language_name_de)
                            VALUES (%s,NULL,NULL);
                            '''

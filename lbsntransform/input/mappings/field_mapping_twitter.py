@@ -440,7 +440,6 @@ class FieldMappingTwitter():
             HF.json_date_string_to_proto(json_string_dict.get('created_at')))
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
-
         post_record.post_quote_count = HF.value_count(
             json_string_dict.get('quote_count'))
         post_record.post_comment_count = HF.value_count(

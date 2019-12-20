@@ -54,7 +54,7 @@ class BaseConfig():
         self.transfer_reactions = True
         self.disable_reactionpost_ref = False
         self.ignore_non_geotagged = False
-        self.startwith_db_rownumber = 0
+        self.startwith_db_rownumber = None
         self.endwith_db_rownumber = None
         self.debug_mode = 'INFO'
         self.geocode_locations = False
@@ -86,7 +86,7 @@ class BaseConfig():
         parser.add_argument('-o', "--origin",
                             default=0,
                             help='Input source type (id). '
-                            'Defaults to 3: Twitter '
+                            'Defaults to 0: LBSN '
                             '(1 - Instagram, 2 - Flickr, 3 - Twitter)',
                             type=int)
         # Local Input

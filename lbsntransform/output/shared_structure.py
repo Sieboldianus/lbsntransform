@@ -38,6 +38,7 @@ class LBSNRecordDicts():
     """Parent structure to store collected lbsnstructures"""
 
     def __init__(self):
+        self.lbsn_origin_dict = dict()
         self.lbsn_country_dict = dict()
         self.lbsn_city_dict = dict()
         self.lbsn_place_dict = dict()
@@ -46,7 +47,8 @@ class LBSNRecordDicts():
         self.lbsn_post_dict = dict()
         self.lbsn_post_reaction_dict = dict()
         self.lbsn_relationship_dict = dict()
-        self.key_hashes = {lbsn.Post.DESCRIPTOR.name: set(),
+        self.key_hashes = {lbsn.Origin.DESCRIPTOR.name: set(),
+                           lbsn.Post.DESCRIPTOR.name: set(),
                            lbsn.Country.DESCRIPTOR.name: set(),
                            lbsn.City.DESCRIPTOR.name: set(),
                            lbsn.Place.DESCRIPTOR.name: set(),
@@ -61,6 +63,7 @@ class LBSNRecordDicts():
         # returns all recordsDicts in correct order,
         # with names as references (tuple)
         self.all_dicts = [
+            (self.lbsn_origin_dict, lbsn.Origin().DESCRIPTOR.name),
             (self.lbsn_country_dict, lbsn.Country().DESCRIPTOR.name),
             (self.lbsn_city_dict, lbsn.City().DESCRIPTOR.name),
             (self.lbsn_place_dict, lbsn.Place().DESCRIPTOR.name),
@@ -95,7 +98,7 @@ class LBSNRecordDicts():
             count_list.append(f'{x}: {len(y)} ')
         return ''.join(count_list)
 
-    def update_key_hash(self, record):
+    def update_key_hash(self, record, key=None):
         """Update key-hash with record
 
         Keep lists of pkeys for each type
@@ -105,6 +108,9 @@ class LBSNRecordDicts():
         in this case we assume that origin_id remains the same
         in each program iteration!
         """
+        if key is not None:
+            self.key_hashes[record.DESCRIPTOR.name].add(key)
+            return
         if record.DESCRIPTOR.name == lbsn.Relationship().DESCRIPTOR.name:
             # we need the complete uuid of both entities for
             # relationships because they can span different origin_ids
@@ -171,15 +177,22 @@ class LBSNRecordDicts():
             lbsn.Place().DESCRIPTOR.name: self.lbsn_place_dict,
             lbsn.PostReaction().DESCRIPTOR.name: self.lbsn_post_reaction_dict,
             lbsn.User().DESCRIPTOR.name: self.lbsn_user_dict,
-            lbsn.UserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict
+            lbsn.UserGroup().DESCRIPTOR.name: self.lbsn_user_group_dict,
+            lbsn.Origin().DESCRIPTOR.name: self.lbsn_origin_dict
         }
         return dict_switcher.get(record.DESCRIPTOR.name)
 
     def add_record_to_dict(self, newrecord):
         """Add single lbsn record to dict"""
         sel_dict = self.dict_selector(newrecord)
-        pkey_id = newrecord.pkey.id
-        if newrecord.pkey.id in sel_dict:
+        try:
+            pkey_id = newrecord.pkey.id
+        except AttributeError:
+            # inexpensive try that is raised rarely
+            # lbsn origins have no composite pkey
+            # use origin_id instead
+            pkey_id = newrecord.origin_id
+        if pkey_id in sel_dict:
             oldrecord = sel_dict[pkey_id]
             # oldrecord will be modified/updated
             self.merge_existing_records(oldrecord, newrecord)
@@ -188,7 +201,7 @@ class LBSNRecordDicts():
             # just count new entries
             self.count_glob += 1
             # update keyHash only necessary for new record
-            self.update_key_hash(newrecord)
+            self.update_key_hash(newrecord, pkey_id)
             sel_dict[pkey_id] = newrecord
 
     def add_relationship_to_dict(self, newrelationship):

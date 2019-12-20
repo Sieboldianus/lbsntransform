@@ -22,7 +22,9 @@ class ProtoLBSNMapping():
         - ready for copy-from pg import
         """
         dict_switcher = \
-            {lbsn.City.DESCRIPTOR.name:
+            {lbsn.Origin.DESCRIPTOR.name:
+             'origin_id, name',
+             lbsn.City.DESCRIPTOR.name:
              'origin_id, city_guid, name, name_alternatives, geom_center, '
              'geom_area, url, country_guid, sub_type',
              lbsn.Country.DESCRIPTOR.name:
@@ -73,6 +75,7 @@ class ProtoLBSNMapping():
     def func_prepare_selector(self, record):
         """Select correct prepare function according to record type"""
         dict_switcher = {
+            lbsn.Origin().DESCRIPTOR.name: self.prepare_lbsn_origin,
             lbsn.Country().DESCRIPTOR.name: self.prepare_lbsn_country,
             lbsn.City().DESCRIPTOR.name: self.prepare_lbsn_city,
             lbsn.Place().DESCRIPTOR.name: self.prepare_lbsn_place,
@@ -97,6 +100,13 @@ class ProtoLBSNMapping():
                                place_record.geom_center),
                            HF.return_ewkb_from_geotext(place_record.geom_area),
                            place_record.url)
+        return prepared_record
+
+    @classmethod
+    def prepare_lbsn_origin(cls, record):
+        """Get common attributes for records of type lbsn.Origin"""
+        prepared_record = (record.origin_id,
+                           record.name)
         return prepared_record
 
     @classmethod

@@ -12,7 +12,8 @@ import logging
 import traceback
 from contextlib import closing
 from itertools import zip_longest
-from typing import Dict, TextIO, List, Union, Any, Iterator, Optional, IO
+from typing import Tuple, List, Union, Iterator, Optional, IO
+import psycopg2
 
 import ntpath
 import requests
@@ -21,6 +22,7 @@ from lbsnstructure import lbsnstructure_pb2 as lbsn
 from ..tools.db_connection import DBConnection
 from ..output.shared_structure import GeocodeLocations
 from ..tools.helper_functions import HelperFunctions as HF
+from .mappings.db_query import InputSQL, LBSN_SCHEMA
 
 
 class LoadData():
@@ -35,19 +37,20 @@ class LoadData():
             recursive_load=None, local_file_type=None,
             endwith_db_rownumber=None, is_stacked_json=None,
             is_line_separated_json=None, csv_delim=None,
-            input_lbsn_type=None, geocode_locations=None,
+            input_lbsn_type=None, dbformat_input=None, geocode_locations=None,
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
             zip_records=None, skip_until_record=None):
         self.is_local_input = is_local_input
         self.start_number = 1
-        self.continue_number = 0
+        self.continue_number = None
         if not self.is_local_input:
             # Start Value, Modify to continue from last processing
             self.continue_number = startwith_db_rownumber
             self.start_number = startwith_db_rownumber
         else:
+            self.continue_number = 0
             if skip_until_file is not None:
                 self.continue_number = skip_until_file
             if skip_until_record is not None:
@@ -56,16 +59,17 @@ class LoadData():
         if zip_records is None:
             zip_records = False
         self.zip_records = zip_records
-        self.cursor_input = None
+        self.cursor_input = cursor_input
         if self.is_local_input and not self.source_web:
             self.filelist = LoadData._read_local_files(
                 input_path=input_path, recursive_load=recursive_load,
                 local_file_type=local_file_type,
                 skip_until_file=skip_until_file)
-            self.cursor_input = cursor_input
         elif self.is_local_input and self.source_web:
             self.filelist = input_path
         self.finished = False
+        self.dbformat_input = dbformat_input
+
         self.db_row_number = 0
         self.endwith_db_rownumber = endwith_db_rownumber
         self.is_stacked_json = is_stacked_json
@@ -74,7 +78,6 @@ class LoadData():
         self.csv_delim = csv_delim
         self.file_format = local_file_type
         self.input_lbsn_type = input_lbsn_type
-        self.cursor = None
         self.start_id = None
         self.count_glob = 0
         self.current_source = None
@@ -147,10 +150,13 @@ class LoadData():
 
     def _process_input(
             self,
-            file_handles: Iterator[IO[str]] = None) -> Iterator[Optional[List[str]]]:
+            file_handles: Iterator[IO[str]] = None) -> Iterator[
+                Optional[Tuple[List[str], Optional[str]]]]:
         """File parse for CSV or JSON from open file handle
 
-        Output: produces a list of post that can be parsed
+        Output Generator of type Tuple (1, 2):
+            1) a list of post that can be parsed
+            2) Optional information regarding type of records in list
         """
         if self.source_web:
             if len(self.filelist) == 1:
@@ -164,7 +170,7 @@ class LoadData():
                         quotechar='"', quoting=csv.QUOTE_NONE)
                     for record in record_reader:
                         # for record in zip_longest(r1, r2)
-                        yield record
+                        yield record, None
             else:
                 # multiple web file query
                 if self.zip_records and len(self.filelist) == 2:
@@ -190,7 +196,7 @@ class LoadData():
                             #     yield zipped_record[0]
                             # two combine lists
                             try:
-                                yield zipped_record[0] + zipped_record[1]
+                                yield zipped_record[0] + zipped_record[1], None
                             except TypeError:
                                 sys.exit(f"Stream appears to have broken. "
                                          f"Check connection and continue at "
@@ -210,7 +216,7 @@ class LoadData():
                     for zipped_record in zip_longest(
                         self.fetch_record_from_file(filehandle1),
                             self.fetch_record_from_file(filehandle2)):
-                        yield zipped_record[0] + zipped_record[1]
+                        yield zipped_record[0] + zipped_record[1], None
                 else:
                     raise ValueError("Zipping only supported for 2 files.")
             else:
@@ -221,7 +227,7 @@ class LoadData():
                         for record in self.fetch_record_from_file(
                                 file_handle):
                             if record:
-                                yield record
+                                yield record, None
                             else:
                                 continue
                     else:
@@ -229,19 +235,34 @@ class LoadData():
                         for record in self.fetch_json_data_from_file(
                                 file_handle):
                             if record:
-                                yield record
+                                yield record, None
                             else:
                                 continue
         else:
             # db query
-            while self.cursor:
-                records = self.fetch_json_data_from_lbsn(
-                    self.cursor, self.continue_number)
-                for record in records:
-                    yield record
+            if self.dbformat_input == "lbsn":
+                for lbsn_type, schema_name, table_name, key_col in LBSN_SCHEMA:
+                    self.continue_number = None
+                    while self.cursor_input:
+                        records = self.fetch_json_data_from_lbsn(
+                            cursor=self.cursor_input,
+                            start_id=self.continue_number,
+                            schema_name=schema_name, table_name=table_name,
+                            key_col=key_col)
+                        if records is None:
+                            break
+                        for record in records:
+                            yield record, lbsn_type
+            elif self.dbformat_input == "json":
+                while self.cursor_input:
+                    records = self.fetch_json_data_from_lbsn(
+                        cursor=self.cursor_input, start_id=self.continue_number)
+                    for record in records:
+                        yield record, self.input_lbsn_type
 
     def convert_records(
-        self, records: Iterator[Optional[List[str]]]) -> Iterator[List[Union[
+        self, records: Iterator[Optional[Tuple[List[str], Optional[str]]]]
+    ) -> Iterator[List[Union[
             lbsn.CompositeKey, lbsn.Language, lbsn.RelationshipKey, lbsn.City,
             lbsn.Country, lbsn.Origin, lbsn.Place, lbsn.Post,
             lbsn.PostReaction, lbsn.Relationship, lbsn.User,
@@ -253,24 +274,28 @@ class LoadData():
         """
         for record in records:
             self.count_glob += 1
-            if self.start_number > self.count_glob:
-                print(f'Skipping record {self.count_glob}', end='\r')
-                continue
-            if self.is_local_input:
-                single_record = record
+            # TODO: implement skipping of records based on count
+            # if self.start_number > self.count_glob:
+            #     print(f'Skipping record {self.count_glob}', end='\r')
+            #     continue
+            record_type = None
+            if self.is_local_input or self.dbformat_input == "lbsn":
+                single_record = record[0]
+                record_type = record[1]
             else:
+                # e.g. dbformat_input == "json"
                 self.db_row_number = record[0]
                 single_record = record[2]
             if LoadData.skip_empty_or_other(single_record):
                 # skip empty or malformed records
                 continue
             if self.local_file_type == 'json' or not self.is_local_input:
-                # note: db-records always returned as json
+                # note: db-records always returned as json-dict
                 lbsn_records = self.import_mapper.parse_json_record(
-                    single_record, self.input_lbsn_type)
+                    single_record, record_type)
             elif self.local_file_type in ('txt', 'csv'):
                 lbsn_records = self.import_mapper.parse_csv_record(
-                    single_record)
+                    single_record, record_type)
             else:
                 sys.exit(f'Format {self.local_file_type} not supportet.')
             # return record as pipe
@@ -292,8 +317,9 @@ class LoadData():
         return skip
 
     def fetch_json_data_from_lbsn(
-            self, cursor, start_id=0, get_max=None,
-            number_of_records_to_fetch=10000
+            self, cursor, start_id=None, get_max=None,
+            number_of_records_to_fetch=10000,
+            schema_name=None, table_name=None, key_col=None
     ) -> Optional[List[List[str]]]:
         """Fetches records from Postgres DB
 
@@ -308,20 +334,26 @@ class LoadData():
         if get_max:
             number_of_records_to_fetch = min(
                 number_of_records_to_fetch, get_max)
-        query_sql = '''
-                SELECT in_id,insert_time,data::json FROM public."input"
-                WHERE in_id > %s
-                ORDER BY in_id ASC LIMIT %s;
-                '''
-        cursor.execute(query_sql, (start_id, number_of_records_to_fetch))
+        query_sql = InputSQL.LBSN.get_sql(
+            schema_name=schema_name, table_name=table_name,
+            start_id=start_id,
+            number_of_records_to_fetch=number_of_records_to_fetch,
+            key_col=key_col)
+        cursor.execute(query_sql)
         records = cursor.fetchall()
         if cursor.rowcount == 0:
             return None
         # update last returned db_row_number
-        self.continue_number = records[-1][0]
-        if not self.start_number:
-            # first returned db_row_number
-            self.start_number = records[0][0]
+        if key_col == None:
+            self.continue_number = records[-1][0]
+            if not self.start_number:
+                # first returned db_row_number
+                self.start_number = records[0][0]
+        else:
+            self.continue_number = records[-1].get(key_col)
+            if not self.start_number:
+                # first returned db_row_number
+                self.start_number = records[0].get(key_col)
         return records
 
     def fetch_record_from_file(self, file_handle):
@@ -409,7 +441,7 @@ class LoadData():
     def initialize_connection(
             dbuser_output, dbserveraddress_output,
             dbname_output, dbpassword_output, dbserverport_output,
-            readonly: bool = True):
+            readonly: bool = True, dict_cursor: Optional[bool] = None):
         """Establishes connection to DB (Postgres)"""
 
         if dbuser_output:
@@ -420,7 +452,7 @@ class LoadData():
                 password=dbpassword_output,
                 port=dbserverport_output,
                 readonly=readonly)
-            conn, cursor = connection.connect()
+            conn, cursor = connection.connect(dict_cursor)
         else:
             conn = None
             cursor = None

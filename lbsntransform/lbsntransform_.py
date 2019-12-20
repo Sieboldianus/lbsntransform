@@ -109,7 +109,7 @@ class LBSNTransform():
             __, cursor_input = LoadData.initialize_connection(
                 dbuser_input, dbserveraddress_input,
                 dbname_input, dbpassword_input, dbserverport_input,
-                readonly=True)
+                readonly=True, dict_cursor=True)
             self.cursor_input = cursor_input
         #      loc_filelist = LoadData.read_local_files(config)
         # else:
