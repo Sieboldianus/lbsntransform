@@ -36,7 +36,8 @@ FLICKR_CITY_MATCH = {
     "sub-division", "community", "autonomous region",
     "municipal region", "emirate", "autonomous province",
     "historical county", "constituency", "entity", "colloquial",
-    "circle", "quarter", "dependency", "sub-prefecture"}
+    "circle", "quarter", "dependency", "sub-prefecture", "insular area",
+    "island council"}
 FLICKR_PLACE_MATCH = {
     "poi", "land feature", "estate", "airport", "drainage",
     "miscellaneous", "suburb"}
