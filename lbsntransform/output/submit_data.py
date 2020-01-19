@@ -74,7 +74,7 @@ class LBSNTransfer():
             temporal.YearBase.NAME: dict(),
             topical.TermBase.NAME: dict(),
             topical.HashtagBase.NAME: dict(),
-            # topical.EmojiBase.NAME: dict(),
+            topical.EmojiBase.NAME: dict(),
             topical.TermLatLngBase.NAME: dict(),
         }
         self.count_round = 0
