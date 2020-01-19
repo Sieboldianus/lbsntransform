@@ -207,6 +207,7 @@ class ProtoHLLMapping():
     def get_hll_metrics(cls, record) -> hll.HllMetrics:
         """Extracts hll metrics based on record type"""
         dict_switcher = {
+            lbsn.Origin().DESCRIPTOR.name: cls.get_origin_metrics,
             lbsn.Country().DESCRIPTOR.name: cls.get_country_metrics,
             lbsn.City().DESCRIPTOR.name: cls.get_city_metrics,
             lbsn.Place().DESCRIPTOR.name: cls.get_place_metrics,
@@ -219,6 +220,11 @@ class ProtoHLLMapping():
         extract_function = dict_switcher.get(record.DESCRIPTOR.name)
         record_hll_metrics = extract_function(record)
         return record_hll_metrics
+
+    @staticmethod
+    def get_origin_metrics(record) -> hll.HllMetrics:
+        """Get hll metrics from lbsn.Origin record"""
+        return
 
     @staticmethod
     def get_country_metrics(record) -> hll.HllMetrics:
