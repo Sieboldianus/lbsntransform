@@ -70,7 +70,7 @@ class HLLFunctions():
         return merged_records
 
     @staticmethod
-    def make_shard_sql(values_str: str):
+    def make_shard_sql(values_str: str) -> str:
         """SQL to calculate HLL Shards from sets of items
 
         Example values_str:
@@ -88,7 +88,7 @@ class HLLFunctions():
 
     @staticmethod
     def calculate_item_shards(
-        hllworker_cursor, values_str: List[str]
+        hllworker_cursor, values_str: str
     ) -> List[Tuple[int, str, str]]:
         """Calculates shards from batched hll_items
         using hll_worker connection
