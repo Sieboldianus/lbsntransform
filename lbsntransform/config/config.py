@@ -71,6 +71,7 @@ class BaseConfig():
         self.source_web = False
         self.skip_until_record = None
         self.zip_records = None
+        self.exclude_lbsn_objects = []
 
         BaseConfig.set_options()
 
@@ -341,6 +342,16 @@ class BaseConfig():
                                    'or "city" to limit output based '
                                    'on min geoaccuracy (default: no limit)',
                                    type=str)
+        settings_args.add_argument("--exclude_lbsn_objects",
+                                   help='If processing from lbsn db, '
+                                   'provide a comma separated list '
+                                   'of lbsn objects to exclude. May contain: '
+                                   'origin,country,city,place,user_groups,'
+                                   'user,post,post_reaction. Note: Excluded '
+                                   'objects will not be queried, but empty '
+                                   'objects may be created due to referenced '
+                                   'foreign key relationships.',
+                                   type=str)
 
         args = parser.parse_args()
         if args.file_input:
@@ -447,6 +458,8 @@ class BaseConfig():
         if args.min_geoaccuracy:
             self.min_geoaccuracy = self.check_geoaccuracy_input(
                 args.min_geoaccuracy)
+        if args.exclude_lbsn_objects:
+            self.exclude_lbsn_objects = args.exclude_lbsn_objects.split(",")
 
     @staticmethod
     def check_geoaccuracy_input(geoaccuracy_string):

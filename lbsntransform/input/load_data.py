@@ -41,7 +41,8 @@ class LoadData():
             ignore_input_source_list=None, disable_reactionpost_ref=None,
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
-            zip_records=None, skip_until_record=None):
+            zip_records=None, skip_until_record=None,
+            exclude_lbsn_objects=None):
         self.is_local_input = is_local_input
         self.start_number = 1
         self.continue_number = None
@@ -79,6 +80,9 @@ class LoadData():
         self.file_format = local_file_type
         self.input_lbsn_type = input_lbsn_type
         self.start_id = None
+        if exclude_lbsn_objects is None:
+            exclude_lbsn_objects = []
+        self.exclude_lbsn_objects = exclude_lbsn_objects
         self.count_glob = 0
         self.current_source = None
         # self.transferlimit = cfg.transferlimit
@@ -242,6 +246,8 @@ class LoadData():
             # db query
             if self.dbformat_input == "lbsn":
                 for lbsn_type, schema_name, table_name, key_col in LBSN_SCHEMA:
+                    if table_name in self.exclude_lbsn_objects:
+                        continue
                     self.continue_number = None
                     while self.cursor_input:
                         records = self.fetch_json_data_from_lbsn(

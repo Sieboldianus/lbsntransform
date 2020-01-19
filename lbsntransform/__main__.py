@@ -94,7 +94,8 @@ def main():
         min_geoaccuracy=config.min_geoaccuracy,
         source_web=config.source_web,
         skip_until_record=config.skip_until_record,
-        zip_records=config.zip_records)
+        zip_records=config.zip_records,
+        exclude_lbsn_objects=config.exclude_lbsn_objects)
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)
