@@ -77,7 +77,7 @@ class FieldMappingLBSN():
         # globally
         # this OriginID is required for all CompositeKeys
         origin = lbsn.Origin()
-        origin.origin_id = lbsn.Origin.UNKNOWN
+        origin.origin_id = lbsn.Origin.LBSN
         self.origin = origin
         self.null_island = 0
         # this is where all the data will be stored
