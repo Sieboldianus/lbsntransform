@@ -58,7 +58,8 @@ class LBSNTransform():
             dbpassword_input=None, dbserverport_input=None,
             dbformat_output=None, dbuser_hllworker=None,
             dbserveraddress_hllworker=None, dbname_hllworker=None,
-            dbpassword_hllworker=None, dbserverport_hllworker=None):
+            dbpassword_hllworker=None, dbserverport_hllworker=None,
+            include_lbsn_bases=None):
         """Init settings for LBSNTransform"""
 
         # init logger level
@@ -101,7 +102,8 @@ class LBSNTransform():
             store_csv=csv_output,
             SUPPRESS_LINEBREAKS=csv_suppress_linebreaks,
             dbformat_output=dbformat_output,
-            hllworker_cursor=cursor_hllworker)
+            hllworker_cursor=cursor_hllworker,
+            include_lbsn_bases=include_lbsn_bases)
         # load from local json/csv or from PostgresDB
         self.cursor_input = None
         self.is_local_input = is_local_input

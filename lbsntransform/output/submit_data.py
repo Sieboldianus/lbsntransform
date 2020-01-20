@@ -37,7 +37,8 @@ class LBSNTransfer():
                  store_csv=None,
                  SUPPRESS_LINEBREAKS=True,
                  dbformat_output="lbsn",
-                 hllworker_cursor=None):
+                 hllworker_cursor=None,
+                 include_lbsn_bases=None):
         self.db_cursor = db_cursor
         self.db_connection = db_connection
         if not self.db_cursor:
@@ -64,7 +65,7 @@ class LBSNTransfer():
         }
         # dynamially register base classes from base module
         hll.register_classes()
-        # this is the global dict of measures that will be collected,
+        # this is the global dict of measures that are currently supported,
         # bases not registered here will not be measured
         self.batched_hll_records = {
             spatial.LatLngBase.NAME: dict(),
@@ -76,6 +77,7 @@ class LBSNTransfer():
             topical.HashtagBase.NAME: dict(),
             topical.EmojiBase.NAME: dict(),
             topical.TermLatLngBase.NAME: dict(),
+            topical.EmojiLatLngBase.NAME: dict(),
         }
         self.count_round = 0
         # Records are batched and submitted in
@@ -88,8 +90,13 @@ class LBSNTransfer():
         if self.dbformat_output == 'lbsn':
             self.db_mapping = ProtoLBSNMapping()
         else:
-            self.db_mapping = ProtoHLLMapping()
+
+            if include_lbsn_bases is None:
+                include_lbsn_bases = []
+            self.db_mapping = ProtoHLLMapping(
+                include_lbsn_bases=include_lbsn_bases)
             self.hllworker_cursor = hllworker_cursor
+
         if self.store_csv:
             self.csv_output = LBSNcsv(SUPPRESS_LINEBREAKS)
 

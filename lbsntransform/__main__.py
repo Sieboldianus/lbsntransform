@@ -59,7 +59,8 @@ def main():
         dbserveraddress_hllworker=config.dbserveraddress_hllworker,
         dbname_hllworker=config.dbname_hllworker,
         dbpassword_hllworker=config.dbpassword_hllworker,
-        dbserverport_hllworker=config.dbserverport_hllworker)
+        dbserverport_hllworker=config.dbserverport_hllworker,
+        include_lbsn_bases=config.include_lbsn_bases)
 
     # initialize converter class
     # depending on lbsn origin

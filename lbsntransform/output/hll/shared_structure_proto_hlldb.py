@@ -18,6 +18,11 @@ from .hll_functions import HLLFunctions as HLF
 class ProtoHLLMapping():
     """ Methods to map ProtoBuf structure to PG HLL SQL structure."""
 
+    def __init__(self, include_lbsn_bases: List[str] = None):
+        if include_lbsn_bases is None:
+            include_lbsn_bases = []
+        self.include_lbsn_bases = include_lbsn_bases
+
     @staticmethod
     def update_hll_dicts(
             batched_hll_bases: Dict[Tuple[str, str], Dict[str, Union[
@@ -58,17 +63,13 @@ class ProtoHLLMapping():
                 base_dict[metric_key] |= hll_base_metric
 
     def extract_hll_base_metrics(self, record, record_type) -> Optional[
-            List[Union[
-            spatial.LatLngBase, spatial.PlaceBase,
-            spatial.CityBase, spatial.CountryBase,
-            temporal.DateBase, temporal.MonthBase,
-            temporal.YearBase, topical.TermBase]]]:
+            List[HllBases]]:
         """Combine bases and metrics from Proto LBSN record"""
         record_hll_metrics = self.get_hll_metrics(record)
         if record_hll_metrics is None:
             return
         hll_bases = self.extract_hll_bases(
-            record, record_type)
+            record, record_type, self.include_lbsn_bases)
         # turn generator into list
         hll_base_metrics = list(ProtoHLLMapping.update_bases_metrics(
             bases=hll_bases, metrics=record_hll_metrics))
@@ -104,12 +105,9 @@ class ProtoHLLMapping():
                 # return updated base as iterator
                 yield base
 
-    def extract_hll_bases(self, record, record_type) -> List[
-        Union[
-            spatial.LatLngBase, spatial.PlaceBase,
-            spatial.CityBase, spatial.CountryBase,
-            temporal.DateBase, temporal.MonthBase,
-            temporal.YearBase, topical.TermBase]]:
+    def extract_hll_bases(
+            self, record, record_type,
+            include_lbsn_bases: List[str]) -> List[HllBases]:
         """Extract hll bases from Proto LBSN record
 
         Depending on LBSNType, multiple bases can be extracted
@@ -133,15 +131,19 @@ class ProtoHLLMapping():
             # base from record.post_geoaccuracy
             # see protobuf spec for enum values:
             # UNKNOWN = 0; LATLNG = 1; PLACE = 2; CITY = 3; COUNTRY = 4;
-            base_records = self.make_base(
-                facet='spatial',
-                base=lbsn.Post.PostGeoaccuracy.Name(
-                    record.post_geoaccuracy).lower(),
-                record=record)
-            if base_records:
-                base_list.extend(base_records)
+            spatial_base = lbsn.Post.PostGeoaccuracy.Name(
+                record.post_geoaccuracy).lower()
+            if include_lbsn_bases and spatial_base in include_lbsn_bases:
+                base_records = self.make_base(
+                    facet='spatial',
+                    base=spatial_base,
+                    record=record)
+                if base_records:
+                    base_list.extend(base_records)
             # Temporal Facet
             temporal_bases = ['date', 'month', 'year']
+            temporal_bases = self.filter_bases(
+                temporal_bases, include_lbsn_bases)
             base_records = self.make_bases(
                 facet='temporal',
                 bases=temporal_bases,
@@ -149,7 +151,10 @@ class ProtoHLLMapping():
             if base_records:
                 base_list.extend(base_records)
             # Topical Facet
-            topical_bases = ['hashtag', 'emoji', 'term', '_term_latlng']
+            topical_bases = [
+                'hashtag', 'emoji', 'term', '_term_latlng', '_emoji_latlng']
+            topical_bases = self.filter_bases(
+                topical_bases, include_lbsn_bases)
             base_records = self.make_bases(
                 facet='topical',
                 bases=topical_bases,
@@ -159,27 +164,44 @@ class ProtoHLLMapping():
 
         # Places
         if record_type == lbsn.Place.DESCRIPTOR.name:
-            base_records = self.make_base(
-                facet='spatial',
-                base='place',
-                record=record)
-            if base_records:
-                base_list.extend(base_records)
+            if include_lbsn_bases and 'place' in include_lbsn_bases:
+                base_records = self.make_base(
+                    facet='spatial',
+                    base='place',
+                    record=record)
+                if base_records:
+                    base_list.extend(base_records)
         if record_type == lbsn.City.DESCRIPTOR.name:
-            base_records = self.make_base(
-                facet='spatial',
-                base='city',
-                record=record)
-            if base_records:
-                base_list.extend(base_records)
+            if include_lbsn_bases and 'city' in include_lbsn_bases:
+                base_records = self.make_base(
+                    facet='spatial',
+                    base='city',
+                    record=record)
+                if base_records:
+                    base_list.extend(base_records)
         if record_type == lbsn.Country.DESCRIPTOR.name:
-            base_records = self.make_base(
-                facet='spatial',
-                base='country',
-                record=record)
-            if base_records:
-                base_list.extend(base_records)
+            if include_lbsn_bases and 'country' in include_lbsn_bases:
+                base_records = self.make_base(
+                    facet='spatial',
+                    base='country',
+                    record=record)
+                if base_records:
+                    base_list.extend(base_records)
         return base_list
+
+    @classmethod
+    def filter_bases(
+            cls, base_list: List[str],
+            include_lbsn_bases: List[str]):
+        """Remove bases based on user supplied include list"""
+        if not include_lbsn_bases:
+            # if empty
+            return base_list
+        base_list_filtered = []
+        for base in base_list:
+            if base in include_lbsn_bases:
+                base_list_filtered.append(base)
+        return base_list_filtered
 
     @classmethod
     def make_bases(cls, facet: str, bases: List[str], record):

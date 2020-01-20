@@ -72,6 +72,7 @@ class BaseConfig():
         self.skip_until_record = None
         self.zip_records = None
         self.exclude_lbsn_objects = []
+        self.include_lbsn_bases = None
 
         BaseConfig.set_options()
 
@@ -352,7 +353,17 @@ class BaseConfig():
                                    'objects may be created due to referenced '
                                    'foreign key relationships.',
                                    type=str)
-
+        settings_args.add_argument("--include_lbsn_bases",
+                                   help='If the target output type is hll, '
+                                   'provide a comma separated list '
+                                   'of lbsn bases to include. Currently '
+                                   'supported: hashtag,emoji,term,_term_latlng,'
+                                   '_emoji_latlng,monthofyear,month,dayofmonth,'
+                                   'dayofweek,hourofday,year,month,date,'
+                                   'timestamp,country,region,city,place,latlng.'
+                                   'Bases not included will be skipped. Per '
+                                   'default, all bases will be considered.',
+                                   type=str)
         args = parser.parse_args()
         if args.file_input:
             self.is_local_input = True
@@ -460,6 +471,8 @@ class BaseConfig():
                 args.min_geoaccuracy)
         if args.exclude_lbsn_objects:
             self.exclude_lbsn_objects = args.exclude_lbsn_objects.split(",")
+        if args.include_lbsn_bases:
+            self.include_lbsn_bases = args.include_lbsn_bases.split(",")
 
     @staticmethod
     def check_geoaccuracy_input(geoaccuracy_string):
