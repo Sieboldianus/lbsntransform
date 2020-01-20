@@ -5,7 +5,7 @@ Collection of functions used in hll transformation
 """
 
 import datetime as dt
-from typing import Dict, Generator, List, Set, Tuple, Union
+from typing import Dict, Generator, List, Set, Tuple, Union, Optional
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
@@ -198,7 +198,7 @@ class HLLFunctions():
         return ":".join(map(str, record_attr))
 
     @staticmethod
-    def merge_dates_post(record: lbsn.Post = None) -> dt:
+    def merge_dates_post(record: lbsn.Post = None) -> Optional[dt.datetime]:
         """Merge post_publish and post_created attributes"""
         post_create_date = HF.null_check_datetime(
             record.post_create_date)

@@ -14,6 +14,14 @@ from lbsntransform.output.hll.base import social, spatial, temporal, topical
 
 from .hll_functions import HLLFunctions as HLF
 
+HllBases = Union[
+    spatial.LatLngBase, spatial.PlaceBase,
+    spatial.CityBase, spatial.CountryBase,
+    temporal.DateBase, temporal.MonthBase,
+    temporal.YearBase, topical.TermBase,
+    topical.EmojiBase, topical.TermLatLngBase,
+    topical.EmojiLatLngBase]
+
 
 class ProtoHLLMapping():
     """ Methods to map ProtoBuf structure to PG HLL SQL structure."""
@@ -25,16 +33,8 @@ class ProtoHLLMapping():
 
     @staticmethod
     def update_hll_dicts(
-            batched_hll_bases: Dict[Tuple[str, str], Dict[str, Union[
-                spatial.LatLngBase, spatial.PlaceBase,
-                spatial.CityBase, spatial.CountryBase,
-                temporal.DateBase, temporal.MonthBase,
-                temporal.YearBase, topical.TermBase]]],
-            hll_base_metrics: List[Union[
-                spatial.LatLngBase, spatial.PlaceBase,
-                spatial.CityBase, spatial.CountryBase,
-                temporal.DateBase, temporal.MonthBase,
-                temporal.YearBase, topical.TermBase]]):
+            batched_hll_bases: Dict[Tuple[str, str], Dict[str, HllBases]],
+            hll_base_metrics: List[HllBases]):
         """Update batched hll bases with new list of bases, merged metrics
 
         batched_hll_bases:
@@ -77,16 +77,8 @@ class ProtoHLLMapping():
 
     @staticmethod
     def update_bases_metrics(
-            bases: List[Union[
-                spatial.LatLngBase, spatial.PlaceBase,
-                spatial.CityBase, spatial.CountryBase,
-                temporal.DateBase, temporal.MonthBase,
-                temporal.YearBase, topical.TermBase]],
-            metrics: hll.HllMetrics) -> Iterator[Union[
-                spatial.LatLngBase, spatial.PlaceBase,
-                spatial.CityBase, spatial.CountryBase,
-                temporal.DateBase, temporal.MonthBase,
-                temporal.YearBase, topical.TermBase]]:
+            bases: List[HllBases],
+            metrics: hll.HllMetrics) -> Iterator[HllBases]:
         """Adds/updates metrics to hll_bases"""
         # iterate Namedtuple field names and values
         for key, value in zip(metrics._fields, metrics):

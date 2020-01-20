@@ -61,6 +61,7 @@ A privacy-aware model to process data from location-based social media.
 import inspect
 import sys
 from collections import OrderedDict, namedtuple
+from typing import List
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
@@ -232,7 +233,7 @@ class HllBase():
         """
         return list(self.metrics.keys())
 
-    def get_sql_header(self) -> str:
+    def get_sql_header(self) -> List[str]:
         """Get joined header for hll upsert sql
         Concat column names for key, attrs and metrics, e.g.:
         latitude, longitude, latlng_geom, user_hll, post_hll, date_hll, utl_hll
