@@ -129,6 +129,12 @@ class HelperFunctions():
         return all_post_terms
 
     @staticmethod
+    def get_all_post_emoji(
+            post_body: str) -> Set[str]:
+        """Returns all post emoji combined in single set"""
+        return set(HelperFunctions.extract_emoji(post_body))
+
+    @staticmethod
     def select_terms(
             text_s: str, selection_list: List[str] = None) -> Set[str]:
         """Extract list of words from sentence and return filtered version

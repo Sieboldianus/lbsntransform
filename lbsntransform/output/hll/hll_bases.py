@@ -136,7 +136,7 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
                 base_structure(tag))
     elif base == 'emoji':
         # do nothing
-        all_post_emoji = set(HF.extract_emoji(record.post_body))
+        all_post_emoji = HF.get_all_post_emoji(record.post_body)
         for emoji in all_post_emoji:
             # create base for each term
             records.append(
@@ -163,6 +163,14 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
             # create base for each term
             records.append(
                 base_structure(record=record, term=term))
+    elif base == '_emoji_latlng':
+        # any term mentioned in title,
+        # body or hashtag
+        all_post_emoji = HF.get_all_post_emoji(record.post_body)
+        for emoji in all_post_emoji:
+            # create base for each term
+            records.append(
+                base_structure(record=record, emoji=emoji))
     else:
         # init for all other bases with single lbsn record
         record = base_structure(record)
