@@ -255,7 +255,7 @@ class GeocodeLocations():
 class TimeMonitor():
     """Utility to report processing speed
 
-    Once initiallized, the start time will be
+    Once initialized, the start time will be
     recorded and can be stopped at any time with
     stop_time(), which will return the time passed
     in a text readable time format.
