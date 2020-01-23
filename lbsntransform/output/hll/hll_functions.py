@@ -5,7 +5,9 @@ Collection of functions used in hll transformation
 """
 
 import datetime as dt
-from typing import Dict, Generator, List, Set, Tuple, Union, Optional
+from typing import Dict, Generator, List, Optional, Set, Tuple, Union
+
+import psycopg2
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
@@ -93,8 +95,20 @@ class HLLFunctions():
         """Calculates shards from batched hll_items
         using hll_worker connection
         """
+        tsuccessful = False
         shard_sql = HLLFunctions.make_shard_sql(values_str)
-        hllworker_cursor.execute(shard_sql)
+        while not tsuccessful:
+            try:
+                hllworker_cursor.execute(shard_sql)
+            except psycopg2.OperationalError:
+                input(
+                    "Server closed the connection unexpectedly. Check "
+                    "if your postgres server has enough memory available. "
+                    "Will repeat execution once after input..")
+                hllworker_cursor.execute(shard_sql)
+                tsuccessful = True
+            else:
+                tsuccessful = True
         hll_shards = hllworker_cursor.fetchall()
         return hll_shards
 
