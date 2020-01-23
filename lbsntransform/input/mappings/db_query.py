@@ -65,7 +65,8 @@ class InputSQL(enum.Enum):
                 quote_subst = "'"
             optional_where = \
                 f"WHERE {key_col} > {quote_subst}{start_id}{quote_subst}"
-
+        # self.value refers to current ENUM,
+        # which is always string
         return self.value.format(
             schema_name=schema_name,
             table_name=table_name,
