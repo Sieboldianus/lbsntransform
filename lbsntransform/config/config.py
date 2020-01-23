@@ -261,7 +261,11 @@ class BaseConfig():
         settings_args.add_argument("--startwith_db_rownumber",
                                    help='Start with db row x. '
                                    'Provide a number (row-id) to start '
-                                   'processing from live db.', type=int)
+                                   'processing from live db. If input db type '
+                                   'is "LBSN", provide the primary key '
+                                   'to start from '
+                                   '(e.g. post_guid, place_guid etc.).',
+                                   type=self.int_or_str)
         settings_args.add_argument("--endwith_db_rownumber",
                                    help='End with db row x. '
                                    'Provide a number (row-id) to end '
@@ -512,3 +516,11 @@ class BaseConfig():
         prior execution"""
         # tell shapely to include the srid when generating WKBs
         geos.WKBWriter.defaults['include_srid'] = True
+
+    @classmethod
+    def int_or_str(cls, value_str: str):
+        """Returns int if value is of type int, otherwise str"""
+        try:
+            return int(value_str)
+        except:
+            return value_str
