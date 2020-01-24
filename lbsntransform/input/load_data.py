@@ -248,7 +248,6 @@ class LoadData():
                 for lbsn_type, schema_name, table_name, key_col in LBSN_SCHEMA:
                     if table_name in self.exclude_lbsn_objects:
                         continue
-                    self.continue_number = None
                     while self.cursor_input:
                         records = self.fetch_json_data_from_lbsn(
                             cursor=self.cursor_input,
@@ -259,6 +258,10 @@ class LoadData():
                             break
                         for record in records:
                             yield record, lbsn_type
+                    # reset start cursor
+                    # note: this will disable --startwith_db_rownumber for
+                    # any further lbsnobjects
+                    self.continue_number = None
             elif self.dbformat_input == "json":
                 while self.cursor_input:
                     records = self.fetch_json_data_from_lbsn(

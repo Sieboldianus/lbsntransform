@@ -264,7 +264,9 @@ class BaseConfig():
                                    'processing from live db. If input db type '
                                    'is "LBSN", provide the primary key '
                                    'to start from '
-                                   '(e.g. post_guid, place_guid etc.).',
+                                   '(e.g. post_guid, place_guid etc.). This '
+                                   'flag will only work if processing a '
+                                   'single lbsnObject (e.g. lbsnPost).',
                                    type=self.int_or_str)
         settings_args.add_argument("--endwith_db_rownumber",
                                    help='End with db row x. '
