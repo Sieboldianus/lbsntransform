@@ -146,6 +146,7 @@ class LBSNTransform():
                 self.store_lbsn_records()
             self.initial_loop = False
         if self.lbsn_records.count_glob >= self.transfer_count:
+            print("\n", end='')
             self.store_lbsn_records()
 
     def store_lbsn_records(self):
