@@ -283,7 +283,7 @@ class LBSNTransfer():
                 self.batched_lbsn_records[record_type],
                 self.count_round, record_type)
         if self.db_cursor:
-                # get sql escaped values list
+            # get sql escaped values list
             sql_escaped_values_list = [
                 self.prepare_sqlescaped_values(record) for
                 record in prepared_records]

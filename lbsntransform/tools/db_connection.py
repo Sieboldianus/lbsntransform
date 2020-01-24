@@ -70,7 +70,7 @@ class DBConnection():
         # activate dict to hstore conversion globally
         psycopg2.extras.register_hstore(conn, globally=True)
         # conn.cursor will return a cursor object,
-        # you can use this cursor to perform queries
+        # this will be used to perform queries
         cursor = conn.cursor()
         dnow = datetime.datetime.now()
         LOG.info(f'{dnow.strftime("%Y-%m-%d %H:%M:%S")} '
