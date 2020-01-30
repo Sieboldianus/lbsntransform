@@ -370,6 +370,7 @@ class BaseConfig():
                                    'Bases not included will be skipped. Per '
                                    'default, all bases will be considered.',
                                    type=str)
+
         args = parser.parse_args()
         if args.file_input:
             self.is_local_input = True
