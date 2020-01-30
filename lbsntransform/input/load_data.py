@@ -283,10 +283,10 @@ class LoadData():
         """
         for record in records:
             self.count_glob += 1
-            # TODO: implement skipping of records based on count
-            # if self.start_number > self.count_glob:
-            #     print(f'Skipping record {self.count_glob}', end='\r')
-            #     continue
+            # skip records based on count
+            if self.start_number > self.count_glob:
+                print(f'Skipping record {self.count_glob}', end='\r')
+                continue
             record_type = None
             if self.is_local_input or self.dbformat_input == "lbsn":
                 single_record = record[0]
