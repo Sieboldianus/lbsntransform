@@ -24,6 +24,13 @@ from ..output.shared_structure import GeocodeLocations
 from ..tools.helper_functions import HelperFunctions as HF
 from .mappings.db_query import InputSQL, LBSN_SCHEMA
 
+# type alias
+LBSNObjects = Union[
+    lbsn.CompositeKey, lbsn.Language, lbsn.RelationshipKey, lbsn.City,
+    lbsn.Country, lbsn.Origin, lbsn.Place, lbsn.Post,
+    lbsn.PostReaction, lbsn.Relationship, lbsn.User,
+    lbsn.UserGroup]
+
 
 class LoadData():
     """
@@ -108,11 +115,7 @@ class LoadData():
             min_geoaccuracy)
         self.finished = False
 
-    def __enter__(self) -> Iterator[Union[
-            lbsn.CompositeKey, lbsn.Language, lbsn.RelationshipKey, lbsn.City,
-            lbsn.Country, lbsn.Origin, lbsn.Place, lbsn.Post,
-            lbsn.PostReaction, lbsn.Relationship, lbsn.User,
-            lbsn.UserGroup]]:
+    def __enter__(self) -> Iterator[LBSNObjects]:
         """Main pipeline for reading input data
 
         Combine multiple generators to single pipeline,
@@ -271,11 +274,7 @@ class LoadData():
 
     def convert_records(
         self, records: Iterator[Optional[Tuple[List[str], Optional[str]]]]
-    ) -> Iterator[List[Union[
-            lbsn.CompositeKey, lbsn.Language, lbsn.RelationshipKey, lbsn.City,
-            lbsn.Country, lbsn.Origin, lbsn.Place, lbsn.Post,
-            lbsn.PostReaction, lbsn.Relationship, lbsn.User,
-            lbsn.UserGroup]]]:
+    ) -> Iterator[List[LBSNObjects]]:
         """Loops input json or csv records,
         converts to ProtoBuf structure and adds to records_dict
 
