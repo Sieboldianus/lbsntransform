@@ -53,6 +53,7 @@ class LoadData():
         self.is_local_input = is_local_input
         self.start_number = 1
         self.continue_number = None
+        self.skip_until_record = None
         if not self.is_local_input:
             # Start Value, Modify to continue from last processing
             self.continue_number = startwith_db_rownumber
@@ -61,8 +62,7 @@ class LoadData():
             self.continue_number = 0
             if skip_until_file is not None:
                 self.continue_number = skip_until_file
-            if skip_until_record is not None:
-                self.start_number = skip_until_record
+            self.skip_until_record = skip_until_record
         self.source_web = source_web
         if zip_records is None:
             zip_records = False
@@ -283,7 +283,7 @@ class LoadData():
         for record in records:
             self.count_glob += 1
             # skip records based on count
-            if self.start_number > self.count_glob:
+            if self.skip_until_record and self.skip_until_record > self.count_glob:
                 print(f'Skipping record {self.count_glob}', end='\r')
                 continue
             record_type = None
