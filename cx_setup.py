@@ -27,7 +27,7 @@ EXCLUDES_MOD = ['tkinter',
                 'scipy',
                 'numpy']
 PACKAGES_MOD = [
-    'lbsnstructure>=0.2.6.211',
+    'lbsnstructure>=0.5.1',
     'protobuf',
     'psycopg2',
     'ppygis3',
