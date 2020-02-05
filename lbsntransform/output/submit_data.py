@@ -32,7 +32,7 @@ class LBSNTransfer():
 
     def __init__(self, db_cursor=None,
                  db_connection=None,
-                 commit_volume=10000,
+                 commit_volume=None,
                  disable_reaction_post_ref=0,
                  store_csv=None,
                  SUPPRESS_LINEBREAKS=True,
@@ -46,6 +46,13 @@ class LBSNTransfer():
         self.count_entries_commit = 0
         self.count_entries_store = 0
         self.count_affected = 0
+        if commit_volume is None:
+            # due to more output bases
+            # increase commit volume on hll output
+            if dbformat_output == "lbsn":
+                commit_volume = 10000
+            else:
+                commit_volume = 100000
         self.commit_volume = commit_volume
         self.store_volume = 500000
         self.count_glob = 0
@@ -80,9 +87,15 @@ class LBSNTransfer():
             topical.EmojiLatLngBase.NAME: dict(),
         }
         self.count_round = 0
+        if dbformat_output == "lbsn":
+            batch_db_volume = 100
+        else:
+            # increase for less complex but
+            # higher quantity of hll records
+            batch_db_volume = 20000
         # Records are batched and submitted in
         # one insert with x number of records
-        self.batch_db_volume = 100
+        self.batch_db_volume = batch_db_volume
         self.store_csv = store_csv
         self.headers_written = set()
         # self.CSVsuppressLinebreaks = CSVsuppressLinebreaks
@@ -190,7 +203,11 @@ class LBSNTransfer():
         """If any dict contains more values than self.batch_db_volume,
            submit/store all
         """
-        for batch_list in self.batched_lbsn_records.values():
+        if self.dbformat_output == 'lbsn':
+            batch_lists = self.batched_lbsn_records.values()
+        else:
+            batch_lists = self.batched_hll_records.values()
+        for batch_list in batch_lists:
             if len(batch_list) >= self.batch_db_volume:
                 self.submit_all_batches()
 
