@@ -269,7 +269,7 @@ class HelperFunctions():
     def report_stats(input_cnt, current_cnt, lbsn_records=None):
         """Format string for reporting stats."""
         report_stats = (f'{input_cnt} '
-                        f'input records processed (up to '
+                        f'input records read (up to '
                         f'{current_cnt}). '
                         f'{HelperFunctions.get_count_stats(lbsn_records)}')
         return report_stats

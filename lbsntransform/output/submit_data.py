@@ -158,7 +158,7 @@ class LBSNTransfer():
         g_cnt = lbsn_record_dicts.get_current_count()
         for record, type_name in lbsn_record_dicts.get_all_records():
             r_cnt += 1
-            print(f'Storing {r_cnt} of {g_cnt} '
+            print(f'Converting {r_cnt} of {g_cnt} '
                   f'lbsn records ({type_name})..', end='\r')
             self.prepare_lbsn_record(record, type_name)
             self.count_glob += 1  # self.dbCursor.rowcount
@@ -285,6 +285,9 @@ class LBSNTransfer():
         # get sql escaped values list
         values_str = HF.concat_values_str(hll_items)
         # calculate hll shards from raw values
+        print(
+            f'Calculating hll shards for {len(values_str)} values..',
+            end='\r')
         hll_shards = HLF.calculate_item_shards(
             self.hllworker_cursor, values_str)
         prepared_records = HLF.concat_base_shards(
@@ -309,6 +312,7 @@ class LBSNTransfer():
                 sql_escaped_values_list
             )
             insert_sql = self.insert_sql_selector(values_str, record_type)
+            print(f'Submitting {len(prepared_records)}..', end='\r')
             self.submit_batch(insert_sql)
 
     def insert_sql_selector(
