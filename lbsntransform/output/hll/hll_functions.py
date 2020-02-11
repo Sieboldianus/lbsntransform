@@ -85,6 +85,7 @@ class HLLFunctions():
             VALUES {values_str}
             ) s(base_id, metric_id, item_value)
             GROUP BY base_id, metric_id
+            ORDER BY base_id, metric_id
             '''
         return insert_sql
 
