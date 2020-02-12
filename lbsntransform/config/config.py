@@ -267,7 +267,7 @@ class BaseConfig():
                                    '(e.g. post_guid, place_guid etc.). This '
                                    'flag will only work if processing a '
                                    'single lbsnObject (e.g. lbsnPost).',
-                                   type=BaseConfig.int_or_str)
+                                   type=str)
         settings_args.add_argument("--endwith_db_rownumber",
                                    help='End with db row x. '
                                    'Provide a number (row-id) to end '
@@ -450,7 +450,11 @@ class BaseConfig():
         if args.ignore_non_geotagged:
             self.ignore_non_geotagged = True
         if args.startwith_db_rownumber:
-            self.startwith_db_rownumber = args.startwith_db_rownumber
+            # hack: converts to int (row-count) if possible
+            # otherwise uses str (row-id lookup)
+            # TODO: separate into different cli args
+            self.startwith_db_rownumber = self.int_or_str(
+                args.startwith_db_rownumber)
         if args.endwith_db_rownumber:
             self.endwith_db_rownumber = args.endwith_db_rownumber
         if args.debug_mode:
@@ -520,8 +524,8 @@ class BaseConfig():
         # tell shapely to include the srid when generating WKBs
         geos.WKBWriter.defaults['include_srid'] = True
 
-    @staticmethod
-    def int_or_str(value_str: str):
+    @classmethod
+    def int_or_str(cls, value_str: str):
         """Returns int if value is of type int, otherwise str"""
         try:
             return int(value_str)
