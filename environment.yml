@@ -12,6 +12,7 @@ dependencies:
   - shapely
   - requests
   - nltk
+  - psycopg2
   - pip:
     - lbsnstructure>=0.5.1
     - ppygis3>=0.4

@@ -1,3 +1,8 @@
+stages:
+  - test
+  - mkdocs
+  - deploy
+  
 test:
   image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
   before_script:
@@ -49,18 +54,18 @@ test:
   - ci-test
 
 pages:
-  stage: deploy
+  stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
   script:
     - mkdir .public
     - cp *.svg .public
-    - mv .public public
+    - mv .public public/lbsntransform
     # build docs
     - mkdocs build
-    - mv site public
+    - mv site public/lbsntransform
     # copy pdoc3 compiled API ref
-    - mv docs/api/lbsntransform/* public/site/api/
-    - mv public/site public/docs
+    - mv docs/api/lbsntransform/* public/lbsntransform/site/api/
+    - mv public/lbsntransform/site public/lbsntransform/docs
   artifacts:
     name: pages
     paths:
@@ -68,3 +73,16 @@ pages:
   only:
   - master
   - ci-test
+
+rsync:
+  stage: deploy
+  image: registry.gitlab.vgiscience.org/lbsn/lbsn.vgiscience.org/rsync-ssh:latest
+  before_script:
+  - eval $(ssh-agent -s)
+  - echo "${SSH_PRIVKEY}" | ssh-add -
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+  - rsync -avu -zz --no-perms --omit-dir-times --del --chown=www-data:www-data --chmod=D775,F664 public/ "${STAGING_DESTINATION}"/
+  only:
+  - master
