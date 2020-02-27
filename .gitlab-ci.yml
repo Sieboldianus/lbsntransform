@@ -53,13 +53,12 @@ test:
   - master
   - ci-test
 
-pages:
+mkdocs:
   stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
   script:
-    - mkdir .public
-    - cp *.svg .public
-    - mv .public public/lbsntransform
+    - mkdir -p public/lbsntransform
+    - cp *.svg public/lbsntransform
     # build docs
     - mkdocs build
     - mv site public/lbsntransform
