@@ -82,6 +82,6 @@ rsync:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   script:
-  - rsync -avu -zz --no-perms --omit-dir-times --del --chown=www-data:www-data --chmod=D775,F664 public/ "${STAGING_DESTINATION}"/
+  - rsync -avu -zz --no-perms --omit-dir-times --del --chown=www-data:www-data --chmod=D775,F664 public/lbsntransform "${STAGING_DESTINATION}"/lbsntransform
   only:
   - master
