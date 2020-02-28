@@ -1,3 +1,7 @@
+variables:
+  # relative namespace of project
+  REL_NAMESPACE: "/lbsntransform/"
+
 stages:
   - test
   - mkdocs
@@ -57,14 +61,14 @@ mkdocs:
   stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
   script:
-    - mkdir -p public/lbsntransform
-    - cp *.svg public/lbsntransform
+    - mkdir -p "public/${REL_NAMESPACE}"
+    - cp *.svg "public/${REL_NAMESPACE}"
     # build docs
     - mkdocs build
-    - mv site public/lbsntransform
+    - mv site "public/${REL_NAMESPACE}"
     # copy pdoc3 compiled API ref
-    - mv docs/api/lbsntransform/* public/lbsntransform/site/api/
-    - mv public/lbsntransform/site public/lbsntransform/docs
+    - mv docs/api/lbsntransform/* "public/${REL_NAMESPACE}/site/api/"
+    - mv public/lbsntransform/site "public/${REL_NAMESPACE}/docs"
   artifacts:
     name: pages
     paths:
@@ -82,6 +86,7 @@ rsync:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   script:
-  - rsync -avu -zz --no-perms --omit-dir-times --del --chown=www-data:www-data --chmod=D775,F664 public/lbsntransform "${STAGING_DESTINATION}"/lbsntransform
+  - ssh "${STAGING_SERVER}" mkdir -p "${STAGING_PATH}${REL_NAMESPACE}"
+  - rsync -avu -zz --no-perms --omit-dir-times --del --chown=www-data:www-data --chmod=D775,F664 "public/${REL_NAMESPACE}" "${STAGING_SERVER}:${STAGING_PATH}${REL_NAMESPACE}"
   only:
   - master
