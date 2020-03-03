@@ -2,6 +2,7 @@ build/
 tests/
 scripts/
 .vscode/
+lbsntransform_env/
 dev/
 # Byte-compiled / optimized / DLL files
 __pycache__/
