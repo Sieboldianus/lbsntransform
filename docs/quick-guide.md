@@ -8,4 +8,25 @@ There are many ways to install python tools:
 
 # Linux
 
-* `pip install lbsntransform` is recommended to install lbsntransform in Linux.
+For most Linux users, it is recommended first creating some type of virtual environment, and then install lbsntransform in this virtual env, e.g.:
+```bash
+apt-get install python3-venv
+python3 -m venv lbsntransform_env
+source ./lbsntransform_env/bin/activate
+pip install lbsntransform
+```
+
+You can also directly install the latest release of lbsntransform with pip:  
+```bash
+pip install lbsntransform
+```
+
+..or, clone the repository and install lbsntransform directly:
+
+```bash
+git clone https://github.com/Sieboldianus/lbsntransform.git
+cd lbsntransform
+python setup.py install
+```
+
+
