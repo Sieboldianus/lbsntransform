@@ -6,7 +6,6 @@ dependencies:
   - python
   - pip
   - emoji>=0.5.1
-  - geos
   - numpy
   - pycodestyle
   - protobuf
@@ -20,4 +19,5 @@ dependencies:
     - pylint-exit
     - ppygis3
     - lbsnstructure>=0.5.1
+    - geos
 

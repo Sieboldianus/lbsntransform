@@ -6,7 +6,6 @@ dependencies:
   - python>=3.5
   - pip
   - emoji>=0.5.1
-  - geos
   - numpy
   - protobuf
   - shapely
@@ -16,4 +15,5 @@ dependencies:
   - pip:
     - lbsnstructure>=0.5.1
     - ppygis3>=0.4
+    - geos
 
