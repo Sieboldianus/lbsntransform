@@ -4,7 +4,7 @@
 """
 
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.md') as f:
     LONG_DESCRIPTION = f.read()
@@ -30,7 +30,8 @@ setup(name="lbsntransform",
       author_email='alexander.dunkel@tu-dresden.de',
       url='https://gitlab.vgiscience.de/lbsn/lbsntransform',
       license='GNU GPLv3 or any higher',
-      packages=['lbsntransform'],
+      packages=find_packages(
+          include=['lbsntransform', 'lbsntransform.*']),
       include_package_data=True,
       install_requires=[
           'lbsnstructure>=0.5.1',
