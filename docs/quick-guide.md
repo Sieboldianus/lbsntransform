@@ -31,7 +31,11 @@ python setup.py install
 
 # Installation with conda
 
-If you have conda package manager you can install lbsntransform dependencies, OS independent, with the `environment.yml` that is available in the lbsntransform repository:
+If you have conda package manager, you can install lbsntransform dependencies 
+with the `environment.yml` that is available in the lbsntransform repository.
+This approach is OS independent.
+
+1. Create a conda env using `environment.yml`
 
 ```bash
 git clone https://github.com/Sieboldianus/lbsntransform.git
@@ -39,7 +43,8 @@ cd lbsntransform
 conda env create -f environment.yml
 ```
 
-..and then install lbsntransform directly:
+2. Install lbsntransform without dependencies
+
 ```bash
 conda activate lbsntransform
 python setup.py install --no-deps
