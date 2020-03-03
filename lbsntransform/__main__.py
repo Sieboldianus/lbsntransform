@@ -20,7 +20,7 @@ import sys
 
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 from lbsntransform.output.shared_structure import TimeMonitor
-from lbsntransform.input.load_data import LoadData
+from lbsntransform.data_input.load_data import LoadData
 from lbsntransform.config.config import BaseConfig
 from lbsntransform.lbsntransform_ import LBSNTransform
 

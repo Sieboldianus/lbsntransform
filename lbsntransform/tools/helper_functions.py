@@ -654,20 +654,20 @@ class HelperFunctions():
             1 - Instagram, 2 - Flickr, 3 - Twitter, 4 - Facebook
         """
         if origin == 0:
-            from lbsntransform.input.mappings.field_mapping_lbsn import \
+            from lbsntransform.data_input.mappings.field_mapping_lbsn import \
                 FieldMappingLBSN as importer
         elif origin == 2:
-            from lbsntransform.input.mappings.field_mapping_flickr import \
+            from lbsntransform.data_input.mappings.field_mapping_flickr import \
                 FieldMappingFlickr as importer
         elif origin == 21:
             # Flickr YFCC100M dataset
-            from lbsntransform.input.mappings.field_mapping_yfcc100m import \
+            from lbsntransform.data_input.mappings.field_mapping_yfcc100m import \
                 FieldMappingYFCC100M as importer
         elif origin == 3:
-            from lbsntransform.input.mappings.field_mapping_twitter import \
+            from lbsntransform.data_input.mappings.field_mapping_twitter import \
                 FieldMappingTwitter as importer
         elif origin == 41:
-            from lbsntransform.input.mappings.field_mapping_fb import \
+            from lbsntransform.data_input.mappings.field_mapping_fb import \
                 FieldMappingFBPlace as importer
         else:
             raise ValueError("Input type not supported")

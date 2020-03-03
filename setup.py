@@ -39,6 +39,9 @@ setup(name="lbsntransform",
           'ppygis3',
           'shapely',
           'emoji',
+          'requests',
+          'geos',
+          'numpy',
           'requests'
       ],
       extras_require={

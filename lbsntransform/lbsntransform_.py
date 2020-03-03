@@ -19,7 +19,7 @@ from pathlib import Path
 from .tools.helper_functions import HelperFunctions as HF
 from .output.shared_structure import LBSNRecordDicts
 from .output.submit_data import LBSNTransfer
-from .input.load_data import LoadData
+from .data_input.load_data import LoadData
 
 
 class LBSNTransform():
