@@ -10,7 +10,16 @@ theme:
   name: 'readthedocs'
 
 markdown_extensions:
-  - admonition
+    - toc:
+        permalink: true
+    - markdown_include.include:
+        base_path: docs
+    - admonition
+    - codehilite
+    - extra
+
+plugins:
+  - search
 
 nav:
     - Introduction: index.md
