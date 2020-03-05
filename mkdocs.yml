@@ -19,6 +19,7 @@ markdown_extensions:
       base_path: docs
   - admonition
   - fenced_code
+  - sane_lists
 
 nav:
   - Introduction: index.md

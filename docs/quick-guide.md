@@ -51,7 +51,7 @@ cd lbsntransform
 conda env create -f environment.yml
 ```
 
-<span>2.</span> Install lbsntransform without dependencies
+2. Install lbsntransform without dependencies
 
 ```bash
 conda activate lbsntransform
