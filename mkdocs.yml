@@ -8,25 +8,25 @@ repo_url: https://github.com/Sieboldianus/lbsntransform
 
 theme:
   name: 'readthedocs'
+  highlightjs: true
 
 markdown_extensions:
-    - toc:
-        permalink: true
-    - markdown_include.include:
-        base_path: docs
-    - admonition
-    - codehilite
-    - extra
+  - toc:
+      permalink: true
+  - markdown_include.include:
+      base_path: docs
+  - admonition
+  - codehilite
 
 plugins:
   - search
 
 nav:
-    - Introduction: index.md
-    - Quick Installation: quick-guide.md
-    - Command Line Interface:
-        - Arguments: argparse/args.md
-        - Examples: argparse/examples.md
-    - API Reference (external): api/lbsntransform_.html
-    - Additional resources: resources.md
-    - About: about.md
+  - Introduction: index.md
+  - Quick Installation: quick-guide.md
+  - Command Line Interface:
+      - Arguments: argparse/args.md
+      - Examples: argparse/examples.md
+  - API Reference (external): api/lbsntransform_.html
+  - Additional resources: resources.md
+  - About: about.md
