@@ -36,7 +36,7 @@ This approach is independent of the OS used.
 If you have conda package manager, you can install lbsntransform dependencies 
 with the `environment.yml` that is available in the lbsntransform repository:
 
-```yaml
+``` yaml
 {!../environment.yml!}
 ```
 
