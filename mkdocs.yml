@@ -9,6 +9,8 @@ repo_url: https://github.com/Sieboldianus/lbsntransform
 theme:
   name: 'readthedocs'
   highlightjs: true
+  hljs_languages:
+    - yaml
 
 markdown_extensions:
   - toc:
@@ -16,10 +18,7 @@ markdown_extensions:
   - markdown_include.include:
       base_path: docs
   - admonition
-  - codehilite
-
-plugins:
-  - search
+  - fenced_code
 
 nav:
   - Introduction: index.md
