@@ -23,7 +23,7 @@ FLICKR_COUNTRY_MATCH = {
     "country", "timezone", "state", "territory",
     "state/territory", "land", "arrondissement", "prefecture",
     "island", "disputed territory", "overseas collectivity",
-    "overseas region", "island group"}
+    "overseas region", "island group", "kingdom"}
 FLICKR_CITY_MATCH = {
     "city", "town", "region", "special administrative region",
     "county", "district", "zip", "province",
