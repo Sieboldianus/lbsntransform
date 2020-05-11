@@ -157,6 +157,15 @@ class HLLFunctions():
         return date_formatted
 
     @staticmethod
+    def hll_concat_userday(record: lbsn.Post) -> str:
+        """Merge date and user pkey (guid) for measuring user days"""
+        date_merged = HLLFunctions.hll_concat_date(record)
+        user_merged = HLLFunctions.hll_concat_user(record)
+        date_hll = HLLFunctions.hll_concat(
+            [user_merged, date_merged])
+        return date_hll
+
+    @staticmethod
     def hll_concat_yearmonth(record: lbsn.Post) -> str:
         """Concat year and month of post date to string"""
         date_merged = HLLFunctions.merge_dates_post(record)
