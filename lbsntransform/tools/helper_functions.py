@@ -99,7 +99,7 @@ class HelperFunctions():
     def format_base_repr(base):
         """Return formatted string of base"""
         return (
-            f'{base.__name__}\nFacet: {base.facet}, '
+            f'{base.NAME.base}\nFacet: {base.NAME.facet}, '
             f'Key: {base.get_key_value()}, '
             f'Metrics: \n'
             f'{[":".join([k, str(len(v))]) for k, v in base.metrics.items()]}')

@@ -20,7 +20,8 @@ HllBases = Union[
     temporal.DateBase, temporal.MonthBase,
     temporal.YearBase, topical.TermBase,
     topical.EmojiBase, topical.TermLatLngBase,
-    topical.EmojiLatLngBase]
+    topical.HashtagLatLngBase, topical.EmojiLatLngBase,
+    social.CommunityBase]
 
 
 class ProtoHLLMapping():
@@ -144,12 +145,22 @@ class ProtoHLLMapping():
                 base_list.extend(base_records)
             # Topical Facet
             topical_bases = [
-                'hashtag', 'emoji', 'term', '_term_latlng', '_emoji_latlng']
+                'hashtag', 'emoji', 'term', '_term_latlng', '_emoji_latlng',
+                '_hashtag_latlng']
             topical_bases = self.filter_bases(
                 topical_bases, include_lbsn_bases)
             base_records = self.make_bases(
                 facet='topical',
                 bases=topical_bases,
+                record=record)
+            if base_records:
+                base_list.extend(base_records)
+            social_bases = ['community']
+            social_bases = self.filter_bases(
+                social_bases, include_lbsn_bases)
+            base_records = self.make_bases(
+                facet='social',
+                bases=social_bases,
                 record=record)
             if base_records:
                 base_list.extend(base_records)
@@ -238,9 +249,7 @@ class ProtoHLLMapping():
     @staticmethod
     def get_origin_metrics(record) -> hll.HllMetrics:
         """Get hll metrics from lbsn.Origin record"""
-        post_hll = HLF.hll_concat_origin_guid(record)
-        hll_metrics = hll.HllMetrics(post_hll=post_hll)
-        return hll_metrics
+        return
 
     @staticmethod
     def get_country_metrics(record) -> hll.HllMetrics:

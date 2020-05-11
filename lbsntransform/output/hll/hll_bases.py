@@ -164,6 +164,12 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
             # create base for each term
             records.append(
                 base_structure(record=record, term=term))
+    elif base == '_hashtag_latlng':
+        # any hashtag explicitly used
+        tag_terms = HF.filter_terms(record.hashtags)
+        for tag in tag_terms:
+            records.append(
+                base_structure(record=record, hashtag=tag))
     elif base == '_emoji_latlng':
         # any term mentioned in title,
         # body or hashtag

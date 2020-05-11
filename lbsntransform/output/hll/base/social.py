@@ -3,7 +3,7 @@
 """Hll bases for social facet
 """
 
-from typing import Tuple
+from typing import Tuple, Union
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
@@ -61,15 +61,18 @@ class CommunityBase(SocialBase):
     """Extends Social Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='community')
 
-    def __init__(self, record: lbsn.Origin = None):
+    def __init__(self, record: Union[lbsn.Origin, lbsn.Post] = None):
         super().__init__()
         self.attrs['name'] = None
         self.key['id'] = None
         if record is None:
             # init empty
             return
-        self.attrs['name'] = record.DESCRIPTOR.name
-        self.key['id'] = record.origin_id
+        if hasattr(record, "origin_id"):
+            self.key['id'] = record.origin_id
+            self.attrs['name'] = record.DESCRIPTOR.name
+        else:
+            self.key['id'] = record.pkey.origin.origin_id
 
 
 class CultureBase(SocialBase):

@@ -194,6 +194,45 @@ class TermLatLngBase(hll.HllBase):
                 "from lbsn.Post")
 
 
+class HashtagLatLngBase(hll.HllBase):
+    """Composite Base (c-base) that extends from HLL base Class
+
+    Note: To distinguish c-bases which are composite bases combining
+    aspects from multiple facets, they're termed with a leading underscore
+    """
+    NAME = hll.HllBaseRef(facet=FACET, base='_hashtag_latlng')
+
+    def __init__(self, record: lbsn.Post = None, hashtag: str = None):
+        super().__init__()
+        self.key['latitude'] = None
+        self.key['longitude'] = None
+        self.key['hashtag'] = None
+        self.attrs['latlng_geom'] = None
+        self.metrics['date_hll'] = set()
+        if hashtag is None:
+            # init empty
+            return
+        self.key['hashtag'] = hashtag.lower()
+        if record is None:
+            # init empty
+            return
+        if isinstance(record, lbsn.Post):
+            coordinates_geom = record.post_latlng
+            coordinates = HF.get_coordinates_from_ewkt(
+                coordinates_geom
+            )
+            self.key['latitude'] = coordinates.lat
+            self.key['longitude'] = coordinates.lng
+            # additional (optional) attributes
+            # formatted ready for sql upsert
+            self.attrs['latlng_geom'] = HF.return_ewkb_from_geotext(
+                coordinates_geom)
+        else:
+            raise ValueError(
+                "Parsing of LatLngBase only supported "
+                "from lbsn.Post")
+
+
 class EmojiLatLngBase(hll.HllBase):
     """Composite Base (c-base) that extends from HLL base Class
 

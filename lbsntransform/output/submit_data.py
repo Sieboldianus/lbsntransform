@@ -84,7 +84,9 @@ class LBSNTransfer():
             topical.HashtagBase.NAME: dict(),
             topical.EmojiBase.NAME: dict(),
             topical.TermLatLngBase.NAME: dict(),
+            topical.HashtagLatLngBase.NAME: dict(),
             topical.EmojiLatLngBase.NAME: dict(),
+            social.CommunityBase.NAME: dict()
         }
         self.count_round = 0
         if dbformat_output == "lbsn":
