@@ -6,7 +6,7 @@ from .version import __version__
 
 from .lbsntransform_ import LBSNTransform
 from .config.config import BaseConfig
-from .data_input.load_data import LoadData
+from .input.load_data import LoadData
 from .output.hll.shared_structure_proto_hlldb import ProtoHLLMapping
 from .output.lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
 from .output.shared_structure import (GeocodeLocations, LBSNRecordDicts,
