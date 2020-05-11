@@ -33,7 +33,8 @@ PACKAGES_MOD = [
     'ppygis3',
     'shapely',
     'emoji',
-    'requests'
+    'requests',
+    'regex'
 ]
 INCLUDE_FOLDERS_FILES = [('scripts/00_TransferAll_Default.sh')
                          ]

@@ -12,6 +12,7 @@ dependencies:
   - requests
   - nltk
   - psycopg2
+  - regex
   - pip:
     - lbsnstructure>=0.5.1
     - ppygis3>=0.4

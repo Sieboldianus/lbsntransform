@@ -12,6 +12,7 @@ import logging
 # import types based on OS
 import platform
 import re
+import regex
 import string
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
@@ -359,11 +360,46 @@ class HelperFunctions():
         return cleantext
 
     @staticmethod
-    def extract_emoji(str_text: str):
-        """Extract list of emoji from string"""
+    def extract_emoji_fast(str_text: str):
+        """Extract list of emoji from string
+
+        Note:
+            cannot detect grapheme clusters or flags"""
         # str = str.decode('utf-32').encode('utf-32', 'surrogatepass')
         # return list(c for c in str if c in emoji.UNICODE_EMOJI)
-        return list(c for c in str_text if c in emoji.UNICODE_EMOJI)
+        return set(c for c in str_text if c in emoji.UNICODE_EMOJI)
+
+    @staticmethod
+    def extract_emoji(string_with_emoji: str) -> Set[str]:
+        """Extract emoji and flags using regex package
+
+        This is a new version to extract emoji (see old method:
+        _extract_emoji_old). Code source:
+        https://stackoverflow.com/a/49242754/4556479
+        This method supports extracting grapheme clusters,
+        emoji constructed of multiple emoji (the "perceived
+        pictograms")
+
+        Compare:
+        A: _extract_emoji_old:
+        Total emoji count for the 100 most
+        used emoji in selected area: 27722.
+        Total distinct emoji (DEC): 918
+        B: _extract_emoji:
+        Total emoji count for the 100 most
+        used emoji in selected area: 25793.
+        Total distinct emoji (DEC): 1349
+
+        Original Code @ sheldonzy:
+        https://stackoverflow.com/a/49242754/4556479
+        """
+        emoji_set = set()
+        # use \X (eXtended grapheme cluster) regular expression:
+        data = regex.findall(r'\X', string_with_emoji)
+        for grapheme in data:
+            if any(char in emoji.UNICODE_EMOJI for char in grapheme):
+                emoji_set.add(grapheme)
+        return emoji_set
 
     @staticmethod
     def get_rectangle_bounds(points):

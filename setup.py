@@ -42,7 +42,8 @@ setup(name="lbsntransform",
           'requests',
           'geos',
           'numpy',
-          'requests'
+          'requests',
+          'regex'
       ],
       extras_require={
           'nltk_stopwords':  [

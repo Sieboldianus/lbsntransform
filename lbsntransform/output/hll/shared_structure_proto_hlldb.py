@@ -238,7 +238,9 @@ class ProtoHLLMapping():
     @staticmethod
     def get_origin_metrics(record) -> hll.HllMetrics:
         """Get hll metrics from lbsn.Origin record"""
-        return
+        post_hll = HLF.hll_concat_origin_guid(record)
+        hll_metrics = hll.HllMetrics(post_hll=post_hll)
+        return hll_metrics
 
     @staticmethod
     def get_country_metrics(record) -> hll.HllMetrics:

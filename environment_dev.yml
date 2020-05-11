@@ -15,6 +15,7 @@ dependencies:
   - requests
   - bitarray
   - nltk
+  - regex
   - pip:
     - pylint-exit
     - ppygis3
