@@ -1,5 +1,6 @@
 include README.md
 include VERSION
-include lbsntransform/classes/*
+include lbsntransform/data_input/*
 include lbsntransform/config/*
 include lbsntransform/tests/*
+include lbsntransform/tools/*
