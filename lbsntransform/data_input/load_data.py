@@ -22,7 +22,7 @@ from lbsnstructure import lbsnstructure_pb2 as lbsn
 from ..tools.db_connection import DBConnection
 from ..output.shared_structure import GeocodeLocations
 from ..tools.helper_functions import HelperFunctions as HF
-from .mappings.db_query import InputSQL, LBSN_SCHEMA
+from .mappings.db_query import InputSQL, LBSN_SCHEMA, optional_schema_override
 
 # type alias
 LBSNObjects = Union[
@@ -49,7 +49,7 @@ class LoadData():
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
             zip_records=None, skip_until_record=None,
-            exclude_lbsn_objects=None):
+            include_lbsn_objects=None, override_lbsn_query_schema=None):
         self.is_local_input = is_local_input
         self.start_number = 1
         self.continue_number = None
@@ -87,9 +87,9 @@ class LoadData():
         self.file_format = local_file_type
         self.input_lbsn_type = input_lbsn_type
         self.start_id = None
-        if exclude_lbsn_objects is None:
-            exclude_lbsn_objects = []
-        self.exclude_lbsn_objects = exclude_lbsn_objects
+        if include_lbsn_objects is None:
+            include_lbsn_objects = ["post"]
+        self.include_lbsn_objects = include_lbsn_objects
         self.count_glob = 0
         self.current_source = None
         # self.transferlimit = cfg.transferlimit
@@ -104,6 +104,10 @@ class LoadData():
             self.ignore_sources_set = LoadData.load_ignore_sources(
                 ignore_input_source_list)
 
+        self.lbsn_schema = LBSN_SCHEMA
+        if override_lbsn_query_schema:
+            self.lbsn_schema = optional_schema_override(
+                LBSN_SCHEMA, override_lbsn_query_schema)
         # initialize field mapping structure
         self.import_mapper = importer(
             disable_reactionpost_ref,
@@ -248,8 +252,8 @@ class LoadData():
         else:
             # db query
             if self.dbformat_input == "lbsn":
-                for lbsn_type, schema_name, table_name, key_col in LBSN_SCHEMA:
-                    if table_name in self.exclude_lbsn_objects:
+                for lbsn_type, schema_name, table_name, key_col in self.lbsn_schema:
+                    if lbsn_type.lower() not in self.include_lbsn_objects:
                         continue
                     while self.cursor_input:
                         records = self.fetch_json_data_from_lbsn(

@@ -96,7 +96,8 @@ def main():
         source_web=config.source_web,
         skip_until_record=config.skip_until_record,
         zip_records=config.zip_records,
-        exclude_lbsn_objects=config.exclude_lbsn_objects)
+        include_lbsn_objects=config.include_lbsn_objects,
+        override_lbsn_query_schema=config.override_lbsn_query_schema)
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)

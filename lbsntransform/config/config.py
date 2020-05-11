@@ -9,6 +9,7 @@ Config module for parsing input args for lbsntransform package.
 import argparse
 import logging
 from pathlib import Path
+from typing import List, Tuple
 
 from shapely import geos
 
@@ -71,8 +72,9 @@ class BaseConfig():
         self.source_web = False
         self.skip_until_record = None
         self.zip_records = None
-        self.exclude_lbsn_objects = []
+        self.include_lbsn_objects = []
         self.include_lbsn_bases = None
+        self.override_lbsn_query_schema = None
 
         BaseConfig.set_options()
 
@@ -349,26 +351,68 @@ class BaseConfig():
                                    'or "city" to limit output based '
                                    'on min geoaccuracy (default: no limit)',
                                    type=str)
-        settings_args.add_argument("--exclude_lbsn_objects",
+        settings_args.add_argument("--include_lbsn_objects",
                                    help='If processing from lbsn db, '
                                    'provide a comma separated list '
-                                   'of lbsn objects to exclude. May contain: '
-                                   'origin,country,city,place,user_groups,'
-                                   'user,post,post_reaction. Note: Excluded '
+                                   'of [lbsn objects][1] to include. '
+                                   'May contain:  '
+                                   '* origin  '
+                                   '* country  '
+                                   '* city  '
+                                   '* place  '
+                                   '* user_groups  '
+                                   '* user  '
+                                   '* post  '
+                                   '* post_reaction  '
+                                   'Note: Excluded '
                                    'objects will not be queried, but empty '
                                    'objects may be created due to referenced '
-                                   'foreign key relationships.',
+                                   'foreign key relationships. Defaults to '
+                                   '`origin,post`.  '
+                                   '[1]: https://lbsn.vgiscience.org/structure/',
                                    type=str)
         settings_args.add_argument("--include_lbsn_bases",
                                    help='If the target output type is hll, '
                                    'provide a comma separated list '
                                    'of lbsn bases to include. Currently '
-                                   'supported: hashtag,emoji,term,_term_latlng,'
-                                   '_emoji_latlng,monthofyear,month,dayofmonth,'
-                                   'dayofweek,hourofday,year,month,date,'
-                                   'timestamp,country,region,city,place,latlng.'
+                                   'supported:  '
+                                   '* hashtag  '
+                                   '* emoji  '
+                                   '* term  '
+                                   '* _term_latlng  '
+                                   '* _emoji_latlng  '
+                                   '* monthofyear  '
+                                   '* month  '
+                                   '* dayofmonth  '
+                                   '* dayofweek  '
+                                   '* hourofday  '
+                                   '* year  '
+                                   '* month  '
+                                   '* date  '
+                                   '* timestamp  '
+                                   '* country  '
+                                   '* region  '
+                                   '* city  '
+                                   '* place  '
+                                   '* latlng '
+                                   '    '
                                    'Bases not included will be skipped. Per '
                                    'default, all bases will be considered.',
+                                   type=str)
+        settings_args.add_argument("--override_lbsn_query_schema",
+                                   help='Override schema and table name for '
+                                   'lbsn queries on given object from input db. '
+                                   'This can be used, for example, to redirect '
+                                   '`topical.post` queries to another location, '
+                                   'such as a materialized view, e.g. to limit '
+                                   'processing of input data to a specific '
+                                   'query. Format is `lbsn_type,schema.table`'
+                                   ', e.g.:  '
+                                   '```csv'
+                                   'post,newschema.newtable'
+                                   '```'
+                                   ' Argument can be used multiple times.',
+                                   action='append',
                                    type=str)
 
         args = parser.parse_args()
@@ -480,10 +524,34 @@ class BaseConfig():
         if args.min_geoaccuracy:
             self.min_geoaccuracy = self.check_geoaccuracy_input(
                 args.min_geoaccuracy)
-        if args.exclude_lbsn_objects:
-            self.exclude_lbsn_objects = args.exclude_lbsn_objects.split(",")
+        if args.include_lbsn_objects:
+            self.include_lbsn_objects = \
+                args.include_lbsn_objects.lower().split(",")
+        else:
+            self.include_lbsn_objects = ['origin,post']
         if args.include_lbsn_bases:
             self.include_lbsn_bases = args.include_lbsn_bases.split(",")
+        if args.override_lbsn_query_schema:
+            self.override_lbsn_query_schema = self.compile_schema_override(
+                args.override_lbsn_query_schema)
+
+    @classmethod
+    def compile_schema_override(
+            cls, override_lbsn_query_schema: List[str]) -> List[Tuple[str, str]]:
+        """Split lbsn_type from schema.table override"""
+        lbsn_query_schema = []
+        for override in override_lbsn_query_schema:
+            try:
+                lbsn_type, schema_table_override = override.split(
+                    ",")
+            except ValueError as e:
+                raise ValueError(
+                    f"Cannot split lbsn_type from schema.table ({override}). "
+                    f"Make sure override_lbsn_query_schema entries are "
+                    f"formatted correctly, e.g. lbsn_type,schema.table") from e
+            lbsn_query_schema.append(
+                (lbsn_type.lower(), schema_table_override.lower()))
+        return lbsn_query_schema
 
     @staticmethod
     def check_geoaccuracy_input(geoaccuracy_string):

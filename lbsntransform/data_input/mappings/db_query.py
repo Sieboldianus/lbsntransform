@@ -5,7 +5,7 @@ Module for db input connection sql mapping
 """
 
 import enum
-from typing import Union, Optional
+from typing import Union, Optional, List, Tuple
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
 """Schema convention from lbsn db spec"""
@@ -20,6 +20,36 @@ LBSN_SCHEMA = [
     (lbsn.PostReaction().DESCRIPTOR.name,
      "topical", "post_reaction", "reaction_guid"),
 ]
+
+
+def optional_schema_override(
+        LBSN_SCHEMA: List[Tuple[str, str, str, str]],
+        schema_table_overrides: List[Tuple[str, str]]) -> List[Tuple[str, str, str, str]]:
+    """Override schema and table name for selected lbsn objects."""
+    LBSN_SCHEMA_OVERRIDE = []
+    for lbsn_type, schema_name, table_name, key_col in LBSN_SCHEMA:
+        for schema_table_override in schema_table_overrides:
+            lbsn_object_ref, schema_table_override = schema_table_override
+            try:
+                schema_override, table_override = schema_table_override.split(
+                    ".")
+            except ValueError as e:
+                raise ValueError(
+                    f"Cannot split schema and table from override "
+                    f"({schema_table_override}). Make sure "
+                    f"override_lbsn_query_schema entries are formatted "
+                    f"correctly, e.g. schema_override.table_override") from e
+            if lbsn_type.lower() == lbsn_object_ref:
+                # append override
+                LBSN_SCHEMA_OVERRIDE.append(
+                    (lbsn_type, schema_override, table_override, key_col))
+                break
+        else:
+            # append none-overrides
+            # if no match has been found
+            LBSN_SCHEMA_OVERRIDE.append(
+                (lbsn_type, schema_name, table_name, key_col))
+    return LBSN_SCHEMA_OVERRIDE
 
 
 class InputSQL(enum.Enum):
