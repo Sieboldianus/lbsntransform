@@ -13,18 +13,8 @@ from .output.shared_structure import (GeocodeLocations, LBSNRecordDicts,
                                       TimeMonitor)
 from .tools.helper_functions import HelperFunctions as HF
 
-# pdoc documentation exclude format
+# pdoc documentation exclude/include format
 __pdoc__ = {}
-__pdoc__["lbsntransform.config"] = False
-__pdoc__["lbsntransform.input"] = False
-__pdoc__["lbsntransform.input.mappings"] = False
-__pdoc__["lbsntransform.output"] = False
-__pdoc__["lbsntransform.output.csv"] = False
-__pdoc__["lbsntransform.output.hll"] = False
-__pdoc__["lbsntransform.output.hll.base"] = False
-__pdoc__["lbsntransform.output.lbsn"] = False
-__pdoc__["lbsntransform.tools"] = False
-__pdoc__["lbsntransform.tests"] = False
 
 # pdoc documentation include format
 __pdoc__["lbsntransform.__main__"] = True
