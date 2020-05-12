@@ -1,6 +1,3 @@
 include README.md
 include VERSION
-include lbsntransform/input/*
-include lbsntransform/config/*
-include lbsntransform/tests/*
-include lbsntransform/tools/*
+recursive-include lbsntransform/ *.py
