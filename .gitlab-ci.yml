@@ -6,7 +6,7 @@ stages:
   - test
   - mkdocs
   - deploy
-  
+
 test:
   image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
   before_script:
@@ -35,6 +35,7 @@ test:
     - argdown --truncate-help parse_args.py > docs/argparse/args.md
     # to enable all warnings during ci doc generation
     # - export PYTHONWARNINGS='error::UserWarning'
+    - python -c "import nltk;nltk.download('stopwords')"
     - pdoc --config show_type_annotations=True --template-dir docs/apidoc/ --html --output-dir docs/api/ lbsntransform
     # create badges
     - pylint --output-format=text lbsntransform | tee pylint.txt || pylint-exit $?
@@ -58,7 +59,7 @@ test:
     - if:
         $CI_COMMIT_BRANCH == "master" ||
         $CI_COMMIT_BRANCH == "ci-test"
-        
+
 mkdocs:
   stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
