@@ -9,9 +9,15 @@ There are many ways to install python tools, in Windows this can become particul
 
 # Linux
 
+!!! note
+    Use of pip can be problematic, even on Linux. Some sub-dependencies outside python cannot 
+    be managed by pip, such as `libpq-dev`, which is required by [psycopg2](https://www.psycopg.org/install/). 
+    Use [conda](#installation-with-conda) if you're new to python package managers. You've been warned.
+    
 For most Linux users, it is recommended to first create some type of virtual environment, and then install lbsntransform in the virtual env, e.g.:
 
 ```bash
+apt-get install -y libpq-dev # required for psycopg2
 apt-get install python3-venv
 python3 -m venv lbsntransform_env
 source ./lbsntransform_env/bin/activate
