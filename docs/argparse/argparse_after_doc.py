@@ -13,6 +13,7 @@ def format_markdown():
         for line in source_file:
             newline = line.replace('&nbsp;&nbsp;<br>', '  \n')
             newline = newline.replace(':  \n', ':  \n\n')
+            newline = newline.replace(':\nhttps', ': https')
             newline = newline.replace('\n*\n','\n* ')
             newlines.append(newline)
     with open("docs/argparse/args.md", "w") as source_file:
