@@ -33,6 +33,7 @@ test:
     # for mkdocs args page
     - python docs/argparse/argparse_doc.py
     - argdown --truncate-help parse_args.py > docs/argparse/args.md
+    - python docs/argparse/argparse_after_doc.py
     # to enable all warnings during ci doc generation
     # - export PYTHONWARNINGS='error::UserWarning'
     - python -c "import nltk;nltk.download('stopwords')"

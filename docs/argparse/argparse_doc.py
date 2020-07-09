@@ -31,6 +31,10 @@ def extract_argscode():
     # fix argparse name
     parse_args_source = parse_args_source.replace(
         'ArgumentParser()', 'ArgumentParser(prog="lbsntransform")')
+    # replace two empty spaces on str line ends with non-breaking spaces,
+    # protecting line breaks during python-markdown conversion
+    parse_args_source = parse_args_source.replace(
+        "  '\n", "&nbsp;&nbsp;<br>'\n")
     # write prepared source code
     source_file.write(parse_args_source)
     source_file.close()
