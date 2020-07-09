@@ -12,6 +12,7 @@ def format_markdown():
     with open(source_file_path, "r") as source_file:
         for line in source_file:
             newline = line.replace('&nbsp;&nbsp;<br>', '  \n')
+            newline = newline.replace(':  \n', ':  \n\n')
             newline = newline.replace('\n*\n','\n* ')
             newlines.append(newline)
     with open("docs/argparse/args.md", "w") as source_file:
