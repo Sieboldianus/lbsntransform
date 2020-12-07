@@ -10,6 +10,7 @@ import logging
 from typing import Optional, Dict, Any
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.duration_pb2 import Duration
 from shapely import wkb
 
 from ...tools.helper_functions import HelperFunctions as HF
@@ -46,6 +47,14 @@ def copydate_lbsn_attr(lbsn_obj_attr, copy_from_val):
     lbsn_obj_attr.CopyFrom(
         date_pb)
 
+def copyduration_lbsn_attr(lbsn_obj_attr, copy_from_val):
+    """Some protobuf fields cannot be assigned directly,
+    this function applies copyfrom assignment"""
+    duration_pb = Duration()
+    duration_pb.FromString(
+        copy_from_val)
+    lbsn_obj_attr.CopyFrom(
+        duration_pb)
 
 def set_lbsn_pkey(lbsn_obj_pkey, pkey_obj, pkey_val, origin_val):
     """Sets value for lbsn_obj_pkey of pkey_obj if
@@ -101,6 +110,7 @@ class FieldMappingLBSN():
             lbsn.User().DESCRIPTOR.name: cls.extract_user,
             lbsn.Post().DESCRIPTOR.name: cls.extract_post,
             lbsn.PostReaction().DESCRIPTOR.name: cls.extract_postreaction,
+            lbsn.Event().DESCRIPTOR.name: cls.extract_event,
         }
         func_map = FUNC_MAP.get(input_type)
         # create origin always the same
@@ -281,9 +291,9 @@ class FieldMappingLBSN():
             set_lbsn_pkey(
                 post.country_pkey, lbsn.Country(),
                 record.get('country_guid'), origin)
-            set_lbsn_pkey(
-                post.user_pkey, lbsn.User(),
-                record.get('user_guid'), origin)
+        set_lbsn_pkey(
+            post.user_pkey, lbsn.User(),
+            record.get('user_guid'), origin)
         pub_date = record.get('post_publish_date')
         if pub_date:
             copydate_lbsn_attr(
@@ -335,6 +345,67 @@ class FieldMappingLBSN():
                 [user_ref.pkey for user_ref in mentioned_users_list])
         set_lbsn_attr(post, "post_content_license", record)
         return post
+
+    @classmethod
+    def extract_event(cls, record, origin):
+        event = HF.new_lbsn_record_with_id(
+            lbsn.Event(),
+            record.get('event_guid'),
+            origin)
+        set_lbsn_attr(event, "name", record)
+        event_latlng = record.get("event_latlng")
+        if event_latlng:
+            setattr(event, "event_latlng", parse_geom(event_latlng))
+        event_area = record.get("event_area")
+        if event_area:
+            setattr(event, "event_area", parse_geom(event_area))
+        set_lbsn_attr(event, "event_website", record)
+        event_date = record.get('event_date')
+        if event_date:
+            copydate_lbsn_attr(
+                event.event_date,
+                event_date)
+        event_date_start = record.get('event_date_start')
+        if event_date_start:
+            copydate_lbsn_attr(
+                event.event_date_start,
+                event_date_start)
+        event_date_end = record.get('event_date_end')
+        if event_date_end:
+            copydate_lbsn_attr(
+                event.event_date_end,
+                event_date_end)
+        duration = record.get('duration')
+        if duration:
+            copyduration_lbsn_attr(
+                event.duration,
+                duration)
+        place_guid = record.get('place_guid')
+        if place_guid:
+            set_lbsn_pkey(
+                event.place_pkey, lbsn.Place(),
+                record.get('place_guid'), origin)
+        city_guid = record.get('city_guid')
+        if city_guid:
+            set_lbsn_pkey(
+                event.city_pkey, lbsn.City(),
+                record.get('city_guid'), origin)
+        country_guid = record.get('country_guid')
+        if country_guid:
+            set_lbsn_pkey(
+                event.country_pkey, lbsn.Country(),
+                record.get('country_guid'), origin)
+        set_lbsn_pkey(
+            event.user_pkey, lbsn.User(),
+            record.get('user_guid'), origin)
+        set_lbsn_attr(event, "event_description", record)
+        set_lbsn_attr(event, "event_type", record)
+        set_lbsn_attr(event, "event_share_count", record)
+        set_lbsn_attr(event, "event_like_count", record)
+        set_lbsn_attr(event, "event_comment_count", record)
+        set_lbsn_attr(event, "event_views_count", record)
+        set_lbsn_attr(event, "event_engage_count", record)
+        return event
 
     @classmethod
     def extract_postreaction(cls, record):

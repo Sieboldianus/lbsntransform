@@ -357,7 +357,7 @@ class LBSNTransfer():
                 args_isfriend = ','.join(select_friends)
                 insert_sql = \
                     f'''
-                    INSERT INTO social."_user_friends_user" (
+                    INSERT INTO interlinkage."_user_friends_user" (
                         {self.typeNamesHeaderDict["_user_friends_user"]})
                     VALUES {args_isfriend}
                     ON CONFLICT (origin_id, user_guid, friend_guid)
@@ -376,7 +376,7 @@ class LBSNTransfer():
                 args_isconnected = ','.join(select_connected)
                 insert_sql = \
                     f'''
-                        INSERT INTO social."_user_connectsto_user" (
+                        INSERT INTO interlinkage."_user_connectsto_user" (
                             {self.typeNamesHeaderDict["_user_connectsto_user"]})
                         VALUES {args_isconnected}
                         ON CONFLICT (origin_id, user_guid,
@@ -397,7 +397,7 @@ class LBSNTransfer():
                 args_isingroup = ','.join(select_usergroupmember)
                 insert_sql = \
                     f'''
-                    INSERT INTO social."_user_memberof_group" (
+                    INSERT INTO interlinkage."_user_memberof_group" (
                         {self.typeNamesHeaderDict["_user_memberof_group"]})
                     VALUES {args_isingroup}
                     ON CONFLICT (origin_id, user_guid, group_guid)
@@ -417,7 +417,7 @@ class LBSNTransfer():
                 args_isingroup = ','.join(select_usergroupmember)
                 insert_sql = \
                     f'''
-                    INSERT INTO social."_user_follows_group" (
+                    INSERT INTO interlinkage."_user_follows_group" (
                         {self.typeNamesHeaderDict["_user_follows_group"]})
                     VALUES {args_isingroup}
                     ON CONFLICT (origin_id, user_guid, group_guid)
@@ -437,7 +437,7 @@ class LBSNTransfer():
                 args_isingroup = ','.join(select_usermentions)
                 insert_sql = \
                     f'''
-                    INSERT INTO social."_user_mentions_user" (
+                    INSERT INTO interlinkage."_user_mentions_user" (
                         {self.typeNamesHeaderDict["_user_mentions_user"]})
                     VALUES {args_isingroup}
                     ON CONFLICT (origin_id, user_guid, mentioneduser_guid)

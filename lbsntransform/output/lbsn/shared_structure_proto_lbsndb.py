@@ -55,6 +55,13 @@ class ProtoLBSNMapping():
              'user_location_geom, liked_count, active_since, '
              'profile_image_url, user_timezone, user_utc_offset, '
              'user_groups_member, user_groups_follows',
+             lbsn.Event.DESCRIPTOR.name:
+             'origin_id, event_guid, name, event_latlng, event_area, '
+             'event_website, event_date, event_date_start, event_date_end, '
+             'duration, place_guid, city_guid, country_guid, user_guid, '
+             'event_description, event_type, event_share_count, '
+             'event_like_count, event_comment_count, event_views_count, '
+             'event_engage_count',
              lbsn.UserGroup.DESCRIPTOR.name:
              'origin_id, usergroup_guid, usergroup_name, '
              'usergroup_description, member_count, '
@@ -82,6 +89,7 @@ class ProtoLBSNMapping():
             lbsn.User().DESCRIPTOR.name: self.prepare_lbsn_user,
             lbsn.UserGroup().DESCRIPTOR.name: self.prepare_lbsn_usergroup,
             lbsn.Post().DESCRIPTOR.name: self.prepare_lbsn_post,
+            lbsn.Event().DESCRIPTOR.name: self.prepare_lbsn_event,
             lbsn.PostReaction().DESCRIPTOR.name: self.prepare_lbsn_postreaction,
             lbsn.Relationship().DESCRIPTOR.name: self.prepare_lbsn_relation
         }
@@ -243,6 +251,35 @@ class ProtoLBSNMapping():
         return prepared_record
 
     @classmethod
+    def prepare_lbsn_event(cls, record):
+        """Get common attributes for records of type lbsn.Post"""
+        event_record = EventAttrShared(record)
+        prepared_record = (event_record.origin_id,
+                           event_record.event_guid,
+                           event_record.name,
+                           HF.return_ewkb_from_geotext(
+                               event_record.event_latlng),
+                           HF.return_ewkb_from_geotext(
+                               event_record.event_area),
+                           event_record.event_website,
+                           event_record.event_date,
+                           event_record.event_date_start,
+                           event_record.event_date_end,
+                           event_record.duration,
+                           event_record.place_guid,
+                           event_record.city_guid,
+                           event_record.country_guid,
+                           event_record.user_guid,
+                           event_record.event_description,
+                           event_record.event_type,
+                           event_record.event_share_count,
+                           event_record.event_like_count,
+                           event_record.event_comment_count,
+                           event_record.event_views_count,
+                           event_record.event_engage_count)
+        return prepared_record
+
+    @classmethod
     def prepare_lbsn_postreaction(cls, record):
         """Get common attributes for records of type lbsn.PostReaction"""
         post_reaction_record = PostreactionAttrShared(record)
@@ -393,6 +430,37 @@ class PostAttrShared():
         self.latitude = 0
         self.longitude = 0
 
+class EventAttrShared():
+    """Shared structure for lbsn.Event Attributes
+
+    Contains attributes shared among PG DB and LBSN ProtoBuf spec.
+    """
+
+    def __init__(self, record=None):
+        if record is None:
+            record = lbsn.Event()
+
+        self.origin_id = record.pkey.origin.origin_id
+        self.event_guid = record.pkey.id
+        self.name = HF.null_check(record.name)
+        self.event_latlng = HF.null_geom_check(record.event_latlng)
+        self.event_area = HF.null_check(record.event_area)
+        self.event_website = HF.null_check(record.event_website)
+        self.event_date = HF.null_check_datetime(record.event_date)
+        self.event_date_start = HF.null_check_datetime(record.event_date_start)
+        self.event_date_end = HF.null_check_datetime(record.event_date_end)
+        self.duration = HF.null_check(record.duration)
+        self.place_guid = HF.null_check(record.place_pkey.id)
+        self.city_guid = HF.null_check(record.city_pkey.id)
+        self.country_guid = HF.null_check(record.country_pkey.id)
+        self.user_guid = HF.null_check(record.user_pkey.id)
+        self.event_description = HF.null_check(record.event_description)
+        self.event_type = HF.null_check(record.event_type)
+        self.event_share_count = HF.null_check(record.event_share_count)
+        self.event_like_count = HF.null_check(record.event_like_count)
+        self.event_comment_count = HF.null_check(record.event_comment_count)
+        self.event_views_count = HF.null_check(record.event_views_count)
+        self.event_engage_count = HF.null_check(record.event_engage_count)
 
 class PostreactionAttrShared():
     """Shared structure for Postreaction Attributes

@@ -26,6 +26,7 @@ class LBSNSql():
             lbsn.User().DESCRIPTOR.name: cls.user_insertsql,
             lbsn.UserGroup().DESCRIPTOR.name: cls.usergroup_insertsql,
             lbsn.Post().DESCRIPTOR.name: cls.post_insertsql,
+            lbsn.Event().DESCRIPTOR.name: cls.event_insertsql,
             lbsn.PostReaction().DESCRIPTOR.name: cls.postreaction_insertsql,
         }
         return type_sql_mapping
@@ -362,4 +363,59 @@ class LBSNSql():
         # Finally, merge New Entries with existing ones (distinct):
         # extensions.mergeArrays([new],[old]) uses custom mergeArrays
         # function (see function definitions)
+        return insert_sql
+
+    @staticmethod
+    def event_insertsql(values_str: str, record_type):
+        """Insert SQL for event values
+        """
+        insert_sql = \
+            f'''
+            INSERT INTO temporal."event" (
+                {LBSNSql.DB_MAPPING.get_header_for_type(record_type)})
+            VALUES {values_str}
+            ON CONFLICT (origin_id, event_guid)
+            DO UPDATE SET
+                name = COALESCE(EXCLUDED.name,
+                    temporal."event".name),
+                event_latlng = COALESCE(
+                    NULLIF(EXCLUDED.event_latlng,
+                    '{HF.NULL_GEOM_HEX}'),
+                    temporal."event".event_latlng,
+                    '{HF.NULL_GEOM_HEX}'),
+                event_area = COALESCE(EXCLUDED.event_area,
+                    temporal."event".event_area),
+                event_website = COALESCE(EXCLUDED.event_website,
+                    temporal."event".event_website),
+                event_date = COALESCE(EXCLUDED.event_date,
+                    temporal."event".event_date),
+                event_date_start = COALESCE(EXCLUDED.event_date_start,
+                    temporal."event".event_date_start),
+                event_date_end = COALESCE(EXCLUDED.event_date_end,
+                    temporal."event".event_date_end),
+                duration = COALESCE(EXCLUDED.duration,
+                    temporal."event".duration),
+                place_guid = COALESCE(EXCLUDED.place_guid,
+                    temporal."event".place_guid),
+                city_guid = COALESCE(EXCLUDED.city_guid,
+                    temporal."event".city_guid),
+                country_guid = COALESCE(EXCLUDED.country_guid,
+                    temporal."event".country_guid),
+                user_guid = COALESCE(EXCLUDED.user_guid,
+                    temporal."event".user_guid),
+                event_description = COALESCE(EXCLUDED.event_description,
+                    temporal."event".event_description),
+                event_type = COALESCE(EXCLUDED.event_type,
+                    temporal."event".event_type),
+                event_share_count = COALESCE(EXCLUDED.event_share_count,
+                    temporal."event".event_share_count),
+                event_like_count = COALESCE(EXCLUDED.event_like_count,
+                    temporal."event".event_like_count),
+                event_comment_count = COALESCE(EXCLUDED.event_comment_count,
+                    temporal."event".event_comment_count),
+                event_views_count = COALESCE(EXCLUDED.event_views_count,
+                    temporal."event".event_views_count),
+                event_engage_count = COALESCE(EXCLUDED.event_engage_count,
+                    temporal."event".event_engage_count);
+            '''
         return insert_sql
