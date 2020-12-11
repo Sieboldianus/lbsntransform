@@ -7,13 +7,17 @@ Collection of helper functions being used in lbsntransform package.
 
 import datetime as dt
 import json
+import importlib.util
 import logging
 # due to different protocol buffers implementations on Unix, MacOS and Windows
 # import types based on OS
 import platform
 import re
+import inspect
+import sys
 import regex
 import string
+from pathlib import Path
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
 from typing import List, Set, Union, Optional
@@ -685,28 +689,66 @@ class HelperFunctions():
         return {}
 
     @staticmethod
-    def load_importer_mapping_module(origin: int):
+    def _get_file_list(path: Path, ext: str = "py"):
+        """Return file list in folder"""
+        return [file.stem for file in path.glob(f'*.{ext}')]
+
+    @staticmethod
+    def dynamic_get_mapping_module(
+            origin: int,
+            mappings_path: Path = None):
+        """Function to dynamically register input mappings
+
+        Args:
+            path: Override default path with user defined folder.
+        """
+        if mappings_path is None:
+            mappings_module_name = "lbsntransform.input.mappings"
+            if origin == 0:
+                from lbsntransform.input.mappings.field_mapping_lbsn import \
+                    importer as importer
+                return importer
+        else:
+            #if mappings_path not in sys.path:
+            #    sys.path.append(str(mappings_path))
+            mapping_modules = HelperFunctions._get_file_list(
+                mappings_path)
+            init_file_str = "__init__"
+            # if not init_file_str in mapping_modules:
+            #     raise ValueError(
+            #     f"Please add an empty {init_file_str} to "
+            #     f"your custom mappings folder.")
+            mappings_module_name = mappings_path.name
+            for mapping_module in mapping_modules:
+                if mapping_module == init_file_str:
+                    continue
+                spec = importlib.util.spec_from_file_location(
+                    f"{mappings_path.name}.{mapping_module}",
+                    mappings_path / f'{mapping_module}.py')
+                foo = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(foo)
+                if hasattr(foo, 'MAPPING_ID') and foo.MAPPING_ID == origin:
+                    if hasattr(foo, 'importer'):
+                        importer = foo.importer
+                        return importer
+                    raise ImportError("importer missing in {foo}")
+        raise ValueError(
+            f'{origin} not found in {mappings_module_name}. '
+            f'Input type not supported.')
+
+    @staticmethod
+    def load_module(package: str, name: str):
+        name = f"{package}.{name}"
+        __import__(name, fromlist=[''])
+
+    @staticmethod
+    def load_importer_mapping_module(
+            origin: int, mappings_path: Path = None):
         """ Switch import module based on origin input
             1 - Instagram, 2 - Flickr, 3 - Twitter, 4 - Facebook
         """
-        if origin == 0:
-            from lbsntransform.input.mappings.field_mapping_lbsn import \
-                FieldMappingLBSN as importer
-        elif origin == 2:
-            from lbsntransform.input.mappings.field_mapping_flickr import \
-                FieldMappingFlickr as importer
-        elif origin == 21:
-            # Flickr YFCC100M dataset
-            from lbsntransform.input.mappings.field_mapping_yfcc100m import \
-                FieldMappingYFCC100M as importer
-        elif origin == 3:
-            from lbsntransform.input.mappings.field_mapping_twitter import \
-                FieldMappingTwitter as importer
-        elif origin == 41:
-            from lbsntransform.input.mappings.field_mapping_fb import \
-                FieldMappingFBPlace as importer
-        else:
-            raise ValueError("Input type not supported")
+        importer = HelperFunctions.dynamic_get_mapping_module(
+            origin=origin, mappings_path=mappings_path)
         return importer
 
     @staticmethod

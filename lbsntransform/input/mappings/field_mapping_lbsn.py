@@ -13,8 +13,9 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.duration_pb2 import Duration
 from shapely import wkb
 
-from ...tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
+MAPPING_ID = 0
 
 def parse_geom(geom_hex):
     """Parse Postgis hex WKB to geometry WKT"""
@@ -67,7 +68,7 @@ def set_lbsn_pkey(lbsn_obj_pkey, pkey_obj, pkey_val, origin_val):
         pkey_obj.pkey)
 
 
-class FieldMappingLBSN():
+class importer():
     """ Provides mapping function from LBSN (raw) endpoints to
         protobuf lbsnstructure
     """

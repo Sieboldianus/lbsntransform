@@ -49,7 +49,7 @@ class LBSNTransform():
     """
 
     def __init__(
-            self, origin_id=3, logging_level=None,
+            self, importer, logging_level=None,
             is_local_input: bool = False, transfer_count: int = 50000,
             csv_output: bool = True, csv_suppress_linebreaks: bool = True,
             dbuser_output=None, dbserveraddress_output=None, dbname_output=None,
@@ -74,8 +74,7 @@ class LBSNTransform():
         # init global settings
 
         self.transfer_count = transfer_count
-        self.importer = HF.load_importer_mapping_module(
-            origin_id)
+        self.importer = importer
         # get origin name and id from importer
         # e.g. yfcc100m dataset has origin id 21,
         # but is specified as general Flickr origin (2) in importer

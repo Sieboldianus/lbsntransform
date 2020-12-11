@@ -36,9 +36,17 @@ def main():
     # Parse args
     config.parse_args()
 
+    # initialize mapping class
+    # depending on lbsn origin
+    # e.g. 1 = Instagram,
+    #      2 = Flickr, 2.1 = Flickr YFCC100m,
+    #      3 = Twitter)
+    importer = HF.load_importer_mapping_module(
+        config.origin, config.mappings_path)
+
     # initialize lbsntransform
     lbsntransform = LBSNTransform(
-        origin_id=config.origin,
+        importer=importer,
         logging_level=config.logging_level,
         is_local_input=config.is_local_input,
         transfer_count=config.transfer_count,
@@ -61,14 +69,6 @@ def main():
         dbpassword_hllworker=config.dbpassword_hllworker,
         dbserverport_hllworker=config.dbserverport_hllworker,
         include_lbsn_bases=config.include_lbsn_bases)
-
-    # initialize converter class
-    # depending on lbsn origin
-    # e.g. 1 = Instagram,
-    #      2 = Flickr, 2.1 = Flickr YFCC100m,
-    #      3 = Twitter)
-    importer = HF.load_importer_mapping_module(
-        config.origin)
 
     # initialize input reader
     input_data = LoadData(
