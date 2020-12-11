@@ -15,28 +15,28 @@ theme:
     - bash
 
 markdown_extensions:
-  - toc:
-    permalink: true
-  - markdown_include.include:
-    base_path: docs
-  - admonition
-  - fenced_code
-  - sane_lists
+    - toc:
+        permalink: true
+    - markdown_include.include:
+        base_path: docs
+    - admonition
+    - fenced_code
+    - sane_lists
 
 nav:
-  - Introduction: index.md
-  - User Guide:
-    - Quick Installation: quick-guide.md
-    - Use Cases: use-cases.md
-    - Input Types: input-types.md
-    - Mappings:
-        - Input Mappings: input-mappings.md
-        - Output Mappings: output-mappings.md
-    - Command Line Interface:
-        - Arguments: argparse/args.md
-        - Examples: argparse/examples.md
-    - Developers:
-        - Importing lbsntransform as a package: package.md
-        - API Reference (external): api/lbsntransform_.html
-    - Additional resources: resources.md
-  - About: about.md
+    - Introduction: index.md
+    - User Guide:
+        - Quick Installation: quick-guide.md
+        - Use Cases: use-cases.md
+        - Input Types: input-types.md
+        - Mappings:
+            - Input Mappings: input-mappings.md
+            - Output Mappings: output-mappings.md
+        - Command Line Interface:
+            - Arguments: argparse/args.md
+            - Examples: argparse/examples.md
+        - Developers:
+            - Importing lbsntransform as a package: package.md
+            - API Reference (external): api/lbsntransform_.html
+        - Additional resources: resources.md
+    - About: about.md
