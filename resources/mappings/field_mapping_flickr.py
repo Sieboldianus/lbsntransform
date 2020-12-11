@@ -12,10 +12,10 @@ from typing import Optional
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from ...tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
-
-class FieldMappingFlickr():
+MAPPING_ID = 2
+class importer():
     """ Provides mapping function from Flickr endpoints to
         protobuf lbsnstructure
     """

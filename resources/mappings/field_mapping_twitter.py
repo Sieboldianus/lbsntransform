@@ -13,10 +13,10 @@ import shapely.geometry as geometry
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from shapely.geometry.polygon import Polygon
 
-from ...tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
-
-class FieldMappingTwitter():
+MAPPING_ID = 3
+class importer():
     """ Provides mapping function from Twitter endpoints to
         protobuf lbsnstructure
     """

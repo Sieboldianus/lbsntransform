@@ -11,10 +11,10 @@ import re
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from ...tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
-
-class FieldMappingFBPlace():
+MAPPING_ID = 41
+class importer():
     """ Provides mapping function from Facebook lbsn.Place Graph endpoints to
         protobuf lbsnstructure
     """

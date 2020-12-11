@@ -13,9 +13,11 @@ from typing import List, Optional
 
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from ...tools.helper_functions import HelperFunctions as HF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 # pylint: disable=no-member
+
+MAPPING_ID = 21
 
 # module level constants
 # for FLickr yfcc100m mapping
@@ -43,7 +45,7 @@ FLICKR_PLACE_MATCH = {
     "miscellaneous", "suburb"}
 
 
-class FieldMappingYFCC100M():
+class importer():
     """ Provides mapping function from Flickr YFCC100m to
         protobuf lbsnstructure
     """
@@ -172,7 +174,7 @@ class FieldMappingYFCC100M():
             post_record.user_pkey.CopyFrom(user_record.pkey)
         lbsn_records.append(user_record)
         post_record.post_latlng = self.flickr_extract_postlatlng(record)
-        geoaccuracy = FieldMappingYFCC100M.flickr_map_geoaccuracy(
+        geoaccuracy = importer.flickr_map_geoaccuracy(
             record[14])
         if geoaccuracy:
             post_record.post_geoaccuracy = geoaccuracy
@@ -215,7 +217,7 @@ class FieldMappingYFCC100M():
             )))
         if record_tags_list:
             for tag in record_tags_list:
-                tag = FieldMappingYFCC100M.clean_tags_from_flickr(tag)
+                tag = importer.clean_tags_from_flickr(tag)
                 post_record.hashtags.append(tag)
         record_machine_tags = list(
             set(filter(None, [unquote(mtag) for mtag in re.split("[,+]+", record[11])])))
@@ -267,7 +269,7 @@ class FieldMappingYFCC100M():
         place_records = record[1].split(",")
         for place_record in place_records:
             lbsn_place_record = \
-                FieldMappingYFCC100M.process_place_record(
+                importer.process_place_record(
                     place_record, self.origin)
             lbsn_records.append(lbsn_place_record)
         # create or update post record with entries from place record
@@ -423,7 +425,7 @@ class FieldMappingYFCC100M():
                 or l_lng > 180 or l_lng < -180):
             l_lat, l_lng = 0, 0
             self.send_to_null_island()
-        return FieldMappingYFCC100M.lat_lng_to_wkt(l_lat, l_lng)
+        return importer.lat_lng_to_wkt(l_lat, l_lng)
 
     @staticmethod
     def lat_lng_to_wkt(lat, lng):
