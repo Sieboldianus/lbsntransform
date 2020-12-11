@@ -1,4 +1,4 @@
-# Input type: file, url, or database?
+# Input type: File, URL, or Database?
 
 lbsntransform can read data from different common types of data sources:
 
