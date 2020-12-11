@@ -100,11 +100,12 @@ For example:
 lbsntransform --include_lbsn_bases hashtag,place,date,community
 ```
 
-would fill/update entries of the hlldb structures:  
-- topical.hashtag
-- spatial.place
-- temporal.date
-- social.community
+..would fill/update entries of the hlldb structures:  
+
+- topical.hashtag  
+- spatial.place  
+- temporal.date  
+- social.community  
 
 This name refers to `schema.table`.
 

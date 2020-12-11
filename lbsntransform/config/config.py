@@ -75,6 +75,7 @@ class BaseConfig():
         self.include_lbsn_objects = []
         self.include_lbsn_bases = None
         self.override_lbsn_query_schema = None
+        self.mappings_path = None
 
         BaseConfig.set_options()
 
@@ -288,6 +289,12 @@ class BaseConfig():
                                    ' Provide a path to a list of input_source '
                                    'types that will be ignored (e.g. to '
                                    'ignore certain bots etc.)',
+                                   type=str)
+        settings_args.add_argument("--mappings_path",
+                                   help='Path mappings folder. '
+                                   'Provide a path to a custom folder '
+                                   'that contains an __init__.py and '
+                                   'one or more mapping modules.',
                                    type=str)
         settings_args.add_argument("--input_lbsn_type",
                                    help='Input type, e.g. "post", "profile", '
@@ -523,6 +530,8 @@ class BaseConfig():
             self.zip_records = True
         if args.skip_until_record:
             self.skip_until_record = args.skip_until_record
+        if args.mappings_path:
+            self.mappings_path = Path(args.mappings_path)
         if args.min_geoaccuracy:
             self.min_geoaccuracy = self.check_geoaccuracy_input(
                 args.min_geoaccuracy)
