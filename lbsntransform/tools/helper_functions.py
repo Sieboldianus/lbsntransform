@@ -700,6 +700,7 @@ class HelperFunctions():
         """Function to dynamically register input mappings
 
         Args:
+            origin: The MAPPING_ID to identify the mapping module.
             path: Override default path with user defined folder.
         """
         if mappings_path is None:
@@ -709,15 +710,9 @@ class HelperFunctions():
                     importer as importer
                 return importer
         else:
-            #if mappings_path not in sys.path:
-            #    sys.path.append(str(mappings_path))
             mapping_modules = HelperFunctions._get_file_list(
                 mappings_path)
             init_file_str = "__init__"
-            # if not init_file_str in mapping_modules:
-            #     raise ValueError(
-            #     f"Please add an empty {init_file_str} to "
-            #     f"your custom mappings folder.")
             mappings_module_name = mappings_path.name
             for mapping_module in mapping_modules:
                 if mapping_module == init_file_str:
@@ -725,13 +720,13 @@ class HelperFunctions():
                 spec = importlib.util.spec_from_file_location(
                     f"{mappings_path.name}.{mapping_module}",
                     mappings_path / f'{mapping_module}.py')
-                foo = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(foo)
-                if hasattr(foo, 'MAPPING_ID') and foo.MAPPING_ID == origin:
-                    if hasattr(foo, 'importer'):
-                        importer = foo.importer
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                if hasattr(module, 'MAPPING_ID') and module.MAPPING_ID == origin:
+                    if hasattr(module, 'importer'):
+                        importer = module.importer
                         return importer
-                    raise ImportError("importer missing in {foo}")
+                    raise ImportError("importer missing in {module}")
         raise ValueError(
             f'{origin} not found in {mappings_module_name}. '
             f'Input type not supported.')
