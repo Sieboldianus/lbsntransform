@@ -56,7 +56,7 @@ lbsntransform --origin 21 \
 
 # Custom Input Mappings
 
-Start with any of the predefined mappings, either from [field_mapping_lbsn.py](lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html),
+Start with any of the predefined mappings, either from [field_mapping_lbsn.py](/lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html),
 or [field_mapping_twitter.py](https://gitlab.vgiscience.de/lbsn/lbsntransform/resources/field_mapping_twitter.py) (JSON) and
 [field_mapping_yfcc100m.py](https://gitlab.vgiscience.de/lbsn/lbsntransform/resources/field_mapping_yfcc100m.py) (CSV).
 

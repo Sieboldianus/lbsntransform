@@ -64,7 +64,7 @@ of type origin and post (default).
 Use `--include_lbsn_bases` to specify which output data you want to convert to.
 
 We refer to the different output structures as "bases", and they are defined 
-in output mappings in [lbsntransform/input/field_mapping_lbsn.py](lbsntransform/docs/api/output/hll/hll_bases.html),
+in output mappings in [lbsntransform/input/field_mapping_lbsn.py](/lbsntransform/docs/api/output/hll/hll_bases.html),
 
 Bases can be separated by comma and may include:
 
@@ -122,7 +122,7 @@ The name refers to `schema.table` in the Postgres implementation.
     inserted if primary keys do not exist yet, or updated, using `hll_union()`.
 
 It is possible to define own output hll db mappings. The best place
-to start is [lbsntransform/input/field_mapping_lbsn.py](lbsntransform/docs/api/output/hll/hll_bases.html).
+to start is [lbsntransform/input/field_mapping_lbsn.py](/lbsntransform/docs/api/output/hll/hll_bases.html).
 
 Have a look at the pre-defined bases and add any additional needed. It is recommended
 to use inheritance. After adding your own mappings, the hlldb must be prepared with
