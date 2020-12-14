@@ -13,8 +13,8 @@ lbsntransform --mappings_path ./resources/mappings/
 ```
 
 If no path is provided, `lbsn raw` is assumed as input, for which
-the file mapping is available in [lbsntransform/input/field_mapping_lbsn.py](lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html),
-including lbsn db query syntax defined in [lbsntransform/input/db_query.py](lbsntransform/docs/api/input/mappings/db_query.html).
+the file mapping is available in [lbsntransform/input/field_mapping_lbsn.py](/lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html),
+including lbsn db query syntax defined in [lbsntransform/input/db_query.py](/lbsntransform/docs/api/input/mappings/db_query.html).
 
 Predefined mappings exist for the [Flickr YFCC100M dataset](https://lbsn.vgiscience.org/yfcc-introduction/) (CSV) and Twitter (JSON).
 
@@ -26,7 +26,7 @@ If the git repository is cloned to a local folder, use
 Input mappings must have some specific attributes to be recognized.
 
 Primarily, a class constant "MAPPING_ID" is used to load mappings, 
-e.g. the [field_mapping_lbsn.py](lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html)
+e.g. the [field_mapping_lbsn.py](/lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html)
 has the following module level constant:
 ```py
 MAPPING_ID = 0
