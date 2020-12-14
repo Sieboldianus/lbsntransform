@@ -64,7 +64,7 @@ of type origin and post (default).
 Use `--include_lbsn_bases` to specify which output data you want to convert to.
 
 We refer to the different output structures as "bases", and they are defined 
-in output mappings in [lbsntransform/input/field_mapping_lbsn.py](/lbsntransform/docs/api/output/hll/hll_bases.html),
+in [lbsntransform.output.hll.hll_bases](/lbsntransform/docs/api/output/hll/hll_bases.html),
 
 Bases can be separated by comma and may include:
 
