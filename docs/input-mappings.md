@@ -18,7 +18,7 @@ including lbsn db query syntax defined in [lbsntransform/input/db_query.py](/lbs
 
 Predefined mappings exist for the [Flickr YFCC100M dataset](https://lbsn.vgiscience.org/yfcc-introduction/) (CSV) and Twitter (JSON).
 
-Have a look at the two mappings in the [resources folder](https://gitlab.vgiscience.de/lbsn/lbsntransform/resources).
+Have a look at the two mappings in the [resources folder](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/tree/master/resources/mappings).
 
 If the git repository is cloned to a local folder, use
 `--mappings_path ./resources/mappings/` to load Flickr or Twitter mappings.
