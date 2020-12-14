@@ -41,7 +41,8 @@ To load data from Twitter json, use
 lbsntransform --origin 3 \
               --mappings_path ./resources/mappings/ \
               --file_input \
-              --file_type "json"
+              --file_type "json" \
+              --mappings_path ./resources/mappings/
 ```
 
 To load data from Flickr YFCC100M, use 
@@ -51,7 +52,8 @@ lbsntransform --origin 21 \
               --mappings_path ./resources/mappings/ \
               --file_input \
               --file_type "csv" \
-              --csv_delimiter $'\t'
+              --csv_delimiter $'\t' \
+              --mappings_path ./resources/mappings/
 ```
 
 # Custom Input Mappings

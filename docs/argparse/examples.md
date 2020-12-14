@@ -15,7 +15,8 @@ lbsntransform --origin 3 \
     --file_input \
     --file_type 'json' \
     --transferlimit 1000 \
-    --csv_output
+    --csv_output \
+    --mappings_path ./resources/mappings/
 
 ```
 
@@ -52,7 +53,8 @@ lbsntransform --origin 21 \
     --file_type "csv" \
     --zip_records \
     --skip_until_record 7373485 \
-    --transferlimit 10000
+    --transferlimit 10000 \
+    --mappings_path ./resources/mappings/
 ```
 
 In the example above,
@@ -112,7 +114,8 @@ lbsntransform --origin 21 \
     --dbname_hllworker "hllworkerdb" \
     --csv_delimiter $'\t' \
     --file_type "csv" \
-    --zip_records
+    --zip_records \
+    --mappings_path ./resources/mappings/
 ```
 
 

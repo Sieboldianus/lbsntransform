@@ -25,7 +25,6 @@ The following cli arguments are available for the two types.
         * `--input_path_url 01_Input` Read from the relative subfolder "01_Input" (default).
         * `--input_path_url ~/data/` Read from the user's home folder "data".
         * `--input_path_url /c/tmp/data` Read from a WSL mounted subdir from Windows.
-        *  "/d/03_EvaVGI/01_Daten/02_FlickrCommons/Flickr_Commons_100Million_YFCC100M_dataset/" \
     * `--recursive_load` to recursively process local sub directories (default depth: 2).
     * `--skip_until_file x` to process all files until a file name with name `x` is found
     * `--zip_records` Allows to zip records from multiple sources using semi-colon (`;`), e.g.:

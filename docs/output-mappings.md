@@ -122,10 +122,10 @@ The name refers to `schema.table` in the Postgres implementation.
     inserted if primary keys do not exist yet, or updated, using `hll_union()`.
 
 It is possible to define own output hll db mappings. The best place
-to start is [lbsntransform/input/field_mapping_lbsn.py](/lbsntransform/docs/api/output/hll/hll_bases.html).
+to start is [lbsntransform.output.hll.hll_bases](/lbsntransform/docs/api/output/hll/hll_bases.html).
 
 Have a look at the pre-defined bases and add any additional needed. It is recommended
 to use inheritance. After adding your own mappings, the hlldb must be prepared with
 respective table structures. Have a look at the 
-[predefined structures available](https://gitlab.vgiscience.de/lbsn/structure/hlldb).
+[predefined structures available](https://gitlab.vgiscience.de/lbsn/structure/hlldb/-/blob/master/structure/98-create-tables.sql).
 
