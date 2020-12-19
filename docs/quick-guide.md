@@ -27,23 +27,23 @@ conda env create -f environment.yml
 conda activate lbsntransform
 ```
 
-- either use distutils, linking the lbsntransform folder.
+Either use distutils, linking the lbsntransform folder.
 
-  ```
-  python setup.py install develop
-  ```
-  
-  This is the recommended way if you want to edit files, or update to
-  the latest version using git.
+```
+python setup.py install develop
+```
 
-  The `lbsntransform` package will be directly linked to the folder.
+This is the recommended way if you want to edit files, or update to
+the latest version using git.
 
-- or, use pip. This will create a static installation that needs
-  to be manually upgraded when new package versions appear.
+The `lbsntransform` package will be directly linked to the folder.
 
-  ```
-  pip install . --no-deps
-  ```
+Or, use pip. This will create a static installation that needs
+to be manually upgraded when new package versions appear.
+
+```
+pip install . --no-deps
+```
 
 !!! note "Why isn't the package available on conda-forge?"
     This is planned to happen in one of the next versions..
