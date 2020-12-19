@@ -45,7 +45,7 @@ conda activate lbsntransform
   pip install . --no-deps
   ```
 
-??? Why isn't the package available on conda-forge?
+!!! note "Why isn't the package available on conda-forge?"
     This is planned to happen in one of the next versions..
 
 # Windows

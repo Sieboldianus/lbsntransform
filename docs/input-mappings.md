@@ -135,7 +135,7 @@ class importer():
 * Both `parse_csv_record()` and `parse_json_record()` must return a list of lbsn Objects.
     
 
-!!! Note
+!!! note
     For one lbsn origin, many mappings may exist. For example, 
     for the above example origin with id `99`, you may have 
     mappings with ids `991`, `992`, `993` etc. This can be used to 

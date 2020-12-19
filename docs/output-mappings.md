@@ -51,7 +51,7 @@ It further allows to separate processing into individual components.
 
 If no hll worker is available, hlldb may be used.
 
-??? Why do I need a database connection?
+!!! note "Why do I need a database connection?"
     There's a [python package](https://github.com/AdRoll/python-hll) available that
     allows making hll calculations in python. However, it is not as performant
     as the native Postgres implementation.
@@ -114,7 +114,7 @@ lbsntransform --include_lbsn_bases hashtag,place,date,community
 
 The name refers to `schema.table` in the Postgres implementation.
 
-!!! Upsert (Insert or Update)
+!!! note "Upsert (Insert or Update)"
     Because it is entirely unknown to lbsntransform whether output
     records (primary keys) already exist, any data is transferred using the
     [Upsert](https://wiki.postgresql.org/wiki/UPSERT) syntax, which means
