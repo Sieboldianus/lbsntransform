@@ -783,9 +783,9 @@ class HelperFunctions():
     def check_notice_empty_post_guid(post_guid):
         """Check if post_guid empty and if, raise warning"""
         if not post_guid:
-            logging.getLogger('__main__').warning(f'No PostGuid\n\n'
-                                                  f'{post_guid}')
-            # input("Press Enter to continue... (entry will be skipped)")
+            logging.getLogger('__main__').warning(
+                f'No PostGuid\n\n'
+                f'{post_guid}')
             return False
         return True
 
