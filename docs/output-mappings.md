@@ -1,6 +1,6 @@
 **lbsntransform** can output data to a database with the [common lbsn structure](), 
 called [rawdb](https://gitlab.vgiscience.de/lbsn/databases/rawdb)
-or the privacy-aware version, called [hlldb](https://gitlab.vgiscience.de/lbsn/databases/hllb).
+or the privacy-aware version, called [hlldb](https://gitlab.vgiscience.de/lbsn/databases/hlldb).
 
 **Examples:**
 
@@ -51,6 +51,11 @@ It further allows to separate processing into individual components.
 
 If no hll worker is available, hlldb may be used.
 
+!!! note "Why do I need a database connection?"
+    There's a [python package](https://github.com/AdRoll/python-hll) available that
+    allows making hll calculations in python. However, it is not as performant
+    as the native Postgres implementation.
+    
 Use `--include_lbsn_objects` to specify which input data you want to convert to 
 the privacy aware version. For example, `--include_lbsn_objects "origin,post"`
 would process [lbsn objects](https://lbsn.vgiscience.org/structure/) 
@@ -58,8 +63,8 @@ of type origin and post (default).
 
 Use `--include_lbsn_bases` to specify which output data you want to convert to.
 
-We call this "bases", and they are defined in output mappings in
-[lbsntransform/input/field_mapping_lbsn.py](/api/output/hll/hll_bases.html),
+We refer to the different output structures as "bases", and they are defined 
+in [lbsntransform.output.hll.hll_bases](/lbsntransform/docs/api/output/hll/hll_bases.html),
 
 Bases can be separated by comma and may include:
 
@@ -100,19 +105,27 @@ For example:
 lbsntransform --include_lbsn_bases hashtag,place,date,community
 ```
 
-..would fill/update entries of the hlldb structures:  
+..would convert and transfer any input data to the hlldb structures:  
 
-- topical.hashtag  
-- spatial.place  
-- temporal.date  
-- social.community  
+- `topical.hashtag`  
+- `spatial.place`  
+- `temporal.date`  
+- `social.community`  
 
-This name refers to `schema.table`.
+The name refers to `schema.table` in the Postgres implementation.
+
+!!! note "Upsert (Insert or Update)"
+    Because it is entirely unknown to lbsntransform whether output
+    records (primary keys) already exist, any data is transferred using the
+    [Upsert](https://wiki.postgresql.org/wiki/UPSERT) syntax, which means
+    `INSERT ... ON CONFLICT UPDATE`. This means that records are either 
+    inserted if primary keys do not exist yet, or updated, using `hll_union()`.
 
 It is possible to define own output hll db mappings. The best place
-to start is [lbsntransform/input/field_mapping_lbsn.py](/api/output/hll/hll_bases.html).
+to start is [lbsntransform.output.hll.hll_bases](/lbsntransform/docs/api/output/hll/hll_bases.html).
+
 Have a look at the pre-defined bases and add any additional needed. It is recommended
 to use inheritance. After adding your own mappings, the hlldb must be prepared with
 respective table structures. Have a look at the 
-[predefined structures available](https://gitlab.vgiscience.de/lbsn/structure/hlldb).
+[predefined structures available](https://gitlab.vgiscience.de/lbsn/structure/hlldb/-/blob/master/structure/98-create-tables.sql).
 

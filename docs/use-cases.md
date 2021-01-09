@@ -17,5 +17,5 @@ The following two primary use cases exist:
 
 For any conversion,  
 
-- the input type must be provided, see [input-types](/input-types)  
-- a mapping must exist, see [input-mappings](/input-mappings)  
+- the input type must be provided, see [input-types](/lbsntransform/docs/input-types)  
+- a mapping must exist, see [input-mappings](/lbsntransform/docs/input-mappings)  
