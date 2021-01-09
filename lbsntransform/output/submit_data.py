@@ -6,6 +6,7 @@ Module for storing common Proto LBSN Structure to PG DB.
 
 # pylint: disable=no-member
 
+import traceback
 import logging
 import sys
 from typing import Any, Dict, List, Tuple, Union
@@ -254,8 +255,16 @@ class LBSNTransfer():
         """
         prepared_records = []
         for record_item in batch_item:
-            prepared_record = self.db_mapping.func_prepare_selector(
-                record_item)
+            try:
+                prepared_record = self.db_mapping.func_prepare_selector(
+                    record_item)
+            except Exception:
+                print(
+                    f'Could not process record:\n'
+                    f'{record_item}')
+                track = traceback.format_exc()
+                print(f'Traceback: {track}')
+                sys.exit(1)
             if prepared_record:
                 prepared_records.append(prepared_record)
         return prepared_records
