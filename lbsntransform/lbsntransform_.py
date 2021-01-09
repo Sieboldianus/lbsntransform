@@ -149,7 +149,7 @@ class LBSNTransform():
             self.store_lbsn_records()
 
     def store_lbsn_records(self):
-        """Stores processed LBSN Records to chosen outpur format
+        """Stores processed LBSN Records to chosen output format
         """
         self.output.store_lbsn_record_dicts(self.lbsn_records)
         self.output.commit_changes()
