@@ -231,6 +231,21 @@ class HelperFunctions():
         return coordinates
 
     @staticmethod
+    def extract_hashtags_from_string(
+        text_str: str) -> List[str]:
+        """Extract hashtags with leading hash-character (#) from string
+
+        - removes # from hashtags
+        - removes duplicates
+        - removes special chars (emoji etc.) from hashtags, e.g.:
+            - input: "#germany🇩🇪"
+            - output: [germany]
+        """
+        hashtag_pattern = re.compile('(?i)(?<=\#)\w+')
+        hashtag_list = hashtag_pattern.findall(text_str)
+        return set(hashtag_list)
+
+    @staticmethod
     def json_read_wrapper(gen):
         """Wraps json iterator and catches any error"""
         while True:
