@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.15.0 (2021-01-09)
+### Feature
+* Add method for hashtag extraction from string ([`134119c`](https://github.com/Sieboldianus/lbsntransform/commit/134119c2c774ea5b952bea2c52d8d49b5bd425f4))
+* Dynamic load of mapping modules ([`09de72f`](https://github.com/Sieboldianus/lbsntransform/commit/09de72f23b5465e5928267d118c132607f5c9a74))
+
+### Fix
+* Improved exception reporting for malformed records ([`b7b83e2`](https://github.com/Sieboldianus/lbsntransform/commit/b7b83e2bfb96aa179ba791186623aaaf75b026db))
+
 ## v0.14.1 (2021-01-06)
 ### Fix
 * Catch any geos.WKTReader() exceptions ([`14f7721`](https://github.com/Sieboldianus/lbsntransform/commit/14f7721902cd8a42304f6a80ff6e8d53263684a1))
