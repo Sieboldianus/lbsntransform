@@ -636,13 +636,10 @@ class HelperFunctions():
         if text is None:
             # keep Null geometries, e.g. for geom_area columns
             return None
-        try:
-            geom = wkt.loads(text)
-            # Set SRID to WGS1984
-            geos.lgeos.GEOSSetSRID(geom._geom, 4326)
-            geom = geom.wkb_hex
-        except:
-            return None
+        geom = wkt.loads(text)
+        # Set SRID to WGS1984
+        geos.lgeos.GEOSSetSRID(geom._geom, 4326)
+        geom = geom.wkb_hex
         return geom
 
     @staticmethod
