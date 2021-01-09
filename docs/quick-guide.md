@@ -27,23 +27,22 @@ conda env create -f environment.yml
 conda activate lbsntransform
 ```
 
-Either use distutils, linking the lbsntransform folder.
-
-```
-python setup.py install develop
-```
-
-This is the recommended way if you want to edit files, or update to
-the latest version using git.
-
-The `lbsntransform` package will be directly linked to the folder.
-
-Or, use pip. This will create a static installation that needs
+Either, use the release version from pypi. This will create a static installation that needs
 to be manually upgraded when new package versions appear.
 
+```bash
+pip install lbsntransform --no-deps --upgrade
 ```
-pip install . --no-deps
+
+Or use pip `--editable`, linking the lbsntransform folder:
+
+```bash
+pip install . --editable --no-deps
 ```
+
+This is the recommended way if you want to edit files, or use the latest commits from the repository.
+
+The `lbsntransform` package will be directly linked to the folder.
 
 !!! note "Why isn't the package available on conda-forge?"
     This is planned to happen in one of the next versions..
@@ -55,7 +54,7 @@ There are many ways to install python tools, in Windows this can become particul
 1. For most Windows users, the recommended way is to install lbsntransform with [conda package manager](#installation-with-conda)
 2. If you _need_ to install with pip in Windows, a possible approach is to install all dependencies first (use [Gohlke wheels] if necessary) and then install lbsntransform with 
 
-```python
+```bash
 pip install lbsntransform --no-deps
 ```
 # Linux
