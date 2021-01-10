@@ -58,7 +58,7 @@ Afterwards, install lbsntransform using pip, without dependencies.
 ```bash
 conda activate lbsntransform
 pip install lbsntransform --no-deps --upgrade
-# or locally from the latest commits in master
+# or locally, from the latest commits on master
 # pip install . --no-deps --upgrade
 ```
 
