@@ -20,7 +20,7 @@ by [Dunkel et al. (2018)](https://www.tandfonline.com/doi/full/10.1080/13658816.
 
 The GDPR directly requests Social Media Network operators to allow 
 users to transfer accounts and data in-between services.
-While there are attempts by Google, Facebook etc. (e.g. see the [data-transfer-prject][data-transfer-prject]), 
+While there are attempts by Google, Facebook etc. (e.g. see the [data-transfer-project][data-transfer-project]), 
 this is not currently possible. With the lbsnstructure, a primary motivation is to systematically 
 characterize LBSN data aspects in a common, cross-network data scheme that enables privacy-by-design 
 for connected software, data handling and database design.
@@ -153,7 +153,7 @@ see the [LICENSE.md](LICENSE.md) file for details.
 [lbsnstructure]: https://lbsn.vgiscience.org/structure/
 [lbsnpost]: https://lbsn.vgiscience.org/structure/#post
 [lbsnorigin]: https://lbsn.vgiscience.org/structure/#origin
-[data-transfer-prject]: https://datatransferproject.dev/
+[data-transfer-project]: https://datatransferproject.dev/
 [rawdb]: https://gitlab.vgiscience.de/lbsn/databases/rawdb
 [hlldb]: https://gitlab.vgiscience.de/lbsn/databases/hlldb
 [lbsnraw]: lbsntransform/input/mappings/field_mapping_lbsn.py
