@@ -86,7 +86,7 @@ pip install lbsntransform
 ```bash
 git clone https://github.com/Sieboldianus/lbsntransform.git
 cd lbsntransform
-python setup.py install
+pip install .
 ```
 
 [1]: https://stackoverflow.com/q/27734053/4556479#comment43880476_27734053
