@@ -459,7 +459,8 @@ class BaseConfig():
         if args.dry_run:
             self.dry_run = True
         if args.csv_output:
-            self.csv_output = True
+            raise NotImplementedError(
+                "CSV output is currently not available.")
         if args.dbformat_input:
             self.dbformat_input = args.dbformat_input
         if args.origin:
