@@ -68,7 +68,8 @@ def main():
         dbname_hllworker=config.dbname_hllworker,
         dbpassword_hllworker=config.dbpassword_hllworker,
         dbserverport_hllworker=config.dbserverport_hllworker,
-        include_lbsn_bases=config.include_lbsn_bases)
+        include_lbsn_bases=config.include_lbsn_bases,
+        dry_run=config.dry_run)
 
     # initialize input reader
     input_data = LoadData(
@@ -131,7 +132,8 @@ def main():
 
     # final report
     lbsntransform.log.info(
-        f'\n\nProcessed {input_data.count_glob} input records '
+        f'\n\n{"".join([f"(Dry Run){chr(10)}" if config.dry_run else ""])}'
+        f'Processed {input_data.count_glob} input records '
         f'(Input {input_data.start_number} to '
         f'{input_data.continue_number}). '
         f'\n\nIdentified {lbsntransform.processed_total} LBSN records, '

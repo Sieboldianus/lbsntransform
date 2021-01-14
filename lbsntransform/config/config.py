@@ -76,6 +76,7 @@ class BaseConfig():
         self.include_lbsn_bases = None
         self.override_lbsn_query_schema = None
         self.mappings_path = None
+        self.dry_run = None
 
         BaseConfig.set_options()
 
@@ -94,11 +95,15 @@ class BaseConfig():
                             'Defaults to 0: LBSN '
                             '(1 - Instagram, 2 - Flickr, 3 - Twitter)',
                             type=int)
+        parser.add_argument("--dry-run",
+                            action='store_true',
+                            help='Perform a trial run  '
+                            'with no changes made '
+                            'to database/output')
         # Local Input
         local_input_args = parser.add_argument_group('Local Input')
         local_input_args.add_argument('-l', "--file_input",
                                       action='store_true',
-                                      default=False,
                                       help='Process data from files, e.g. json '
                                       'or csv (including '
                                       'urls to files or a folder). '
@@ -451,6 +456,10 @@ class BaseConfig():
             if input_port:
                 self.dbserverport_input = input_port
             self.dbname_input = args.dbname_input
+        if args.dry_run:
+            self.dry_run = True
+        if args.csv_output:
+            self.csv_output = True
         if args.dbformat_input:
             self.dbformat_input = args.dbformat_input
         if args.origin:
@@ -461,7 +470,7 @@ class BaseConfig():
         if args.ignore_input_source_list:
             self.ignore_input_source_list = Path(
                 args.ignore_input_source_list)
-        if args.dbuser_output:
+        if not self.csv_output and args.dbuser_output:
             self.dbuser_output = args.dbuser_output
             self.dbpassword_output = args.dbpassword_output
             output_ip, output_port = BaseConfig.get_ip_port(
@@ -470,7 +479,7 @@ class BaseConfig():
             if output_port:
                 self.dbserverport_output = output_port
             self.dbname_output = args.dbname_output
-        if args.dbformat_output:
+        if not self.csv_output and args.dbformat_output:
             self.dbformat_output = args.dbformat_output
             if self.dbformat_output == "hll":
                 try:
@@ -516,8 +525,6 @@ class BaseConfig():
             self.input_lbsn_type = args.input_lbsn_type
         if args.map_full_relations:
             self.map_relations = True
-        if args.csv_output:
-            self.csv_output = True
         if args.csv_allow_linebreaks:
             self.csv_suppress_linebreaks = False
         if args.csv_delimiter:

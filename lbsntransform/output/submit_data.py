@@ -39,14 +39,18 @@ class LBSNTransfer():
                  SUPPRESS_LINEBREAKS=True,
                  dbformat_output="lbsn",
                  hllworker_cursor=None,
-                 include_lbsn_bases=None):
+                 include_lbsn_bases=None,
+                 dry_run: bool = None):
         self.db_cursor = db_cursor
         self.db_connection = db_connection
+        self.dry_run = dry_run
         if not self.db_cursor:
             print("CSV Output Mode.")
         self.count_entries_commit = 0
         self.count_entries_store = 0
         self.count_affected = 0
+        if store_csv:
+            dbformat_output = "lbsn"
         if commit_volume is None:
             # due to more output bases
             # increase commit volume on hll output
@@ -126,11 +130,19 @@ class LBSNTransfer():
         """Write changes to CSV"""
         if self.store_csv:
             self.csv_output.clean_csv_batches(
-                self.batched_lbsn_records)
+                self.batched_lbsn_records, self.dry_run)
             self.count_entries_store = 0
 
     def store_origin(self, origin_id, name):
         """Store origin of input source sql"""
+        if self.dry_run:
+            return
+        if self.store_csv:
+            origin = lbsn.Origin()
+            origin.origin_id = origin_id
+            self.csv_output.store_append_batch_to_csv(
+                [origin], 0, lbsn.Origin.DESCRIPTOR.name)
+            return
         insert_sql = \
             f'''
             INSERT INTO social."origin" (
@@ -141,7 +153,8 @@ class LBSNTransfer():
             '''
         self.db_cursor.execute(insert_sql)
 
-    def store_lbsn_record_dicts(self, lbsn_record_dicts):
+    def store_lbsn_record_dicts(
+            self, lbsn_record_dicts):
         """Main loop for storing lbsn records to CSV or DB
 
         Arguments:
@@ -314,6 +327,8 @@ class LBSNTransfer():
             prepared_records: List[Tuple[Any]]):
         """Submit/save prepared records to db or csv"""
         if self.store_csv:
+            if self.dry_run:
+                return
             self.csv_output.store_append_batch_to_csv(
                 self.batched_lbsn_records[record_type],
                 self.count_round, record_type)
@@ -465,6 +480,8 @@ class LBSNTransfer():
         psycopg2-insert-multiple-rows-with-one-query
         """
         tsuccessful = False
+        if self.dry_run:
+            return
         self.db_cursor.execute("SAVEPOINT submit_recordBatch")
         while not tsuccessful:
             try:
@@ -513,7 +530,7 @@ class LBSNTransfer():
                 file.write(f'{epsyco}\nINSERT SQL WAS: {insert_sql}')
                 file.close()  # This close() is important
                 sys.exit(f'{epsyco}\nINSERT SQL WAS: {insert_sql}')
-            except psycopg2.errors.DiskFull as espace:
+            except psycopg2.errors.DiskFull:
                 input("Disk space full. Clean files and continue..")
             else:
                 # executed if the try clause does not raise an exception
@@ -568,4 +585,5 @@ class LBSNTransfer():
             - clean and merge csv batches
         """
         if self.store_csv:
-            self.csv_output.clean_csv_batches(self.batched_lbsn_records)
+            self.csv_output.clean_csv_batches(
+                self.batched_lbsn_records, self.dry_run)

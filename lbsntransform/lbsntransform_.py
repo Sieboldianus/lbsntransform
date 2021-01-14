@@ -59,7 +59,7 @@ class LBSNTransform():
             dbformat_output=None, dbuser_hllworker=None,
             dbserveraddress_hllworker=None, dbname_hllworker=None,
             dbpassword_hllworker=None, dbserverport_hllworker=None,
-            include_lbsn_bases=None):
+            include_lbsn_bases=None, dry_run=None):
         """Init settings for LBSNTransform"""
 
         # init logger level
@@ -70,7 +70,7 @@ class LBSNTransform():
             sys.stdout.detach(), sys.stdout.encoding, 'replace')
         sys.stdout.flush()
         self.log = HF.set_logger()
-
+        self.dry_run = dry_run
         # init global settings
 
         self.transfer_count = transfer_count
@@ -102,7 +102,8 @@ class LBSNTransform():
             SUPPRESS_LINEBREAKS=csv_suppress_linebreaks,
             dbformat_output=dbformat_output,
             hllworker_cursor=cursor_hllworker,
-            include_lbsn_bases=include_lbsn_bases)
+            include_lbsn_bases=include_lbsn_bases,
+            dry_run=self.dry_run)
         # load from local json/csv or from PostgresDB
         self.cursor_input = None
         self.is_local_input = is_local_input
@@ -151,7 +152,8 @@ class LBSNTransform():
     def store_lbsn_records(self):
         """Stores processed LBSN Records to chosen output format
         """
-        self.output.store_lbsn_record_dicts(self.lbsn_records)
+        self.output.store_lbsn_record_dicts(
+            self.lbsn_records)
         self.output.commit_changes()
         self.lbsn_records.clear()
 
