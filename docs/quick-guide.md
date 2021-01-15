@@ -37,7 +37,7 @@ pip install lbsntransform --no-deps --upgrade
 Or use pip `--editable`, linking the lbsntransform folder:
 
 ```bash
-pip install . --editable --no-deps
+pip install --no-deps --editable .
 ```
 
 This is the recommended way if you want to edit files, or use the latest commits from the repository.
