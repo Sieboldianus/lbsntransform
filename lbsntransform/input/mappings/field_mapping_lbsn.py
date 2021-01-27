@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Module for mapping Flickr to common LBSN Structure.
+Module for mapping LBSN (RAW) to common LBSN Structure (Protobuf).
 """
 
 # pylint: disable=no-member
@@ -83,7 +83,7 @@ class importer():
                  ignore_non_geotagged=False,
                  ignore_sources_set=None,
                  min_geoaccuracy=None):
-        # We're dealing with Flickr in this class, lets create the OriginID
+        # We're dealing with LBSN in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
         origin = lbsn.Origin()
