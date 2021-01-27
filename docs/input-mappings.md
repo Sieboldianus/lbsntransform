@@ -56,6 +56,48 @@ lbsntransform --origin 21 \
               --mappings_path ./resources/mappings/
 ```
 
+To load data from native LBSN (RAW) DB, running locally
+on port `15432`:
+
+```bash
+lbsntransform --origin 0 \
+              --dbpassword_input "eX4mP13p455w0Rd" \
+              --dbuser_input "postgres" \
+              --dbserveraddress_input "127.0.0.1:15432" \
+              --dbname_input "rawdb" \
+              --dbformat_input "lbsn" \
+              --include_lbsn_bases hashtag,place,date,community \
+              --include_lbsn_objects "origin,post"
+```
+
+!!! note
+    The example commands above are missing output
+    information. Below is a full example that
+    shows how to read from local lbsn raw db
+    to local lbsn hll db, which includes the use of
+    a third, empty [hll importer db](https://gitlab.vgiscience.de/lbsn/tools/importer)
+    for the purpose of separation of concerns.
+
+```bash
+lbsntransform --origin 0 \
+    --dbpassword_input "eX4mP13p455w0Rd" \
+    --dbuser_input "postgres" \
+    --dbserveraddress_input "127.0.0.1:15432" \
+    --dbname_input "rawdb" \
+    --dbformat_input "lbsn" \
+    --dbpassword_output "eX4mP13p455w0Rd" \
+    --dbuser_output "postgres" \
+    --dbserveraddress_output "127.0.0.1:25432" \
+    --dbname_output "hlldb" \
+    --dbformat_output "hll" \
+    --dbpassword_hllworker "eX4mP13p455w0Rd" \
+    --dbuser_hllworker "postgres" \
+    --dbserveraddress_hllworker "127.0.0.1:5432" \
+    --dbname_hllworker "hllworkerdb" \
+    --include_lbsn_bases hashtag,place,date,community \
+    --include_lbsn_objects "origin,post"
+```
+    
 # Custom Input Mappings
 
 Start with any of the predefined mappings, either from [field_mapping_lbsn.py](/lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html),
