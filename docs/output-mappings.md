@@ -46,7 +46,7 @@ is available.
 Having two hll databases, one for calculations and one for storage means
 that concerns can be separated: There is no need for hlldb to receive any
 raw data. Likewise, the hll worker does not need to know contextual data,
-for union of specific hll sets. Such a setup improves rubustness and privacy.
+for union of specific hll sets. Such a setup improves robustness and privacy.
 It further allows to separate processing into individual components.
 
 If no hll worker is available, hlldb may be used.
