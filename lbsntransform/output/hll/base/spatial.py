@@ -9,7 +9,7 @@ from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
-from ..hll_functions import HLLFunctions as HLF
+from lbsntransform.output.hll.hll_functions import HLLFunctions as HLF
 
 FACET = 'spatial'
 

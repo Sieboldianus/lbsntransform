@@ -12,7 +12,7 @@ from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
 from lbsntransform.output.hll.base import social, spatial, temporal, topical
 
-from .hll_functions import HLLFunctions as HLF
+from lbsntransform.output.hll.hll_functions import HLLFunctions as HLF
 
 HllBases = Union[
     spatial.LatLngBase, spatial.PlaceBase,

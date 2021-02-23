@@ -7,7 +7,7 @@ Module for sql insert functions for LBSN (raw) db
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
-from .shared_structure_proto_lbsndb import ProtoLBSNMapping
+from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
 
 
 class LBSNSql():

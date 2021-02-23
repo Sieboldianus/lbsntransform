@@ -6,38 +6,38 @@ Collection of helper functions being used in lbsntransform package.
 
 
 import datetime as dt
-import json
 import importlib.util
+import json
 import logging
 # due to different protocol buffers implementations on Unix, MacOS and Windows
 # import types based on OS
 import platform
 import re
-import inspect
-import sys
-import regex
 import string
-from pathlib import Path
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
-from typing import List, Set, Union, Optional
+from pathlib import Path
+from typing import List, Optional, Set, Union
 
 import emoji
+import regex
 from google.protobuf.timestamp_pb2 import Timestamp
+from lbsnstructure import lbsnstructure_pb2 as lbsn
+from lbsntransform.output.shared_structure import Coordinates
 from shapely import geos, wkt
 from shapely.geometry import Point, Polygon
 
-from lbsnstructure import lbsnstructure_pb2 as lbsn
-
-from ..output.shared_structure import Coordinates
-
 PLATFORM_SYS = platform.system()
 if PLATFORM_SYS == 'Linux':
-    from google.protobuf.pyext._message import RepeatedCompositeContainer  # pylint: disable=no-name-in-module
-    from google.protobuf.pyext._message import ScalarMapContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.pyext._message import \
+        RepeatedCompositeContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.pyext._message import \
+        ScalarMapContainer  # pylint: disable=no-name-in-module
 else:
-    from google.protobuf.internal.containers import RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
-    from google.protobuf.internal.containers import ScalarMapContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.internal.containers import \
+        RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.internal.containers import \
+        ScalarMapContainer  # pylint: disable=no-name-in-module
 
 NLTK_AVAIL = True
 try:

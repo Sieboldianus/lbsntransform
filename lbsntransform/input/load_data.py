@@ -19,10 +19,11 @@ import ntpath
 import requests
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 
-from ..tools.db_connection import DBConnection
-from ..output.shared_structure import GeocodeLocations
-from ..tools.helper_functions import HelperFunctions as HF
-from .mappings.db_query import InputSQL, LBSN_SCHEMA, optional_schema_override
+from lbsntransform.tools.db_connection import DBConnection
+from lbsntransform.output.shared_structure import GeocodeLocations
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+from lbsntransform.input.mappings.db_query import (
+    InputSQL, LBSN_SCHEMA, optional_schema_override)
 
 # type alias
 LBSNObjects = Union[

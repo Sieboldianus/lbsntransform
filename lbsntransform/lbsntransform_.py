@@ -16,10 +16,10 @@ import logging
 import sys
 from pathlib import Path
 
-from .tools.helper_functions import HelperFunctions as HF
-from .output.shared_structure import LBSNRecordDicts
-from .output.submit_data import LBSNTransfer
-from .input.load_data import LoadData
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
+from lbsntransform.output.shared_structure import LBSNRecordDicts
+from lbsntransform.output.submit_data import LBSNTransfer
+from lbsntransform.input.load_data import LoadData
 
 
 class LBSNTransform():

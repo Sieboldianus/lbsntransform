@@ -16,14 +16,14 @@ import psycopg2
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
-from .csv.store_csv import LBSNcsv
-from .hll import hll_bases as hll
-from .hll.base import social, spatial, temporal, topical
-from .hll.hll_functions import HLLFunctions as HLF
-from .hll.shared_structure_proto_hlldb import ProtoHLLMapping
-from .hll.sql_hll import HLLSql
-from .lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
-from .lbsn.sql_lbsn import LBSNSql
+from lbsntransform.output.csv.store_csv import LBSNcsv
+from lbsntransform.output.hll import hll_bases as hll
+from lbsntransform.output.hll.base import social, spatial, temporal, topical
+from lbsntransform.output.hll.hll_functions import HLLFunctions as HLF
+from lbsntransform.output.hll.shared_structure_proto_hlldb import ProtoHLLMapping
+from lbsntransform.output.hll.sql_hll import HLLSql
+from lbsntransform.output.lbsn.shared_structure_proto_lbsndb import ProtoLBSNMapping
+from lbsntransform.output.lbsn.sql_lbsn import LBSNSql
 
 
 class LBSNTransfer():
