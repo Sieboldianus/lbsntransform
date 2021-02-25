@@ -6,7 +6,10 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends \
         libpq-dev \
         build-essential \
-    ;
+    ; \
+    apt-get autoremove -y \
+    ; \
+    rm -rf /var/lib/apt/lists/*;
 
 COPY lbsntransform/ ./lbsntransform/
 COPY resources/ ./resources/
@@ -16,13 +19,5 @@ RUN pip install --upgrade pip; \
     pip install psycopg2-binary
 
 RUN pip install --ignore-installed --editable .
-
-RUN apt-get purge -y \
-        build-essential \
-    ; \
-    apt-get autoremove -y \
-    ; \
-    rm -rf /var/lib/apt/lists/* \
-    ;
 
 ENTRYPOINT ["lbsntransform"]
