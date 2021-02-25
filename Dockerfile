@@ -1,17 +1,28 @@
-FROM continuumio/miniconda3:latest
+FROM python:slim
 
-WORKDIR /app
+RUN set -ex; \
+    \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        libpq-dev \
+        build-essential \
+    ;
 
 COPY lbsntransform/ ./lbsntransform/
 COPY resources/ ./resources/
-COPY *.py environment.yml README.md ./
+COPY setup.py README.md ./
 
-RUN conda config --env --set channel_priority strict
+RUN pip install --upgrade pip; \
+    pip install psycopg2-binary
 
-RUN conda env create -f ./environment.yml
+RUN pip install --ignore-installed --editable .
 
-RUN conda run -n lbsntransform pip install --no-deps --upgrade .
+RUN apt-get purge -y \
+        build-essential \
+    ; \
+    apt-get autoremove -y \
+    ; \
+    rm -rf /var/lib/apt/lists/* \
+    ;
 
-#SHELL ["conda", "run", "-n", "lbsntransform", "/bin/bash", "-c"]
-
-ENTRYPOINT ["conda", "run", "-n", "lbsntransform", "lbsntransform"]
+ENTRYPOINT ["lbsntransform"]
