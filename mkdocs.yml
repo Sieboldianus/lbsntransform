@@ -27,7 +27,10 @@ markdown_extensions:
 nav:
     - Introduction: index.md
     - User Guide:
-        - Quick Installation: quick-guide.md
+        - Quick Installation:
+            - Conda: install-conda.md
+            - Docker: install-docker.md
+            - "Alternatives: Windows and Linux": install-alternatives.md
         - Use Cases: use-cases.md
         - Input Types: input-types.md
         - Mappings:

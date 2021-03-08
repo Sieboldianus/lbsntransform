@@ -1,4 +1,6 @@
-lbsntransform has a Command Line Interface (CLI) that can be used to convert many input formats to common lbsnstructure, including to its privacy-aware hll implementation.
+lbsntransform has a Command Line Interface (CLI) that can be used to convert many 
+input formats to common lbsnstructure, including to its privacy-aware hll implementation.
+
 
 !!! Note
     Substitute bash linebreak character `\` in examples below with `^` if you're on Windows command line
@@ -32,13 +34,22 @@ If your files are spread across subdirectories in (e.g.) `.01_Input/`, add `--re
 
 A specific mapping is provided for the [YFCC100m Dataset](https://multimediacommons.wordpress.com/yfcc100m-core-dataset/).
 
-The YFCC100m Dataset consists of multiple files, with the core dataset of 100 Million Flickr photo metadata records (yfcc100m_dataset.csv) and several "expansion sets".
+
+The YFCC100m Dataset consists of multiple files, with the core dataset of 100 Million 
+Flickr photo metadata records (yfcc100m_dataset.csv) and several "expansion sets".
+
 
 The only expansion-set that is available for mapping is places-expansion (yfcc100m_places.csv).
 
+
 Both photo metadata and places metadata can be processed parrallel, by using `--zip_records`.
 
-Before executing the following, make sure you've started the [lbsn-raw database docker](https://gitlab.vgiscience.de/lbsn/databases/rawdb). This includes the postgres implementation of the common lbsn structure format. You can run the docker db container on any host, but we suggest testing your setup locally - in this case, `127.0.0.1` refers to _localhost_ and port `15432` (the default for lbsn-raw).
+
+Before executing the following, make sure you've started the [lbsn-raw database docker](https://gitlab.vgiscience.de/lbsn/databases/rawdb). 
+This includes the postgres implementation of the common lbsn structure format. You 
+can run the docker db container on any host, but we suggest testing your setup locally 
+- in this case, `127.0.0.1` refers to _localhost_ and port `15432` (the default for 
+lbsn-raw).
 
 
 ```bash
@@ -80,24 +91,41 @@ If you have stored the Flickr-dataset locally, simply replace the urls with:
 
 # Privacy-aware output (HyperLogLog)
 
-We've developed a privacy-aware implementation of lbsn-raw format, based based on the probabilistic datastructure HyperLogLog and the postgres implementation from [Citus](https://github.com/citusdata/postgresql-hll).
+We've developed a privacy-aware implementation of lbsn-raw format, based based on 
+the probabilistic datastructure HyperLogLog and the postgres implementation from 
+[Citus](https://github.com/citusdata/postgresql-hll).
 
 Two preparations steps are necessary:
 
-* Prepare a postgres database with the HLL version of lbsnstructure. You can use the [lbsn-hll database docker](https://gitlab.vgiscience.de/lbsn/databases/hlldb)
-* Prepare a read-only (empty) database with Citus HyperLogLog extension installed. You can use the [hll importer docker](https://gitlab.vgiscience.de/lbsn/tools/importer)
+* Prepare a postgres database with the HLL version of lbsnstructure. You can use 
+  the [lbsn-hll database docker](https://gitlab.vgiscience.de/lbsn/databases/hlldb)
+
+* Prepare a read-only (empty) database with Citus HyperLogLog extension installed. 
+  You can use the [hll importer docker](https://gitlab.vgiscience.de/lbsn/tools/importer)
+
 
 We've designed this rather complex setup to separate concerns:
-- the importer db (called `hllworkerdb` in the command below) will be used by lbsntransform to calculate hll `shards` from raw data - it will not store any data, nor will it get any additional (privacy-relevant) information. Shards are calculated in-memory and returned. The importer is prepared with global hll-settings that must not change during the whole lifetime of the final output.
 
-For example, as a means of additional security, before creating shards, distinct values can be one-way-hashed. This hashing can be improved using a `salt` that is only known to **importer**.
+- the importer db (called `hllworkerdb` in the command below) will be used by lbsntransform 
+  to calculate hll `shards` from raw data
+- it will not store any data, nor will it get any additional (privacy-relevant) information.
+- Shards are calculated in-memory and returned. The importer is prepared with global 
+  hll-settings that must not change during the whole lifetime of the final output.
 
-Finally, as a result, output hll db will not retrieve any privacy-relevant data because this is removed before transmission.
+For example, as a means of additional security, before creating shards, distinct 
+values can be one-way-hashed. This hashing can be improved using a `salt` that is 
+only known to **importer**.
+
+Finally, as a result, output hll db will not retrieve any privacy-relevant data because 
+this is removed before transmission.
 
 !!! Note
-    Depending on chosen `bases` and the type of input data, data may still contain privacy sensitive references. Have a look at the [lbsn-docs](https://lbsn.vgiscience.org) for further information.
+    Depending on chosen `bases` and the type of input data, data may still contain 
+    privacy sensitive references. Have a look at the [lbsn-docs](https://lbsn.vgiscience.org) 
+    for further information.
 
 To convert YFCC100m photo metadata and places and transfer to a local hll-db, use:
+
 
 ```bash
 lbsntransform --origin 21 \
