@@ -427,6 +427,7 @@ class BaseConfig():
                                    'post,newschema.newtable'
                                    '```'
                                    '    '
+                                   '    '
                                    'Argument can be used multiple times.',
                                    action='append',
                                    type=str)
