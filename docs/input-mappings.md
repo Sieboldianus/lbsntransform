@@ -1,3 +1,5 @@
+## Concept
+
 For any conversion, a mapping must exist. A mapping is defined in 
 a python file (`.py`) and describes how any input data is converted
 to the [common lbsn structure](https://lbsn.vgiscience.org/), which
@@ -32,7 +34,7 @@ has the following module level constant:
 MAPPING_ID = 0
 ```
 
-**Examples:**
+## Examples
 
 To load data with the default mapping, with the MAPPING_ID "0", use `lbsntransform --origin 0`.
 
@@ -98,7 +100,7 @@ lbsntransform --origin 0 \
     --include_lbsn_objects "origin,post"
 ```
     
-# Custom Input Mappings
+## Custom Input Mappings
 
 Start with any of the predefined mappings, either from [field_mapping_lbsn.py](/lbsntransform/docs/api/input/mappings/field_mapping_lbsn.html),
 or [field_mapping_twitter.py](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/blob/master/resources/mappings/field_mapping_twitter.py) (JSON) and

@@ -1,4 +1,4 @@
-# Input type: File, URL, or Database?
+## Input type: File, URL, or Database?
 
 lbsntransform can read data from different common types of data sources.
 
@@ -6,7 +6,7 @@ The two main input types to distinguish are input from files and databases.
 
 The following cli arguments are available for the two types.
 
-## File input 
+### File input 
 
 * activated by `--file_input`
 * json files `--file_type json`
@@ -31,7 +31,7 @@ The following cli arguments are available for the two types.
         * `--input_path_url "https://mypage.org/dataset_col1.csv;https://mypage.org/dataset_col2.csv"`
           Will process records from both csv files parallel, by zipping files.
               
-## Database input (Postgres)
+### Database input (Postgres)
 
 * activated by default
 * `--dbuser_input "postgres"` the name of the dbuser

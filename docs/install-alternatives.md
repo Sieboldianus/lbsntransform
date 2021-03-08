@@ -1,4 +1,4 @@
-# Windows
+## Windows
 
 There are many ways to install python tools, in Windows this can become particularly frustrating.
 
@@ -11,7 +11,7 @@ There are many ways to install python tools, in Windows this can become particul
 pip install lbsntransform --no-deps
 ```
 
-# Linux
+## Linux
 
 !!! note
     Use of pip can be problematic, even on Linux. Some sub-dependencies outside python [cannot 
