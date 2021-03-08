@@ -1,9 +1,12 @@
 # Docker
 
-This is the recommended approach:  
+If you have Docker, and if you do not want to develop or make changes to lbsntransform,
+using our Dockerimage may be an option.
 
-- If you have Docker  
-- and if you do not want to develop or make changes to lbsntransform.
+!!! note
+    The Docker Image is in an early stage. Input data is only
+    poissible through URL, from another database, or through 
+    local bind mounting data (e.g. CSVs) into the container.
 
 You can use the latest Dockerimage to directly run lbsntransform in a container:
 
