@@ -423,9 +423,7 @@ class BaseConfig():
                                    'query. Format is `lbsn_type,schema.table`'
                                    ', e.g.:  '
                                    '    '
-                                   '```'
-                                   'post,newschema.newtable'
-                                   '```'
+                                   '    --override_lbsn_query_schema post,newschema.newtable'
                                    '    '
                                    '    '
                                    'Argument can be used multiple times.',
