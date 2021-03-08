@@ -422,9 +422,11 @@ class BaseConfig():
                                    'processing of input data to a specific '
                                    'query. Format is `lbsn_type,schema.table`'
                                    ', e.g.:  '
+                                   '    '
                                    '```csv'
                                    'post,newschema.newtable'
                                    '```'
+                                   '    '
                                    ' Argument can be used multiple times.',
                                    action='append',
                                    type=str)
