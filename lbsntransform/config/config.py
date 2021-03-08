@@ -408,7 +408,7 @@ class BaseConfig():
                                    '* region  '
                                    '* city  '
                                    '* place  '
-                                   '* latlng '
+                                   '* latlng  '
                                    '    '
                                    'Bases not included will be skipped. Per '
                                    'default, all bases will be considered.',
@@ -423,11 +423,11 @@ class BaseConfig():
                                    'query. Format is `lbsn_type,schema.table`'
                                    ', e.g.:  '
                                    '    '
-                                   '```csv'
+                                   '```'
                                    'post,newschema.newtable'
                                    '```'
                                    '    '
-                                   ' Argument can be used multiple times.',
+                                   'Argument can be used multiple times.',
                                    action='append',
                                    type=str)
 
