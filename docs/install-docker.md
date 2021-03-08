@@ -4,9 +4,9 @@ If you have Docker, and if you do not want to develop or make changes to lbsntra
 using our Dockerimage may be an option.
 
 !!! note
-    The Docker Image is in an early stage. Input data is only
-    poissible through URL, from another database, or through 
-    local bind mounting data (e.g. CSVs) into the container.
+    The Docker Image is in an early stage. Providing input data is only
+    possible through URL, from another database, or through 
+    local bind mounting data (e.g. CSVs) into the container (see note at end).
 
 You can use the latest Dockerimage to directly run lbsntransform in a container:
 
@@ -40,4 +40,20 @@ docker run \
     --rm \
     lbsntransform \
     --version
+```
+
+## Mounting data
+
+If you want to use custom mappings, or read data from CSV (etc.),
+mount these external files on runtime into the container.
+
+Example:
+```bash
+docker run \
+    --rm \
+    --volume $(pwd)/data.csv:/data/data.csv \
+    --volume $(pwd)/resources/mappings:/mappings \
+    lbsntransform \
+    --mappings_path /mappings/ \
+    ...
 ```
