@@ -565,13 +565,12 @@ class BaseConfig():
                                    '    '
                                    'Bases not included will be skipped. Per '
                                    'default, **no bases** will be considered. '
-                                   '    '
-                                   '    '
                                    'Example:  '
                                    '    '
                                    '    --include_lbsn_bases hashtag,place,date,community'
                                    '    '
-                                   '    ',
+                                   '    '
+                                   'Argument only allowed one time.',
                                    type=str)
         settings_args.add_argument("--override_lbsn_query_schema",
                                    help='Override schema and table name '
@@ -582,10 +581,8 @@ class BaseConfig():
                                    'such as a materialized view. '
                                    'This can be usefull (e.g.) to limit '
                                    'processing of input data to a specific '
-                                   'query. Format is `lbsn_type,schema.table`.'
-                                   '    '
-                                   '    '
-                                   'Example:  '
+                                   'query. Format is `lbsn_type,schema.table`'
+                                   ', e.g.:  '
                                    '    '
                                    '    --override_lbsn_query_schema post,mviews.mypostquery'
                                    '    '
