@@ -6,7 +6,13 @@ The two main input types to distinguish are input from files and databases.
 
 The following cli arguments are available for the two types.
 
-### File input 
+!!! note
+    At the moment, validation of CLI arguments is only done rudimentary. This
+    makes it necessary to carefully check parameters. Expect that errors may
+    be misleading. If in doubt, have a look at parameter processing in
+    the [config module](/api/config/config.html).
+    
+### File and URL input 
 
 * activated by `--file_input`
 * json files `--file_type json`
@@ -30,7 +36,14 @@ The following cli arguments are available for the two types.
     * `--zip_records` Allows to zip records from multiple sources using semi-colon (`;`), e.g.:
         * `--input_path_url "https://mypage.org/dataset_col1.csv;https://mypage.org/dataset_col2.csv"`
           Will process records from both csv files parallel, by zipping files.
-              
+
+!!! note "Note <code>--input_path_url</code>"
+    To not be confused, this flag is used to provide _either_ a path _or_ a url to data. 
+    
+    - can also be list of urls (when using `--zip_records`)
+    - paths can be relative or absolute
+    - they will be parsed using `pathlib.Path`, which is OS independent.
+    
 ### Database input (Postgres)
 
 * activated by default
@@ -47,7 +60,12 @@ The following cli arguments are available for the two types.
       This flag will only work if processing a single lbsnObject (e.g. lbsnPost).
     - `--endwith_db_rownumber xyz` To stop processing at a particular row-id.
     - `--include_lbsn_objects` If processing from lbsn rawdb, provide a comma separated list of 
-      [lbsn objects](https://lbsn.vgiscience.org/structure/) to include. May contain: 
+      [lbsn objects](https://lbsn.vgiscience.org/structure/) to include. May contain any of:  
       `origin,country,city,place,user_groups,user,post,post_reaction,event`
-      Note: Excluded objects will not be queried, but empty objects may be created due to referenced 
-      foreign key relationships. Defaults to `origin,post`.
+      <br/><br/>
+      
+    !!! note "Note <code>--include_lbsn_objects</code>"
+        Excluded objects will not be queried, but empty objects may be created due to referenced 
+        foreign key relationships. Defaults to `origin,post`.
+        
+See the full list of CLI arguments [here](/argparse/args/).

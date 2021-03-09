@@ -32,13 +32,13 @@ nav:
             - Docker: install-docker.md
             - "Alternatives: Windows and Linux": install-alternatives.md
         - Use Cases: use-cases.md
-        - Input Types: input-types.md
+        - Input Types and Parameters: input-types.md
         - Mappings:
             - Input Mappings: input-mappings.md
             - Output Mappings: output-mappings.md
         - Command Line Interface:
             - Arguments: argparse/args.md
-            - Examples: argparse/examples.md
+        - Examples: argparse/examples.md
         - Developers:
             - Importing lbsntransform as a package: package.md
             - API Reference (external): api/lbsntransform_.html
