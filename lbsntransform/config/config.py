@@ -279,7 +279,7 @@ class BaseConfig():
                                   '* If `json` is used, a custom mapping for '
                                   'json must be provided, for mapping database '
                                   'json\'s to the lbsn structure. See '
-                                  '[input mappings](/input-mappings/)  ',
+                                  '[input mappings](https://lbsn.vgiscience.org/lbsntransform/docs/mappings/#input-mappings)  ',
                                   type=str)
         # Additional args
         settings_args = parser.add_argument_group('Additional settings')
