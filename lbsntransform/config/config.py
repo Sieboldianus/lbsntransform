@@ -93,9 +93,9 @@ class BaseConfig():
                             default=0,
                             help='Input source type (id). '
                             '    '
-                            'Defaults to `0`: LBSN '
+                            '* Defaults to `0`: LBSN  '
                             '    '
-                            'Other possible values:'
+                            'Other possible values:  '
                             '* `1` - Instagram  '
                             '* `2` - Flickr  '
                             '* `21` - Flickr YFCC100M  '
@@ -117,8 +117,8 @@ class BaseConfig():
                                       'parameter `--input_path_url`.  '
                                       '* To specify file types, e.g. whether to '
                                       'process data from `json` '
-                                      'or `csv`, or from URLs, see '
-                                      '`--file_type`  ')
+                                      'or `csv`, or from URLs,  '
+                                      '  see `--file_type`  ')
         local_input_args.add_argument("--file_type",
                                       default='json',
                                       help='Specify filetype '
@@ -146,6 +146,7 @@ class BaseConfig():
                                       default=False,
                                       help='Input is stacked json. '
                                       '    '
+                                      '    '
                                       '* The typical form of json is '
                                       '`[{json1},{json2}]`  '
                                       '* If `--is_stacked_json` is set, '
@@ -155,6 +156,7 @@ class BaseConfig():
                                       action='store_true',
                                       default=False,
                                       help='Json is line separated '
+                                      '    '
                                       '    '
                                       '* The typical form is '
                                       '`[{json1},{json2}]`  '
@@ -171,6 +173,7 @@ class BaseConfig():
                                     default="",
                                     help='Password for hllworker '
                                     'database (Default = empty)'
+                                    '    '
                                     '    '
                                     '* If reading data into `hlldb`, all '
                                     'HLL Worker parameters must be supplied by'
@@ -191,6 +194,7 @@ class BaseConfig():
         hllworker_args.add_argument("--dbserveraddress_hllworker",
                                     help='IP for hllworker db, '
                                     '    '
+                                    '    '
                                     '* e.g. `111.11.11.11`  '
                                     '* Optionally add '
                                     'port the to use, e.g. `111.11.11.11:5432`.  '
@@ -198,6 +202,7 @@ class BaseConfig():
                                     type=str)
         hllworker_args.add_argument("--dbname_hllworker",
                                     help='DB name for hllworker db '
+                                    '    '
                                     '    '
                                     '* e.g. `hllworkerdb`  ',
                                     type=str)
@@ -216,6 +221,7 @@ class BaseConfig():
         dboutput_args.add_argument('-a', "--dbserveraddress_output",
                                    help='IP for output db, '
                                    '    '
+                                   '    '
                                    '* e.g. `111.11.11.11`  '
                                    '* Optionally add '
                                    'port to use, e.g. `111.11.11.11:5432`.  '
@@ -224,11 +230,13 @@ class BaseConfig():
         dboutput_args.add_argument('-n', "--dbname_output",
                                    help='DB name for output db '
                                    '    '
+                                   '    '
                                    '* e.g. `rawdb` or `hlldb`  ',
                                    type=str)
         dboutput_args.add_argument("--dbformat_output",
                                    default="lbsn",
                                    help='Format of the out-db. '
+                                   '    '
                                    '    '
                                    '* Either `hll` or `lbsn`.  '
                                    '* This setting '
@@ -250,6 +258,7 @@ class BaseConfig():
         dbinput_args.add_argument("--dbserveraddress_input",
                                   help='IP for input-db, '
                                   '    '
+                                  '    '
                                   '* e.g. `111.11.11.11`  '
                                   '* Optionally add port to use, e.g. '
                                   '`111.11.11.11:5432`.  '
@@ -258,24 +267,27 @@ class BaseConfig():
         dbinput_args.add_argument("--dbname_input",
                                   help='DB name for input-db, '
                                   '    '
+                                  '    '
                                   '* e.g.: `rawdb`  ',
                                   type=str)
         dbinput_args.add_argument("--dbformat_input",
                                   default="json",
                                   help='Format of the input-db. '
                                   '    '
+                                  '    '
                                   '* Either `lbsn` or `json`  '
                                   '* If lbsn is used, the native lbsn raw '
                                   'input mapping (`0`) will be used  '
                                   '* If `json` is used, a custom mapping for '
-                                  ' json must be provided, for mapping database '
-                                  ' json\'s to the lbsn structure. See '
-                                  ' [input mappings](/input-mappings/)  ',
+                                  'json must be provided, for mapping database '
+                                  'json\'s to the lbsn structure. See '
+                                  '[input mappings](/input-mappings/)  ',
                                   type=str)
         # Additional args
         settings_args = parser.add_argument_group('Additional settings')
         settings_args.add_argument('-t', "--transferlimit",
                                    help='Abort after x records. '
+                                   '    '
                                    '    '
                                    '* This can be used to limit the number of '
                                    'records that will be processed.  '
@@ -289,6 +301,7 @@ class BaseConfig():
         settings_args.add_argument("--transfer_count",
                                    default=50000,
                                    help='Transfer batch limit x. '
+                                   '    '
                                    '    '
                                    '* Defines after how many '
                                    'parsed records the results will be '
@@ -305,6 +318,7 @@ class BaseConfig():
                                    default=10000,
                                    help='Fetch x records /batch. '
                                    '    '
+                                   '    '
                                    '* If retrieving data from a db (`lbsn`), '
                                    'limit the number of records to fetch at once.  '
                                    '* Defaults to 10000  ',
@@ -313,6 +327,7 @@ class BaseConfig():
             "--disable_transfer_reactions",
             action='store_true',
             help='Disable reactions. '
+            '    '
             '    '
             '* If set, processing of lbsn reactions will be skipped,  '
             '* only original posts are transferred.  '
@@ -325,6 +340,7 @@ class BaseConfig():
             action='store_true',
             default=False,
             help='Disable reactions-refs. '
+            '    '
             '    '
             'Enable this option in args '
             'to prevent empty posts being stored '
@@ -339,10 +355,12 @@ class BaseConfig():
                                    action='store_true',
                                    help='Ignore none-geotagged. '
                                    '    '
+                                   '    '
                                    'If set, posts that are not geotagged '
                                    'are ignored during processing.')
         settings_args.add_argument("--startwith_db_rownumber",
                                    help='Start with db row x. '
+                                   '    '
                                    '    '
                                    '* Provide a number (row-id) to start '
                                    'processing from live db.  '
@@ -356,6 +374,7 @@ class BaseConfig():
         settings_args.add_argument("--endwith_db_rownumber",
                                    help='End with db row x. '
                                    '    '
+                                   '    '
                                    'Provide a number (row-id) to end '
                                    'processing from live db', type=int)
         settings_args.add_argument("--debug_mode",
@@ -363,6 +382,7 @@ class BaseConfig():
                                    type=str)
         settings_args.add_argument("--geocode_locations",
                                    help='Path to loc-geocodes. '
+                                   '    '
                                    '    '
                                    '* Provide path to a CSV file with '
                                    'location geocodes  '
@@ -375,6 +395,7 @@ class BaseConfig():
         settings_args.add_argument("--ignore_input_source_list",
                                    help='Path to input ignore. '
                                    '    '
+                                   '    '
                                    'Provide a path to a list of input_source '
                                    'types that will be ignored (e.g. to '
                                    'ignore certain bots etc.)',
@@ -382,9 +403,11 @@ class BaseConfig():
         settings_args.add_argument("--mappings_path",
                                    help='Path mappings folder. '
                                    '    '
+                                   '    '
                                    'Provide a path to a custom folder '
                                    'that contains '
                                    'one or more input mapping modules (`*.py`). '
+                                   '    '
                                    '    '
                                    '* Have a look at the two sample mappings '
                                    'in [the resources folder](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/tree/master/resources/mappings).  '
@@ -394,6 +417,7 @@ class BaseConfig():
         settings_args.add_argument("--input_lbsn_type",
                                    help='Input sub-type '
                                    '    '
+                                   '    '
                                    '* e.g. `post`, `profile`, '
                                    '`friendslist`, `followerslist` etc.  '
                                    '* This can be used to select an appropiate '
@@ -402,6 +426,7 @@ class BaseConfig():
         settings_args.add_argument("--map_full_relations",
                                    action='store_true',
                                    help='Map full relations. '
+                                   '    '
                                    '    '
                                    'Set to true to map full relations, '
                                    'e.g. many-to-many relationships, '
@@ -413,12 +438,14 @@ class BaseConfig():
                                    action='store_true',
                                    help='Store to local CSV. '
                                    '    '
+                                   '    '
                                    'If set, will store all '
                                    'submit values to local CSV instead. '
                                    'Currently, this type of output is not available.')
         settings_args.add_argument("--csv_allow_linebreaks",
                                    action='store_true',
                                    help=repr('Disable linebreak-rem. '
+                                   '    '
                                    '    '
                                    'If set, will not '
                                    'remove intext-linebreaks (`\r` or `\n`) '
@@ -427,19 +454,22 @@ class BaseConfig():
                                    default=",",
                                    help=repr('CSV delimiter. '
                                              '    '
+                                             '    '
                                              '* Provide the CSV delimiter to be used.  '
                                              '* Default is comma (`,`).  '
                                              '* Note: to pass tab, '
-                                             'use variable substitution (`$"\t"`)  '),
+                                             'use variable substitution (`$"\t"`)  ')[1:-1],
                                    type=str)
         settings_args.add_argument("--recursive_load",
                                    action='store_true', default=False,
                                    help='Recursive local sub dirs. '
                                    '    '
+                                   '    '
                                    'If set, process input directories '
                                    'recursively (default depth: `2`)')
         settings_args.add_argument("--skip_until_file",
                                    help='Skip until file x. '
+                                   '    '
                                    '    '
                                    'If local input, skip all files '
                                    'until file with name `x` appears '
@@ -447,6 +477,7 @@ class BaseConfig():
                                    type=str)
         settings_args.add_argument("--skip_until_record",
                                    help='Skip until record x. '
+                                   '    '
                                    '    '
                                    'If local input, skip all records '
                                    'until record` x` '
@@ -456,13 +487,15 @@ class BaseConfig():
                                    action='store_true', default=False,
                                    help='Zip records parallel. '
                                    '    '
-                                   'Use this flag to zip records of '
-                                   'multiple input files, e.g. '
-                                   '`List1[A,B,C]`, `List2[1,2,3]` will be '
+                                   '    '
+                                   '* Use this flag to zip records of '
+                                   'multiple input files  '
+                                   '* e.g. `List1[A,B,C]`, `List2[1,2,3]` will be '
                                    'combined (zipped) on read to '
-                                   '`List[A1,B2,C3]`')
+                                   '`List[A1,B2,C3]`  ')
         settings_args.add_argument("--min_geoaccuracy",
                                    help='Min geoaccuracy to use '
+                                   '    '
                                    '    '
                                    'Set to `latlng`, `place`, '
                                    'or `city` to limit processing of records based '
@@ -470,6 +503,7 @@ class BaseConfig():
                                    type=str)
         settings_args.add_argument("--include_lbsn_objects",
                                    help='lbsn objects to process '
+                                   '    '
                                    '    '
                                    'If processing from lbsn db (`rawdb`), '
                                    'provide a comma separated list '
@@ -495,6 +529,7 @@ class BaseConfig():
                                    type=str)
         settings_args.add_argument("--include_lbsn_bases",
                                    help='lbsn bases to update '
+                                   '    '
                                    '    '
                                    'If the target output type is `hll`, '
                                    'provide a comma separated list '
@@ -532,6 +567,7 @@ class BaseConfig():
                                    type=str)
         settings_args.add_argument("--override_lbsn_query_schema",
                                    help='Override schema and table name '
+                                   '    '
                                    '    '
                                    'This can be used to redirect lbsn queries on '
                                    'the given object from input db to a specific schema/table '
