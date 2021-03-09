@@ -168,7 +168,6 @@ class BaseConfig():
         # HLL Worker
         hllworker_args = parser.add_argument_group('HLL Worker')
         hllworker_args.add_argument("--dbpassword_hllworker",
-                                    default="",
                                     help='Password for hllworker '
                                     'database (Default = empty)'
                                     '    '
@@ -204,7 +203,6 @@ class BaseConfig():
         # DB Output
         dboutput_args = parser.add_argument_group('DB Output')
         dboutput_args.add_argument('-p', "--dbpassword_output",
-                                   default="",
                                    help='Password for out-db '
                                    '(postgres db)',
                                    type=str)
@@ -240,7 +238,6 @@ class BaseConfig():
         # DB Input
         dbinput_args = parser.add_argument_group('DB Input')
         dbinput_args.add_argument("--dbpassword_input",
-                                  default="",
                                   help='Password for input-db',
                                   type=str)
         dbinput_args.add_argument("--dbuser_input",
