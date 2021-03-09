@@ -313,7 +313,7 @@ class BaseConfig():
                                    'more local memory.  '
                                    '    '
                                    '    '
-                                   '!!! note  '
+                                   '!!! note\\n'
                                    '    Use `--transferlimit` to limit the '
                                    'total number of records transferred. `--transfer_count` '
                                    'defines the _batch_ count that is used to transfer '
@@ -570,7 +570,7 @@ class BaseConfig():
                                    'Example:  '
                                    '    '
                                    '    '
-                                   '    --include_lbsn_bases hashtag,place,date,community  '
+                                   '    --include_lbsn_bases hashtag,place,date,community'
                                    '    '
                                    '    ',
                                    type=str)
@@ -589,7 +589,7 @@ class BaseConfig():
                                    'Example:  '
                                    '    '
                                    '    '
-                                   '    --override_lbsn_query_schema post,mviews.mypostquery  '
+                                   '    --override_lbsn_query_schema post,mviews.mypostquery'
                                    '    '
                                    '    '
                                    'Argument can be used multiple times.',

@@ -66,7 +66,7 @@ docker pull registry.gitlab.vgiscience.org/lbsn/lbsntransform:latest
 docker tag registry.gitlab.vgiscience.org/lbsn/lbsntransform:latest lbsntransform
 ```
 
-The run it.
+Then run it.
 ```bash
 docker run \
     --rm \
