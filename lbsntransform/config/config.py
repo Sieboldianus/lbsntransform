@@ -569,7 +569,6 @@ class BaseConfig():
                                    '    '
                                    'Example:  '
                                    '    '
-                                   '    '
                                    '    --include_lbsn_bases hashtag,place,date,community'
                                    '    '
                                    '    ',
@@ -587,7 +586,6 @@ class BaseConfig():
                                    '    '
                                    '    '
                                    'Example:  '
-                                   '    '
                                    '    '
                                    '    --override_lbsn_query_schema post,mviews.mypostquery'
                                    '    '
