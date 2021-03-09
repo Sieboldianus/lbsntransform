@@ -164,7 +164,7 @@ class BaseConfig():
                                       '* If `--is_line_separated_json` is set, '
                                       'it will process stacked jsons in the form '
                                       'of `{json1}\n{json2}` (with linebreak)  '
-                                      '* Unix style linbreaks (CR) will be used '
+                                      '* Unix style linebreaks (CR) will be used '
                                       'across platforms  '
                                       '* Windows users, use (e.g.) notepad++ to '
                                       'convert from Windows style linebreaks (CRLF)  ')
@@ -579,6 +579,7 @@ class BaseConfig():
                                    'This can be used to redirect lbsn queries on '
                                    'the given object from input db to a specific schema/table '
                                    'such as a materialized view. '
+                                   '    '
                                    'This can be usefull (e.g.) to limit '
                                    'processing of input data to a specific '
                                    'query. Format is `lbsn_type,schema.table`. '

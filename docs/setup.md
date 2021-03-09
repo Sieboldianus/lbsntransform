@@ -108,7 +108,7 @@ docker run \
     ...
 ```
 
-## Alternatives. Windows and Linux
+## Alternatives: Windows and Linux
 
 ### Windows
 
