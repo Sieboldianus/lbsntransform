@@ -1,3 +1,5 @@
+# Examples
+
 lbsntransform has a Command Line Interface (CLI) that can be used to convert many 
 input formats to common lbsnstructure, including to its privacy-aware hll implementation.
 
@@ -5,7 +7,7 @@ input formats to common lbsnstructure, including to its privacy-aware hll implem
 !!! Note
     Substitute bash linebreak character `\` in examples below with `^` if you're on Windows command line
 
-# Basic examples
+## Basic examples
 
 Key to mappings in lbsntransform is the origin id, which refers to the different mappings specified in modules `input/mappings/*.py`. For example,
 id `3` refers to Twitter (`field_mapping_twitter.py`).
@@ -25,12 +27,12 @@ lbsntransform --origin 3 \
 lbsntransform will then create a subfolder `.02_Output/` and store converted data as CSV (specified with `--csv_output` flag).
 
 * `--transferlimit 1000` means: skip transfer after 1000 lbsn records
-* `--file_input`: read from local files (and not from database). Default local input is subfolder `.01_Input/`. This path can be modified with the flag `--input_path_url my-input-path`
+* `--file_input`: read from local files (and not from database). Default local input is subfolder `./01_Input/`. This path can be modified with the flag `--input_path_url my-input-path`
 * `--file_type 'json'` refers to the file ending to look for in `.01_Input/` folder
 
-If your files are spread across subdirectories in (e.g.) `.01_Input/`, add `--recursive_load` flag.
+If your files are spread across subdirectories in (e.g.) `./01_Input/`, add `--recursive_load` flag.
 
-# Flickr YFCC100m
+## Flickr YFCC100m
 
 A specific mapping is provided for the [YFCC100m Dataset](https://multimediacommons.wordpress.com/yfcc100m-core-dataset/).
 
@@ -89,7 +91,7 @@ If you have stored the Flickr-dataset locally, simply replace the urls with:
 ```
 
 
-# Privacy-aware output (HyperLogLog)
+## Privacy-aware output (HyperLogLog)
 
 We've developed a privacy-aware implementation of lbsn-raw format, based based on 
 the probabilistic datastructure HyperLogLog and the postgres implementation from 
@@ -145,5 +147,3 @@ lbsntransform --origin 21 \
     --zip_records \
     --mappings_path ./resources/mappings/
 ```
-
-

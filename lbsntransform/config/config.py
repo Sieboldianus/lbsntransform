@@ -93,6 +93,7 @@ class BaseConfig():
                             default=0,
                             help='Input source type (id). '
                             '    '
+                            '    '
                             '* Defaults to `0`: LBSN  '
                             '    '
                             'Other possible values:  '
@@ -309,7 +310,14 @@ class BaseConfig():
                                    'check happens in Python, and not in '
                                    'Postgres coalesce;  '
                                    '* However, larger values require '
-                                   'more local memory.  ',
+                                   'more local memory.  '
+                                   '    '
+                                   '    '
+                                   '!!! note  '
+                                   '    Use `--transferlimit` to limit the '
+                                   'total number of records transferred. `--transfer_count` '
+                                   'defines the _batch_ count that is used to transfer '
+                                   'data incrementally.  ',
                                    type=int)
         settings_args.add_argument("--records_tofetch",
                                    default=10000,
@@ -409,7 +417,7 @@ class BaseConfig():
                                    '* Have a look at the two sample mappings '
                                    'in [the resources folder](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/tree/master/resources/mappings).  '
                                    '* See how to define custom input mappings '
-                                   'in the [docs](https://lbsn.vgiscience.org/lbsntransform/docs/input-mappings/)  ',
+                                   'in the [docs](https://lbsn.vgiscience.org/lbsntransform/docs/mappings/#input-mappings)  ',
                                    type=str)
         settings_args.add_argument("--input_lbsn_type",
                                    help='Input sub-type '
@@ -446,7 +454,7 @@ class BaseConfig():
                                    '    '
                                    'If set, will not '
                                    'remove intext-linebreaks (`\r` or `\n`) '
-                                   'in output CSVs'))
+                                   'in output CSVs')[1:-1])
         settings_args.add_argument("--csv_delimiter",
                                    default=",",
                                    help=repr('CSV delimiter. '
@@ -477,7 +485,7 @@ class BaseConfig():
                                    '    '
                                    '    '
                                    'If local input, skip all records '
-                                   'until record` x` '
+                                   'until record `x` '
                                    '(default: start with first)',
                                    type=int)
         settings_args.add_argument("--zip_records",
@@ -521,7 +529,7 @@ class BaseConfig():
                                    'objects may be created due to referenced '
                                    'foreign key relationships.  '
                                    '* Defaults to '
-                                   '`origin,post`.  '
+                                   '`origin,post`  '
                                    '[1]: https://lbsn.vgiscience.org/structure/',
                                    type=str)
         settings_args.add_argument("--include_lbsn_bases",
@@ -531,6 +539,7 @@ class BaseConfig():
                                    'If the target output type is `hll`, '
                                    'provide a comma separated list '
                                    'of lbsn bases to include/update/store to. '
+                                   '    '
                                    '    '
                                    'Currently supported:  '
                                    '* hashtag  '
@@ -557,9 +566,12 @@ class BaseConfig():
                                    'Bases not included will be skipped. Per '
                                    'default, **no bases** will be considered. '
                                    '    '
-                                   'For example:  '
                                    '    '
-                                   '    lbsntransform --include_lbsn_bases hashtag,place,date,community'
+                                   'Example:  '
+                                   '    '
+                                   '    '
+                                   '    --include_lbsn_bases hashtag,place,date,community  '
+                                   '    '
                                    '    ',
                                    type=str)
         settings_args.add_argument("--override_lbsn_query_schema",
@@ -571,10 +583,13 @@ class BaseConfig():
                                    'such as a materialized view. '
                                    'This can be usefull (e.g.) to limit '
                                    'processing of input data to a specific '
-                                   'query. Format is `lbsn_type,schema.table`'
-                                   ', e.g.:  '
+                                   'query. Format is `lbsn_type,schema.table`.'
                                    '    '
-                                   '    --override_lbsn_query_schema post,mviews.mypostquery'
+                                   '    '
+                                   'Example:  '
+                                   '    '
+                                   '    '
+                                   '    --override_lbsn_query_schema post,mviews.mypostquery  '
                                    '    '
                                    '    '
                                    'Argument can be used multiple times.',

@@ -1,4 +1,4 @@
-## Input type: File, URL, or Database?
+# Input type: File, URL, or Database?
 
 lbsntransform can read data from different common types of data sources.
 
@@ -12,7 +12,7 @@ The following cli arguments are available for the two types.
     be misleading. If in doubt, have a look at parameter processing in
     the [config module](/api/config/config.html).
     
-### File and URL input 
+## File and URL input 
 
 * activated by `--file_input`
 * json files `--file_type json`
@@ -44,7 +44,7 @@ The following cli arguments are available for the two types.
     - paths can be relative or absolute
     - they will be parsed using `pathlib.Path`, which is OS independent.
     
-### Database input (Postgres)
+## Database input (Postgres)
 
 * activated by default
 * `--dbuser_input "postgres"` the name of the dbuser

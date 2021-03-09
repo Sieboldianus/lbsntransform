@@ -1,7 +1,7 @@
 site_name: lbsntransform Documentation
 site_url: https://lbsn.vgiscience.org/lbsntransform/docs/
 site_author: Alexander Dunkel
-copyright: CC BY 4.0, Alexander Dunkel, vgiscience.org and contributors
+copyright: CC BY 4.0, Alexander Dunkel, Marc Löchner, vgiscience.org and contributors
 
 repo_url: https://github.com/Sieboldianus/lbsntransform
 site_dir: site
@@ -14,6 +14,7 @@ theme:
     - yaml
     - python
     - bash
+  collapse_navigation: true
 
 markdown_extensions:
     - toc:
@@ -27,20 +28,13 @@ markdown_extensions:
 nav:
     - Introduction: index.md
     - User Guide:
-        - Quick Installation:
-            - Conda: install-conda.md
-            - Docker: install-docker.md
-            - "Alternatives: Windows and Linux": install-alternatives.md
+        - Installation: setup.md
         - Use Cases: use-cases.md
         - Input Types and Parameters: input-types.md
-        - Mappings:
-            - Input Mappings: input-mappings.md
-            - Output Mappings: output-mappings.md
-        - Command Line Interface:
-            - Arguments: argparse/args.md
+        - Mappings: mappings.md
+        - Command Line Interface: argparse/args.md
         - Examples: argparse/examples.md
-        - Developers:
-            - Importing lbsntransform as a package: package.md
-            - API Reference (external): api/lbsntransform_.html
+        - Developers: package.md
+        - API Reference (external): api/lbsntransform_.html
         - Additional resources: resources.md
     - About: about.md
