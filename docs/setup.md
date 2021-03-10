@@ -114,7 +114,7 @@ docker run \
 
 There are many ways to install python tools, in Windows this can become particularly frustrating.
 
-1. For most Windows users, the recommended way is to install lbsntransform with [conda package manager](#conda)
+1. For most Windows users, the recommended way is to install lbsntransform with [conda package manager](#installation-with-conda)
 2. You can also use the [Docker](#docker) approach in Windows, e.g. in combination with Windows Subsystem for Linux (WSL)
 3. If you _need_ to install with pip in Windows, a possible approach is to install all dependencies first (use [Gohlke wheels] 
    if necessary) and then install lbsntransform with 
