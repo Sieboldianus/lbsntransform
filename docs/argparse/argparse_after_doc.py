@@ -57,24 +57,6 @@ def format_markdown():
             all_lines="".join((all_lines[:sStart],sGroup,all_lines[sEnd:]))
             # Print match
             # print('Match "{}" found at: [{},{}]'.format(sGroup, sStart,sEnd))  
-        
-    # for x, match in enumerate(re.finditer(regex, all_lines)):
-    #     if x == 0:
-    #         # skip first code blocks
-    #         # with index
-    #         continue
-    #     # Start index of match (integer)
-    #     sStart = match.start()
-    # 
-    #     # Final index of match (integer)
-    #     sEnd = match.end()
-    # 
-    #     # Complete match (string)
-    #     sGroup = match.group().replace('\n',"").replace('  ',"\n").replace('```',"```\n")
-    #     
-    #     all_lines="".join((all_lines[:sStart],sGroup,all_lines[sEnd:]))
-    #     # Print match
-    #     # print('Match "{}" found at: [{},{}]'.format(sGroup, sStart,sEnd))  
     
     with open("docs/argparse/args.md", "w") as source_file:
         source_file.write(all_lines)
