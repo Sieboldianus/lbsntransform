@@ -37,6 +37,9 @@ def extract_argscode():
         "'  '\n", "'&nbsp;&nbsp;<br>'\n")
     parse_args_source = parse_args_source.replace(
         "  '\n", "&nbsp;&nbsp;<br>'\n")
+    # protected indent
+    parse_args_source = parse_args_source.replace(
+        "'    ", "'&nbsp;&nbsp;&nbsp;&nbsp;")
     # write prepared source code
     source_file.write(parse_args_source)
     source_file.close()

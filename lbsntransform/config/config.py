@@ -105,14 +105,17 @@ class BaseConfig():
         parser.add_argument("--dry-run",
                             action='store_true',
                             help='Perform a trial run '
+                            '  '
                             'with no changes made '
                             'to database/output')
         # Local Input
         local_input_args = parser.add_argument_group('Local Input')
         local_input_args.add_argument('-l', "--file_input",
                                       action='store_true',
-                                      help='This flag enables file input '
+                                      help='This flag enables file input  '
+                                      '  '
                                       '(instead of reading data from a database). '
+                                      '  '
                                       '  '
                                       '* To specify which files to process, see '
                                       'parameter `--input_path_url`.  '
@@ -122,15 +125,16 @@ class BaseConfig():
                                       '  see `--file_type`  ')
         local_input_args.add_argument("--file_type",
                                       default='json',
-                                      help='Specify filetype '
+                                      help='Specify filetype  '
+                                      '  '
                                       ' (`json`, `csv` etc.) '
+                                      '  '
                                       '  '
                                       '* only applies if `--file_input` is used.  ',
                                       type=str)
         local_input_args.add_argument("--input_path_url",
                                       default="01_Input",
-                                      help='Path to input folder.'
-                                      '  '
+                                      help='Path to input folder.  '
                                       '  '
                                       '* If not provided, subfolder `./01_Input/` '
                                       ' will be used.  '
@@ -171,8 +175,7 @@ class BaseConfig():
         # HLL Worker
         hllworker_args = parser.add_argument_group('HLL Worker')
         hllworker_args.add_argument("--dbpassword_hllworker",
-                                    help='Password for hllworker '
-                                    'database (Default = empty)'
+                                    help='Password for hllworker db  '
                                     '  '
                                     '  '
                                     '* If reading data into `hlldb`, all '
@@ -192,7 +195,7 @@ class BaseConfig():
                                     help='Username for hllworker db.',
                                     type=str)
         hllworker_args.add_argument("--dbserveraddress_hllworker",
-                                    help='IP for hllworker db, '
+                                    help='IP for hllworker db  '
                                     '  '
                                     '  '
                                     '* e.g. `111.11.11.11`  '
@@ -209,12 +212,14 @@ class BaseConfig():
         # DB Output
         dboutput_args = parser.add_argument_group('DB Output')
         dboutput_args.add_argument('-p', "--dbpassword_output",
-                                   help='Password for out-db '
-                                   '(postgres db)',
+                                   help='Password for out-db  '
+                                   '  '
+                                   '(postgres raw/hll db)',
                                    type=str)
         dboutput_args.add_argument('-u', "--dbuser_output",
                                    default="postgres",
-                                   help='Username for out-db. '
+                                   help='Username for out-db.  '
+                                   '  '
                                    'Default: `example-user-name2`',
                                    type=str)
         dboutput_args.add_argument('-a', "--dbserveraddress_output",
@@ -315,9 +320,9 @@ class BaseConfig():
                                    '  '
                                    '!!! note  '
                                    '    Use `--transferlimit` to limit the '
-                                   'total number of records transferred. `--transfer_count` '
-                                   'defines the _batch_ count that is used to transfer '
-                                   'data incrementally.  ',
+                                   '    total number of records transferred. `--transfer_count` '
+                                   '    instead defines the _batch_ count that is used to transfer '
+                                   '    data incrementally.  ',
                                    type=int)
         settings_args.add_argument("--records_tofetch",
                                    default=10000,
@@ -354,7 +359,7 @@ class BaseConfig():
             'Possible parameters:  '
             '* `0` = Save Original Tweets of Retweets as `posts`;  '
             '* `1` = do not store Original Tweets of Retweets;  '
-            '* !Not implemented: `2` = Store Original Tweets of Retweets as '
+            '* `2` = !Not implemented: Store Original Tweets of Retweets as '
             '`post_reactions`  ')
         settings_args.add_argument("--ignore_non_geotagged",
                                    action='store_true',

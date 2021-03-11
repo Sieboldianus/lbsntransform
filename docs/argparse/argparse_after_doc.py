@@ -17,6 +17,8 @@ def format_markdown():
     with open(source_file_path, "r") as source_file:
         for line in source_file:
             newline = line.replace('&nbsp;&nbsp;<br>', '  \n')
+            newline = newline.replace('!!!\n', '!!! ')
+            newline = newline.replace('&nbsp;&nbsp;&nbsp;&nbsp;', '\n    ')
             newline = newline.replace('```', '\n```\n')
             newline = newline.replace(':  \n', ':  \n\n')
             newline = newline.replace(']:\n', ']: ')
@@ -57,7 +59,8 @@ def format_markdown():
             all_lines="".join((all_lines[:sStart],sGroup,all_lines[sEnd:]))
             # Print match
             # print('Match "{}" found at: [{},{}]'.format(sGroup, sStart,sEnd))  
-    
+    # cleanup
+    all_lines = re.sub(r'(\s) &\w+', r'\1', all_lines)
     with open("docs/argparse/args.md", "w") as source_file:
         source_file.write(all_lines)
 
