@@ -3,6 +3,8 @@
    
    Note:
    It is recognized that this is a horrible way to do things.
+   We'll use this until an arg parser extension is available 
+   for mkdocs.
 """
 
 import re
@@ -60,7 +62,6 @@ def format_markdown():
             # Print match
             # print('Match "{}" found at: [{},{}]'.format(sGroup, sStart,sEnd))  
     # cleanup
-    all_lines = re.sub(r'(\s) &\w+', r'\1', all_lines)
     with open("docs/argparse/args.md", "w") as source_file:
         source_file.write(all_lines)
 
