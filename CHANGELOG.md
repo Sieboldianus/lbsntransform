@@ -2,6 +2,18 @@
 
 <!--next-version-placeholder-->
 
+## v0.16.1 (2021-03-13)
+### Documentation
+* Fix Readme image link on pypi ([`ec352ca`](https://github.com/Sieboldianus/lbsntransform/commit/ec352cad0d9ded60b6dc719e6c19cbb6787519de))
+* Major overhaul of CLI argument formatting ([`d12b4c1`](https://github.com/Sieboldianus/lbsntransform/commit/d12b4c1056b0fd496ed1c907a51321870f17927b))
+* Improve formatting ([`c766d8e`](https://github.com/Sieboldianus/lbsntransform/commit/c766d8ed9a95d1247f26fb55bf97294ae705fbf0))
+* Add docker mount note ([`dcd98a2`](https://github.com/Sieboldianus/lbsntransform/commit/dcd98a225df5cb19a6940d63d7916d91464b73ed))
+* Add note towards Docker input from bind mounts ([`a1e1564`](https://github.com/Sieboldianus/lbsntransform/commit/a1e156484832945bd30e0544849027bdbd851ef1))
+* Fix formatting issue in --override_lbsn_query_schema ([`ac26a2f`](https://github.com/Sieboldianus/lbsntransform/commit/ac26a2fff373261996b2662c47d653d58393ff8b))
+* Fix typo ([`42fe31f`](https://github.com/Sieboldianus/lbsntransform/commit/42fe31ff43bfb2210a28b6d669678dd2631504ab))
+* Add example to read from live lbsn db and to live hll db ([`b07a7c2`](https://github.com/Sieboldianus/lbsntransform/commit/b07a7c2e12e83a7f7398284a90f94fcd31456e1e))
+* Correct order of --editable --no-deps for quirky pip ([`a768da1`](https://github.com/Sieboldianus/lbsntransform/commit/a768da14edc2b82a916e9e844501456a8cabefdb))
+
 ## v0.16.0 (2021-01-14)
 ### Feature
 * Add --dry-run option ([`335631b`](https://github.com/Sieboldianus/lbsntransform/commit/335631b0b2a49eb18a9e25c852a6cca70d8ea9b1))
