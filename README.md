@@ -5,7 +5,7 @@
 A python package that uses the [common location based social network (LBSN) data structure][lbsnstructure] 
 (ProtoBuf) to import, transform and export Social Media data such as Twitter and Flickr.
 
-![Illustration of functions](docs/inputoutput.svg)
+![Illustration of functions](https://lbsn.vgiscience.org/lbsntransform/docs/inputoutput.svg)
 
 ## Motivation
 
