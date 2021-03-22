@@ -15,6 +15,7 @@ theme:
     - python
     - bash
   collapse_navigation: true
+  custom_dir: docs/overrides
 
 markdown_extensions:
     - toc:
@@ -24,6 +25,10 @@ markdown_extensions:
     - admonition
     - fenced_code
     - sane_lists
+
+plugins:
+    - search
+    - git-revision-date-localized
 
 nav:
     - Introduction: index.md
