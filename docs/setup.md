@@ -114,9 +114,13 @@ docker run \
 
 There are many ways to install python tools, in Windows this can become particularly frustrating.
 
-1. For most Windows users, the recommended way is to install lbsntransform with [conda package manager](#installation-with-conda)
-2. You can also use the [Docker](#docker) approach in Windows, e.g. in combination with Windows Subsystem for Linux (WSL)
-3. If you _need_ to install with pip in Windows, a possible approach is to install all dependencies first (use [Gohlke wheels] 
+!!! note
+    The recommended way to run LBSN transform in Windows is either through [Docker](#docker) or in 
+    [Docker](#installation-with-conda), ideally run from Windows Subsystem for Linux (WSL 1 or 2).
+    
+1. It is possible to install install lbsntransform with [conda package manager](#installation-with-conda) in Windows directly.
+   In this case, unlike conda in Linux and in our environment.yml, it is recommended to install `geos` from conda, not from pypi.
+2. If you _need_ to install with pip in Windows, a possible approach is to install all dependencies first (use [Gohlke wheels] 
    if necessary) and then install lbsntransform with 
 
 ```bash
@@ -128,7 +132,7 @@ pip install lbsntransform --no-deps
 !!! note
     Use of pip can be problematic, even on Linux. Some sub-dependencies outside python [cannot 
     be managed by pip][1], such as `libpq-dev`, which is required by [psycopg2]. 
-    Use [conda](#conda) if you're new to python package managers. You've been warned.
+    Use [conda](#installation-with-conda) if you're new to python package managers. You've been warned.
     
 For most Linux users, it is recommended to first create some type of virtual environment, 
 and then install lbsntransform in the virtual env, e.g.:
