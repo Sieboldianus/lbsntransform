@@ -10,7 +10,7 @@ The following cli arguments are available for the two types.
     At the moment, validation of CLI arguments is only done rudimentary. This
     makes it necessary to carefully check parameters. Expect that errors may
     be misleading. If in doubt, have a look at parameter processing in
-    the [config module](api/config/config.html).
+    the [config module](../api/config/config.html).
     
 ## File and URL input 
 
