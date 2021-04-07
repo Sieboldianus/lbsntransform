@@ -115,8 +115,8 @@ docker run \
 There are many ways to install python tools, in Windows this can become particularly frustrating.
 
 !!! note
-    The recommended way to run LBSN transform in Windows is either through [Docker](#docker) or in 
-    [Docker](#installation-with-conda), ideally run from Windows Subsystem for Linux (WSL 1 or 2).
+    The recommended way to run lbsntransform in Windows is either through [Docker](#docker) or in 
+    [conda](#installation-with-conda), ideally run from Windows Subsystem for Linux (WSL 1 or 2).
     
 1. It is possible to install install lbsntransform with [conda package manager](#installation-with-conda) in Windows directly.
    In this case, unlike conda in Linux and in our environment.yml, it is recommended to install `geos` from conda, not from pypi.
