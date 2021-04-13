@@ -22,6 +22,6 @@ We plan to update this section with a Jupyter Lab example notebook.
 lbsntransform is in an early stage of development.
 
 You can contribute:  
-- Feedback, submit issues for bugs etc. on [Github](https://github.com/Sieboldianus/lbsntransform)
-- Improve the concept, see [lbsn.vgiscience.org](https://lbsn.vgiscience.org/) and get [in contact](/about/) with use
-- Provide [custom mappings](/mappings/) for different data sources  
+- Feedback, submit issues for bugs etc. on [Github](https://github.com/Sieboldianus/lbsntransform)  
+- Improve the concept, see [lbsn.vgiscience.org](https://lbsn.vgiscience.org/) and get [in contact](/about/) with use  
+- Provide [custom mappings](/lbsntransform/docs/mappings/) for different data sources  
