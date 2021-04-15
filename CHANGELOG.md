@@ -2,6 +2,18 @@
 
 <!--next-version-placeholder-->
 
+## v0.17.0 (2021-04-15)
+### Feature
+* Properly intergrate hmac hashing and warn user on empty key ([`4cecd96`](https://github.com/Sieboldianus/lbsntransform/commit/4cecd961a79d8e14e047b59eab11ce2498bf02ff))
+
+### Documentation
+* Fix list formatting ([`2751d74`](https://github.com/Sieboldianus/lbsntransform/commit/2751d742480a60f09d3e90e0387144743678b4eb))
+* Fix typo ([`e000386`](https://github.com/Sieboldianus/lbsntransform/commit/e000386a9899b7c8c732282fb54331d8efbaf18b))
+* Update Windows install instructions ([`9d0cb6e`](https://github.com/Sieboldianus/lbsntransform/commit/9d0cb6e393452d4e4e637a20fefd0b0ece1c1fea))
+* Fix api link ([`b31b1ce`](https://github.com/Sieboldianus/lbsntransform/commit/b31b1ce2997aa45f3b1bebcc0af7312c57e560d1))
+* Fix api link ([`1745f39`](https://github.com/Sieboldianus/lbsntransform/commit/1745f3942b737a86af0c9c666754692972431642))
+* Add last git revision date to pages ([`b254df7`](https://github.com/Sieboldianus/lbsntransform/commit/b254df7cc4bf0aa029a22c19e050a99a961cca8d))
+
 ## v0.16.1 (2021-03-13)
 ### Documentation
 * Fix Readme image link on pypi ([`ec352ca`](https://github.com/Sieboldianus/lbsntransform/commit/ec352cad0d9ded60b6dc719e6c19cbb6787519de))
