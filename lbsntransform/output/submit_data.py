@@ -261,7 +261,7 @@ class LBSNTransfer():
 
     def get_prepared_lbsn_records(
             self, batch_item: List[Any]):
-        """Turns propietary lbsn classes into prepared sql value tuples
+        """Turns proprietary lbsn classes into prepared sql value tuples
 
         For hll output, this includes calculation of
         shards from individual items using the hll_worker
