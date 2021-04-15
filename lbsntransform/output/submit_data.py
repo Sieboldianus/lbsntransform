@@ -282,6 +282,17 @@ class LBSNTransfer():
                 prepared_records.append(prepared_record)
         return prepared_records
 
+    def prepare_hmac(self, hmac_key: str = None):
+        """Update the session hmac key that is used to apply cryptographic hashing"""
+        if hmac_key is None:
+            logging.getLogger('__main__').warn(
+                "Use of empty hmac_key: Please set the key for production use.")
+        self.hllworker_cursor.execute(
+            "SET crypt.salt = %s", hmac_key)
+        hmac_func_sql = HLLSql.get_hmac_hash_sql()
+        self.hllworker_cursor.execute(hmac_func_sql)
+
+
     def get_prepared_hll_records(
             self, batch_item: Dict[str, Any]):
         """Turns propietary hll classes into prepared sql value tuples

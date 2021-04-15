@@ -69,7 +69,8 @@ def main():
         dbpassword_hllworker=config.dbpassword_hllworker,
         dbserverport_hllworker=config.dbserverport_hllworker,
         include_lbsn_bases=config.include_lbsn_bases,
-        dry_run=config.dry_run)
+        dry_run=config.dry_run,
+        hmac_key=config.hmac_key)
 
     # initialize input reader
     input_data = LoadData(

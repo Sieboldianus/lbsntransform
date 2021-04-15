@@ -59,7 +59,7 @@ class LBSNTransform():
             dbformat_output=None, dbuser_hllworker=None,
             dbserveraddress_hllworker=None, dbname_hllworker=None,
             dbpassword_hllworker=None, dbserverport_hllworker=None,
-            include_lbsn_bases=None, dry_run=None):
+            include_lbsn_bases=None, dry_run=None, hmac_key=None):
         """Init settings for LBSNTransform"""
 
         # init logger level
@@ -113,10 +113,6 @@ class LBSNTransform():
                 dbname_input, dbpassword_input, dbserverport_input,
                 readonly=True, dict_cursor=True)
             self.cursor_input = cursor_input
-        #      loc_filelist = LoadData.read_local_files(config)
-        # else:
-        #      # establish input connection
-        #
 
         # initialize stats
         self.processed_total = 0
@@ -126,6 +122,10 @@ class LBSNTransform():
         # this is where all the converted data will be stored
         # note that one input record may contain many lbsn records
         self.lbsn_records = LBSNRecordDicts()
+        # prepare hmac
+        if self.output.dbformat_output == 'hll':
+            self.output.prepare_hmac(
+                hmac_key)
 
     def add_processed_records(self, lbsn_record):
         """Adds one or multiple LBSN Records (ProtoBuf)

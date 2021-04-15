@@ -77,6 +77,7 @@ class BaseConfig():
         self.override_lbsn_query_schema = None
         self.mappings_path = None
         self.dry_run = None
+        self.hmac_key = None
 
         BaseConfig.set_options()
 
@@ -599,6 +600,23 @@ class BaseConfig():
                                    'Argument can be used multiple times.',
                                    action='append',
                                    type=str)
+        settings_args.add_argument("--hmac_key",
+                                   help='Override db hmac key '
+                                   '  '
+                                   '  '
+                                   'The hmac key is used for cryptographic hashing '
+                                   'during creation of HLL sets. Override what is '
+                                   'set in hllworker database here. '
+                                   '  '
+                                   '  '
+                                   'Remember to re-use the same hmac key for any '
+                                   'consecutive update of HLL sets. '
+                                   '  '
+                                   'Further information is available in the [YFCC HLL tutorial][2]. '
+                                   '  '
+                                   '[2]: https://lbsn.vgiscience.org/tutorial/yfcc-geohash/#prepare-query-and-cryptographic-hashing',
+                                   action='append',
+                                   type=str)
 
         args = parser.parse_args()
         if args.file_input:
@@ -724,6 +742,8 @@ class BaseConfig():
         if args.override_lbsn_query_schema:
             self.override_lbsn_query_schema = self.compile_schema_override(
                 args.override_lbsn_query_schema)
+        if args.hmac_key:
+            self.hmac_key = args.hmac_key
 
     @classmethod
     def compile_schema_override(

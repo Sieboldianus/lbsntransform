@@ -66,3 +66,33 @@ class HLLSql():
                         facet, base) for metric_key in metric_keys])};
             '''
         return insert_sql
+
+    @staticmethod
+    def get_hmac_hash_sql() -> str:
+        """Returns hmac hash sql function"""
+
+        sql = """/* Produce pseudonymized hash of input id with skey
+        * - using skey as seed value
+        * - sha256 cryptographic hash function
+        * - encode in base64 to reduce length of hash
+        * - remove trailing '=' from base64 string
+        * - return as text
+        */
+        CREATE OR REPLACE FUNCTION
+        extensions.crypt_hash (id text, skey text)
+        RETURNS text
+        AS $$
+            SELECT
+                RTRIM(
+                    ENCODE(
+                        HMAC(
+                            id::bytea,
+                            skey::bytea,
+                            'sha256'),
+                        'base64'),
+                    '=')
+        $$
+        LANGUAGE SQL
+        STRICT;
+        """
+        return sql

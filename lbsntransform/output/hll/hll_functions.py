@@ -80,7 +80,14 @@ class HLLFunctions():
         """
         insert_sql = \
             f'''
-            SELECT base_id, metric_id, hll_add_agg(hll_hash_text(s.item_value))
+            SELECT
+                base_id,
+                metric_id,
+                hll_add_agg(
+                    hll_hash_text(
+                        extensions.crypt_hash(
+                            s.item_value,
+                            current_setting('crypt.salt'))))
             FROM (
             VALUES {values_str}
             ) s(base_id, metric_id, item_value)
