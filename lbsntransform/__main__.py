@@ -86,6 +86,7 @@ def main():
         is_stacked_json=config.is_stacked_json,
         is_line_separated_json=config.is_line_separated_json,
         csv_delim=config.csv_delim,
+        use_csv_dictreader=config.use_csv_dictreader,
         input_lbsn_type=config.input_lbsn_type,
         dbformat_input=config.dbformat_input,
         geocode_locations=config.geocode_locations,

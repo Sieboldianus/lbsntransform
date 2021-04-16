@@ -65,6 +65,7 @@ class BaseConfig():
         self.csv_output = False
         self.csv_suppress_linebreaks = True
         self.csv_delim = None
+        self.use_csv_dictreader = None
         self.recursive_load = False
         self.skip_until_file = None
         self.min_geoaccuracy = None
@@ -471,6 +472,20 @@ class BaseConfig():
                                              '* Note: to pass tab, '
                                              'use variable substitution (`$"\t"`)  ')[1:-1],
                                    type=str)
+        settings_args.add_argument("--use_csv_dictreader",
+                                   action='store_true',
+                                   help='Use csv.DictReader. '
+                                   '  '
+                                   '  '
+                                   'By default, CSVs will be read line by line,  '
+                                   'using the standard csv.reader().  '
+                                   '  '
+                                   'This will enable [csv.DictReader()](https://docs.python.org/3/library/csv.html#csv.DictReader),  '
+                                   'which allows to access CSV fields by name in mappings.  '
+                                   '  '
+                                   'A CSV with a header is required for this setting to work.  '
+                                   '  '
+                                   'Note that `csv.DictReader()` may be slower than the default `csv.reader()`.')
         settings_args.add_argument("--recursive_load",
                                    action='store_true', default=False,
                                    help='Recursive local sub dirs. '
@@ -719,6 +734,8 @@ class BaseConfig():
             self.csv_suppress_linebreaks = False
         if args.csv_delimiter:
             self.csv_delim = args.csv_delimiter
+        if args.use_csv_dictreader:
+            self.use_csv_dictreader = args.use_csv_dictreader
         if args.recursive_load:
             self.recursive_load = True
         if args.skip_until_file:

@@ -50,7 +50,8 @@ class LoadData():
             map_relations=None, transfer_reactions=None,
             ignore_non_geotagged=None, min_geoaccuracy=None, source_web=None,
             zip_records=None, skip_until_record=None,
-            include_lbsn_objects=None, override_lbsn_query_schema=None):
+            include_lbsn_objects=None, override_lbsn_query_schema=None,
+            use_csv_dictreader=None):
         self.is_local_input = is_local_input
         self.start_number = 1
         self.continue_number = None
@@ -85,6 +86,7 @@ class LoadData():
         self.is_line_separated_json = is_line_separated_json
         self.local_file_type = local_file_type
         self.csv_delim = csv_delim
+        self.use_csv_dictreader = use_csv_dictreader
         self.file_format = local_file_type
         self.input_lbsn_type = input_lbsn_type
         self.start_id = None
@@ -440,15 +442,16 @@ class LoadData():
         """
         if self.csv_delim is None:
             self.csv_delim = ','
-        # records = []
-        record_reader = csv.reader(file_handle, delimiter=self.csv_delim,
-                                   quotechar='"', quoting=csv.QUOTE_NONE)
+        kwargs = {
+            'delimiter':self.csv_delim,
+            'quotechar':'"',
+            'quoting':csv.QUOTE_NONE
+        }
+        if self.use_csv_dictreader:
+            record_reader = csv.DictReader(f=file_handle, **kwargs)
+            return record_reader
+        record_reader = csv.reader(file_handle=file_handle, **kwargs)
         return record_reader
-        #   next(reader, None)  # skip headerline
-        #   records = list(reader)
-        #   if not records:
-        #       return None
-        #   return records
 
     @staticmethod
     def initialize_connection(
