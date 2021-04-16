@@ -232,7 +232,7 @@ class HelperFunctions():
 
     @staticmethod
     def extract_hashtags_from_string(
-        text_str: str) -> List[str]:
+        text_str: str) -> Set[str]:
         """Extract hashtags with leading hash-character (#) from string
 
         - removes # from hashtags
@@ -244,6 +244,21 @@ class HelperFunctions():
         hashtag_pattern = re.compile('(?i)(?<=\#)\w+')
         hashtag_list = hashtag_pattern.findall(text_str)
         return set(hashtag_list)
+
+    @staticmethod
+    def extract_atmentions_from_string(
+        text_str: str) -> Set[str]:
+        """Extract @-mentions with leading hash-character (@) from string
+
+        - removes @ from mentions
+        - removes duplicates
+        - removes special chars (emoji etc.) from mentions, e.g.:
+            - input: "@userxyz🇩🇪"
+            - output: [userxyz]
+        """
+        mention_pattern = re.compile('(?i)(?<=\@)\w+')
+        mention_list = mention_pattern.findall(text_str)
+        return set(mention_list)
 
     @staticmethod
     def json_read_wrapper(gen):
