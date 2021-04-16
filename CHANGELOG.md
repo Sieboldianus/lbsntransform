@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.0 (2021-04-16)
+### Feature
+* Add function to extract @-Mentions from string ([`714d5c9`](https://github.com/Sieboldianus/lbsntransform/commit/714d5c9a6b4c1d17805d88232ca8138cd627e18f))
+* Add option to switch to csv.DictReader() ([`2a79f01`](https://github.com/Sieboldianus/lbsntransform/commit/2a79f01cf259a7f2d74763d7adbed8dd59f65488))
+
+### Documentation
+* Improve description of --transfer_count ([`9847f5e`](https://github.com/Sieboldianus/lbsntransform/commit/9847f5e485e36bcab7ff56261277a514573be01c))
+
 ## v0.17.0 (2021-04-15)
 ### Feature
 * Properly intergrate hmac hashing and warn user on empty key ([`4cecd96`](https://github.com/Sieboldianus/lbsntransform/commit/4cecd961a79d8e14e047b59eab11ce2498bf02ff))
