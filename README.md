@@ -1,4 +1,4 @@
-[![PyPI version](https://lbsn.vgiscience.org/lbsntransform/pypi.svg)](https://pypi.org/project/lbsntransform/) [![pylint](https://lbsn.vgiscience.org/lbsntransform/pylint.svg)](https://gitlab.vgiscience.de/lbsn/lbsntransform) [![pipeline](https://lbsn.vgiscience.org/lbsntransform/pipeline.svg)](https://gitlab.vgiscience.de/lbsn/lbsntransform) [![Documentation](https://lbsn.vgiscience.org/lbsntransform/documentation.svg)](https://lbsn.vgiscience.org/lbsntransform/docs/)
+[![PyPI version](https://lbsn.vgiscience.org/lbsntransform/pypi.svg?&kill_cache=1)](https://pypi.org/project/lbsntransform/) [![pylint](https://lbsn.vgiscience.org/lbsntransform/pylint.svg)](https://gitlab.vgiscience.de/lbsn/lbsntransform) [![pipeline](https://lbsn.vgiscience.org/lbsntransform/pipeline.svg?&kill_cache=1)](https://gitlab.vgiscience.de/lbsn/lbsntransform) [![Documentation](https://lbsn.vgiscience.org/lbsntransform/documentation.svg)](https://lbsn.vgiscience.org/lbsntransform/docs/)
 
 # LBSNTransform
 
