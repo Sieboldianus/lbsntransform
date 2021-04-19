@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.1 (2021-04-19)
+### Fix
+* Error on empty HMAC ([`8d29832`](https://github.com/Sieboldianus/lbsntransform/commit/8d2983204d2496e979c71b39655b66bd512c3d4b))
+* Grapheme clusters not found in newest emoji.UNICODE_EMOJI (emoji >= v.1.0.1) ([`cfd6f28`](https://github.com/Sieboldianus/lbsntransform/commit/cfd6f28684c6c56d4a54113fa712f285810289e5))
+
+### Documentation
+* Fix docstring typo ([`7d13423`](https://github.com/Sieboldianus/lbsntransform/commit/7d13423877622306fe39208de1d0b518b9538a77))
+
 ## v0.18.0 (2021-04-16)
 ### Feature
 * Add function to extract @-Mentions from string ([`714d5c9`](https://github.com/Sieboldianus/lbsntransform/commit/714d5c9a6b4c1d17805d88232ca8138cd627e18f))
