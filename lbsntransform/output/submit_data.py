@@ -287,8 +287,11 @@ class LBSNTransfer():
         if hmac_key is None:
             logging.getLogger('__main__').warn(
                 "Use of empty hmac_key: Please set the key for production use.")
-        self.hllworker_cursor.execute(
-            "SET crypt.salt = %s", hmac_key)
+            self.hllworker_cursor.execute(
+            "SET crypt.salt = ''")
+        else:
+            self.hllworker_cursor.execute(
+                "SET crypt.salt = %s", hmac_key)
         hmac_func_sql = HLLSql.get_hmac_hash_sql()
         self.hllworker_cursor.execute(hmac_func_sql)
 
