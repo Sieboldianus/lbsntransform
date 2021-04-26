@@ -283,12 +283,23 @@ class LBSNTransfer():
         return prepared_records
 
     def prepare_hmac(self, hmac_key: str = None):
-        """Update the session hmac key that is used to apply cryptographic hashing"""
+        """Update the session hmac key that is used to apply cryptographic hashing
+
+        Defaults to empty string, if no --hmac_key is provided and crypt.salt
+        is not set in worker db.
+        """
         if hmac_key is None:
             logging.getLogger('__main__').warn(
-                "Use of empty hmac_key: Please set the key for production use.")
+                "Use of empty hmac_key: For production use, please "
+                "make sure that either `crypt.salt` is set on your worker db, "
+                "or provide the --hmac_key.")
             self.hllworker_cursor.execute(
-            "SET crypt.salt = ''")
+            """
+            SELECT set_config(
+                'crypt.salt',
+                COALESCE(current_setting('crypt.salt', 't'), ''),
+                false);
+            """)
         else:
             self.hllworker_cursor.execute(
                 "SET crypt.salt = %s", hmac_key)
