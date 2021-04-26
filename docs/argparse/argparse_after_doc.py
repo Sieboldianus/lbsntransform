@@ -56,8 +56,9 @@ def format_markdown():
                                     '-- ','--').replace(
                                         '```bash',"```bash\n").replace(
                                             '```python',"```python\n").replace(
-                                                '\n ',"\n").replace(
-                                                    '\n\n',"\n")
+                                                '```sql',"```sql\n").replace(
+                                                    '\n ',"\n").replace(
+                                                        '\n\n',"\n")
             all_lines="".join((all_lines[:sStart],sGroup,all_lines[sEnd:]))
             # Print match
             # print('Match "{}" found at: [{},{}]'.format(sGroup, sStart,sEnd))  
