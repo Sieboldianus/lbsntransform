@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.2 (2021-04-26)
+### Fix
+* On empty hmac, do not override if crypt.salt is set in hll worker db ([`24f0a4d`](https://github.com/Sieboldianus/lbsntransform/commit/24f0a4d535087697e70fe6bd535f77b9e1fb39bb))
+
+### Documentation
+* Improve description on how hmac defaults are used ([`aa5e265`](https://github.com/Sieboldianus/lbsntransform/commit/aa5e2651376efbfc3c9b74504f984b4fd6e75cd8))
+* Fix badge links not updating on GH ([`8a425ed`](https://github.com/Sieboldianus/lbsntransform/commit/8a425ed986d489791374c7db6e58152a5a31f007))
+
 ## v0.18.1 (2021-04-19)
 ### Fix
 * Error on empty HMAC ([`8d29832`](https://github.com/Sieboldianus/lbsntransform/commit/8d2983204d2496e979c71b39655b66bd512c3d4b))
