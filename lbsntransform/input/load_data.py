@@ -450,7 +450,7 @@ class LoadData():
         if self.use_csv_dictreader:
             record_reader = csv.DictReader(f=file_handle, **kwargs)
             return record_reader
-        record_reader = csv.reader(file_handle=file_handle, **kwargs)
+        record_reader = csv.reader(file_handle, **kwargs)
         return record_reader
 
     @staticmethod
