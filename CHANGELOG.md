@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.3 (2021-05-05)
+### Fix
+* Csv.reader bug that got introduced in #2a79f01c ([`49243c5`](https://github.com/Sieboldianus/lbsntransform/commit/49243c5d663a76d6c8abcc550f113b09cd909bd0))
+
 ## v0.18.2 (2021-04-26)
 ### Fix
 * On empty hmac, do not override if crypt.salt is set in hll worker db ([`24f0a4d`](https://github.com/Sieboldianus/lbsntransform/commit/24f0a4d535087697e70fe6bd535f77b9e1fb39bb))
