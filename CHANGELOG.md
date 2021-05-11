@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.19.0 (2021-05-11)
+### Feature
+* Add _month_latlng and _month_hashtag composite bases ([`71bbc22`](https://github.com/Sieboldianus/lbsntransform/commit/71bbc222924866a956964326a503ad2408aa3c0a))
+
 ## v0.18.3 (2021-05-05)
 ### Fix
 * Csv.reader bug that got introduced in #2a79f01c ([`49243c5`](https://github.com/Sieboldianus/lbsntransform/commit/49243c5d663a76d6c8abcc550f113b09cd909bd0))
