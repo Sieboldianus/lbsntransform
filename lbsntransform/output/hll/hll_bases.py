@@ -120,7 +120,9 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
     """Base is initialized based on facet-base tuple
     and constructed by parsing lbsn records
 
-    Any bases that require special hooks need to be registered here
+    Any bases that require special hooks need to be registered here. This
+    applies, for example, for bases that can appear multiple times
+    in a single record (hashtags, emoji, terms etc.).
     """
     records = []
     base_structure = BASE_REGISTER.get((facet, base))
@@ -178,6 +180,12 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
             # create base for each term
             records.append(
                 base_structure(record=record, emoji=emoji))
+    elif base == '_month_hashtag':
+        # any hashtag explicitly used
+        tag_terms = HF.filter_terms(record.hashtags)
+        for tag in tag_terms:
+            records.append(
+                base_structure(record=record, hashtag=tag))
     else:
         # init for all other bases with single lbsn record
         record = base_structure(record)

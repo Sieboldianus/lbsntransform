@@ -297,6 +297,8 @@ Bases can be separated by comma and may include:
     - `_hashtag_latlng`
     - `_term_latlng`
     - `_emoji_latlng`
+    - `_month_latlng`
+    - `_month_hashtag`
 
 
 For example:

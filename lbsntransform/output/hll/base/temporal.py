@@ -7,6 +7,7 @@ from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.hll import hll_bases as hll
 
 from lbsntransform.output.hll.hll_functions import HLLFunctions as HLF
+from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 FACET = 'temporal'
 
@@ -186,3 +187,78 @@ class MonthofyearBase(TemporalBase):
         post_date_time = HLF.merge_dates_post(
             record)
         self.key['monthofyear'] = post_date_time.month
+
+class MonthHashtagBase(hll.HllBase):
+    """Composite Base (c-base) that extends from HLL base Class
+
+    Note: To distinguish c-bases which are composite bases combining
+    aspects from multiple facets, they're termed with a leading underscore
+    """
+    NAME = hll.HllBaseRef(facet=FACET, base='_month_hashtag')
+
+    def __init__(self, record: lbsn.Post = None, hashtag: str = None):
+        super().__init__()
+        self.key['year'] = None
+        self.key['month'] = None
+        self.key['hashtag'] = None
+        if hashtag is None:
+            # init empty
+            return
+        self.key['hashtag'] = hashtag.lower()
+        if record is None:
+            # init empty
+            return
+        if isinstance(record, lbsn.Post):
+            post_date_time = HLF.merge_dates_post(
+                record)
+            if post_date_time is None:
+                return
+            date = post_date_time.date()
+            self.key['year'] = date.year
+            self.key['month'] = date.month
+        else:
+            raise ValueError(
+                "Parsing of MonthHashtagBase only supported "
+                "from lbsn.Post")
+
+class MonthLatLngBase(hll.HllBase):
+    """Composite Base (c-base) that extends from HLL base Class
+
+    Note: To distinguish c-bases which are composite bases combining
+    aspects from multiple facets, they're termed with a leading underscore
+    """
+    NAME = hll.HllBaseRef(facet=FACET, base='_month_latlng')
+
+    def __init__(self, record: lbsn.Post = None, hashtag: str = None):
+        super().__init__()
+        self.key['year'] = None
+        self.key['month'] = None
+        self.key['latitude'] = None
+        self.key['longitude'] = None
+        self.attrs['latlng_geom'] = None
+        if record is None:
+            # init empty
+            return
+        if isinstance(record, lbsn.Post):
+            post_date_time = HLF.merge_dates_post(
+                record)
+            if post_date_time is None:
+                return
+            date = post_date_time.date()
+            self.key['year'] = date.year
+            self.key['month'] = date.month
+
+            coordinates_geom = record.post_latlng
+            coordinates = HF.get_coordinates_from_ewkt(
+                coordinates_geom
+            )
+            self.key['latitude'] = coordinates.lat
+            self.key['longitude'] = coordinates.lng
+            # additional (optional) attributes
+            # formatted ready for sql upsert
+            self.attrs['latlng_geom'] = HF.return_ewkb_from_geotext(
+                coordinates_geom)
+        else:
+            raise ValueError(
+                "Parsing of MonthLatLngBase only supported "
+                "from lbsn.Post")
