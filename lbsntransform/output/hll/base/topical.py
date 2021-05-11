@@ -21,7 +21,7 @@ class TopicalBase(hll.HllBase):
         super().__init__()
         self.metrics['latlng_hll'] = set()
         self.metrics['place_hll'] = set()
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
 
 
 class HashtagBase(TopicalBase):
@@ -128,7 +128,7 @@ class TemplateBase(TopicalBase):
         self.attrs['topic_attr2'] = None
         self.attrs['topic_attr3'] = None
         # TemplateBase inherits from TopicalBase
-        # thus, metrics latlng_hll, place_hll and date_hll
+        # thus, metrics latlng_hll, place_hll and pud_hll
         # are already defined. Specify additional metrics below
         # or remove inheritance and define from scratch
         self.metrics['utl_hll'] = set()
@@ -169,7 +169,7 @@ class TermLatLngBase(hll.HllBase):
         self.key['longitude'] = None
         self.key['term'] = None
         self.attrs['latlng_geom'] = None
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
         if term is None:
             # init empty
             return
@@ -208,7 +208,7 @@ class HashtagLatLngBase(hll.HllBase):
         self.key['longitude'] = None
         self.key['hashtag'] = None
         self.attrs['latlng_geom'] = None
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
         if hashtag is None:
             # init empty
             return
@@ -247,7 +247,7 @@ class EmojiLatLngBase(hll.HllBase):
         self.key['longitude'] = None
         self.key['emoji'] = None
         self.attrs['latlng_geom'] = None
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
         if emoji is None:
             # init empty
             return

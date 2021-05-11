@@ -22,7 +22,7 @@ class SocialBase(hll.HllBase):
         super().__init__()
         self.metrics['latlng_hll'] = set()
         self.metrics['place_hll'] = set()
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
 
 
 class UserBase(SocialBase):

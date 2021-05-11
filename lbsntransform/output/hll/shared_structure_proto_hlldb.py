@@ -285,13 +285,13 @@ class ProtoHLLMapping():
         """Get hll metrics from lbsn.Post record"""
         post_hll = HLF.hll_concat_origin_guid(record)
         user_hll = HLF.hll_concat_user(record)
-        date_hll = HLF.hll_concat_userday(record)
+        pud_hll = HLF.hll_concat_userday(record)
         latlng_hll = HLF.hll_concat_latlng(record)
         place_hll = HLF.hll_concat_place(record)
         upt_hll = HLF.hll_concat_upt_hll(record)
         hll_metrics = hll.HllMetrics(
             post_hll=post_hll, user_hll=user_hll,
-            date_hll=date_hll, latlng_hll=latlng_hll,
+            pud_hll=pud_hll, latlng_hll=latlng_hll,
             upt_hll=upt_hll, place_hll=place_hll)
         return hll_metrics
 

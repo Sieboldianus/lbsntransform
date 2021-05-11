@@ -22,7 +22,7 @@ needs (see class topical.TemplateBase). The general idea is that each class has
     key as Postgis Geometry, or a name for the place etc.
 * a list of (hll) metrics that are measured for the base (the "overlay"), e.g.
     a list of post_guids ("post_hll"), or user_guids ("user_hll"), or more
-    complex metrics such as date_hll (user days, as termed by [2]). These
+    complex metrics such as pud_hll (user days, as termed by [2]). These
     lists will be transformed into a "hll shard".
 
 Additional Notes:
@@ -69,7 +69,7 @@ from lbsntransform.tools.helper_functions import HelperFunctions as HF
 # named tuple of defined hll metrics
 HllMetrics = namedtuple(  # pylint: disable=C0103
     'HllMetricsTuple',
-    'user_hll post_hll date_hll latlng_hll upl_hll utl_hll '
+    'user_hll post_hll pud_hll latlng_hll upl_hll utl_hll '
     'upt_hll term_hll place_hll', defaults=(None,) * 9)
 
 HllBaseRef = namedtuple('HllBaseRefTuple', 'facet base')

@@ -28,7 +28,7 @@ class LatLngBase(hll.HllBase):
         self.attrs['latlng_geom'] = None
         # init additional metrics
         # beyond those defined inHllBase
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
         self.metrics['utl_hll'] = set()
         if record is None:
             # init empty
@@ -62,7 +62,7 @@ class PlaceBase(hll.HllBase):
         self.attrs['geom_center'] = None
         self.attrs['geom_area'] = None
         self.attrs['name'] = None
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
         self.metrics['utl_hll'] = set()
         if record is None:
             return
@@ -115,7 +115,7 @@ class SpatialBase(hll.HllBase):
         self.attrs['name'] = None
         self.attrs['geom_center'] = None
         self.attrs['geom_area'] = None
-        self.metrics['date_hll'] = set()
+        self.metrics['pud_hll'] = set()
         self.metrics['utl_hll'] = set()
         self.metrics['latlng_hll'] = set()
         if record is None:
