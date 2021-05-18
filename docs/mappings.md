@@ -49,8 +49,7 @@ To load data from Twitter json, use
 lbsntransform --origin 3 \
               --mappings_path ./resources/mappings/ \
               --file_input \
-              --file_type "json" \
-              --mappings_path ./resources/mappings/
+              --file_type "json"
 ```
 
 To load data from Flickr YFCC100M, use 
@@ -60,8 +59,7 @@ lbsntransform --origin 21 \
               --mappings_path ./resources/mappings/ \
               --file_input \
               --file_type "csv" \
-              --csv_delimiter $'\t' \
-              --mappings_path ./resources/mappings/
+              --csv_delimiter $'\t'
 ```
 
 To load data from native LBSN (RAW) DB, running locally
