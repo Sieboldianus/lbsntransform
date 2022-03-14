@@ -665,12 +665,7 @@ class BaseConfig():
         """
 
         parser = BaseConfig.get_arg_parser()
-        if args is None:
-            # if args are not given, define argparse
-            # and load cli args
-            args = parser.parse_args()
-        else:
-            args = parser.parse_args(args)
+        args = parser.parse_args(args)
         if args.file_input:
             self.is_local_input = True
             self.local_file_type = args.file_type
