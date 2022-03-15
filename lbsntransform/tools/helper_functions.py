@@ -733,12 +733,11 @@ class HelperFunctions():
             origin: The MAPPING_ID to identify the mapping module.
             path: Override default path with user defined folder.
         """
-        if mappings_path is None:
+        if mappings_path is None or origin == 0:
             mappings_module_name = "lbsntransform.input.mappings"
-            if origin == 0:
-                from lbsntransform.input.mappings.field_mapping_lbsn import \
-                    importer as importer
-                return importer
+            from lbsntransform.input.mappings.field_mapping_lbsn import \
+                importer as importer
+            return importer
         else:
             mapping_modules = HelperFunctions._get_file_list(
                 mappings_path)

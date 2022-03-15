@@ -82,12 +82,20 @@ class BaseConfig():
 
         BaseConfig.set_options()
 
-    def parse_args(self):
-        """Process input *args
+    @staticmethod
+    def get_arg_parser(
+            parser: argparse.ArgumentParser = None) -> argparse.ArgumentParser:
+        """Define lbsntransform cli arguments
 
-        All args are optional, but some groups need to be defined together.
+        Arguments:
+            parser: Optional parser with extended arguments. This
+            can be used to include lbsntransofmr in another package.
+
+        Note: All args are optional, but some groups need to be defined
+            together.
         """
-        parser = argparse.ArgumentParser()
+        if parser is None:
+            parser = argparse.ArgumentParser()
         parser.add_argument('--version',
                             action='version',
                             version=f'lbsntransform {__version__}')
@@ -646,8 +654,18 @@ class BaseConfig():
                                    '[2]: https://lbsn.vgiscience.org/tutorial/yfcc-geohash/#prepare-query-and-cryptographic-hashing',
                                    action='append',
                                    type=str)
+        return parser
 
-        args = parser.parse_args()
+    def parse_args(self, args: List = None):
+        """Process input *args
+
+        Arguments:
+            args: Optional prepopulated list of args. Can be used to define
+            and extend arguments outside of lbsntransform
+        """
+
+        parser = BaseConfig.get_arg_parser()
+        args = parser.parse_args(args)
         if args.file_input:
             self.is_local_input = True
             self.local_file_type = args.file_type
