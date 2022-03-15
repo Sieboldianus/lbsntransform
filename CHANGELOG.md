@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.21.0 (2022-03-15)
+### Feature
+* Allow lbsntransform args to be predefined by another package ([`c587bbf`](https://github.com/Sieboldianus/lbsntransform/commit/c587bbf3f0f85abcf55e5b193ba947ad204d0914))
+
+### Documentation
+* Remove duplicate mappings_path from example ([`854aad5`](https://github.com/Sieboldianus/lbsntransform/commit/854aad5df685b71d7a72555e77231c545f2f608a))
+* Fix internal links in Use Cases ([`61f772a`](https://github.com/Sieboldianus/lbsntransform/commit/61f772aef4f9dbe837c9d99906bbc004d242bf1a))
+
 ## v0.20.0 (2021-05-11)
 
 
