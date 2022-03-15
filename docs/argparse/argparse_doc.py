@@ -28,6 +28,7 @@ def extract_argscode():
     source_file.write('import argparse\n')
     source_file.write('import argdown\n')
     source_file.write('from pathlib import Path\n')
+    source_file.write('from lbsntransform import BaseConfig\n')
     # fix argparse name
     parse_args_source = parse_args_source.replace(
         'ArgumentParser()', 'ArgumentParser(prog="lbsntransform")')
