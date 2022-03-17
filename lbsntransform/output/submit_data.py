@@ -131,9 +131,10 @@ class LBSNTransfer():
     def store_changes(self):
         """Write changes to CSV"""
         if self.store_csv:
-            self.csv_output.clean_csv_batches(
-                self.batched_lbsn_records, self.dry_run)
-            self.count_entries_store = 0
+            raise NotImplementedError("CSV Output curently not supported")
+            # self.csv_output.clean_csv_batches(
+            #     self.batched_lbsn_records, self.dry_run)
+            # self.count_entries_store = 0
 
     def store_origin(self, origin_id, name):
         """Store origin of input source sql"""
@@ -612,5 +613,6 @@ class LBSNTransfer():
             - clean and merge csv batches
         """
         if self.store_csv:
-            self.csv_output.clean_csv_batches(
-                self.batched_lbsn_records, self.dry_run)
+            raise NotImplementedError("CSV Output curently not supported")
+            # self.csv_output.clean_csv_batches(
+            #     self.batched_lbsn_records, self.dry_run)
