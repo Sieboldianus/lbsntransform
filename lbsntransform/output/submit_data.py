@@ -131,9 +131,10 @@ class LBSNTransfer():
     def store_changes(self):
         """Write changes to CSV"""
         if self.store_csv:
-            self.csv_output.clean_csv_batches(
-                self.batched_lbsn_records, self.dry_run)
-            self.count_entries_store = 0
+            raise NotImplementedError("CSV Output curently not supported")
+            # self.csv_output.clean_csv_batches(
+            #     self.batched_lbsn_records, self.dry_run)
+            # self.count_entries_store = 0
 
     def store_origin(self, origin_id, name):
         """Store origin of input source sql"""
@@ -583,16 +584,6 @@ class LBSNTransfer():
 
         ProtocolBuffers has no unique list field type. This function will
         remove duplicates, which is needed for unique compare.
-
-        There is a 'bug' in Python implementation of ProtocolBuffers:
-        - depending on the implementation type in use, it is possible
-        to spot either 'RepeatedCompositeFieldContainer'
-            or 'RepeatedCompositeContainer'
-        - solution here: import and compare to both types
-        - this is not ideal, since both types are internal to PB and
-            subject to change
-        - see [proto-bug](https://github.com/protocolbuffers/
-            protobuf/issues/3870)
         """
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
@@ -612,5 +603,6 @@ class LBSNTransfer():
             - clean and merge csv batches
         """
         if self.store_csv:
-            self.csv_output.clean_csv_batches(
-                self.batched_lbsn_records, self.dry_run)
+            raise NotImplementedError("CSV Output curently not supported")
+            # self.csv_output.clean_csv_batches(
+            #     self.batched_lbsn_records, self.dry_run)
