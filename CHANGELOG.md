@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.21.1 (2022-03-17)
+### Fix
+* ScalarMapContainer not found in protobuf dependency (Windows only) ([`7d469f5`](https://github.com/Sieboldianus/lbsntransform/commit/7d469f5fa2e2ec93a0f02d5ae0c08384cf5c3ec0))
+* Deactivate currently not supported CSV output ([`92f887d`](https://github.com/Sieboldianus/lbsntransform/commit/92f887d2691e32efe0378471f81862a0f6877c5d))
+
 ## v0.21.0 (2022-03-15)
 ### Feature
 * Allow lbsntransform args to be predefined by another package ([`c587bbf`](https://github.com/Sieboldianus/lbsntransform/commit/c587bbf3f0f85abcf55e5b193ba947ad204d0914))
