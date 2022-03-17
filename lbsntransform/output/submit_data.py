@@ -584,16 +584,6 @@ class LBSNTransfer():
 
         ProtocolBuffers has no unique list field type. This function will
         remove duplicates, which is needed for unique compare.
-
-        There is a 'bug' in Python implementation of ProtocolBuffers:
-        - depending on the implementation type in use, it is possible
-        to spot either 'RepeatedCompositeFieldContainer'
-            or 'RepeatedCompositeContainer'
-        - solution here: import and compare to both types
-        - this is not ideal, since both types are internal to PB and
-            subject to change
-        - see [proto-bug](https://github.com/protocolbuffers/
-            protobuf/issues/3870)
         """
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
