@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.21.3 (2022-03-18)
+### Fix
+* Pin google.protobuf to latest release 3.19.4 or earlier ([`f591487`](https://github.com/Sieboldianus/lbsntransform/commit/f591487a8d4c3fb71040a26caba2267049f1b657))
+
+### Documentation
+* Add note to activate optional nltk stopwords filter feature ([`015511e`](https://github.com/Sieboldianus/lbsntransform/commit/015511e27863b1b2f63176c498fc8b85f2721707))
+* Deprecate cx_freeze setup ([`4700821`](https://github.com/Sieboldianus/lbsntransform/commit/4700821a3e4ca1d107e66fc2cc78b5a2e1ce4ea7))
+
 ## v0.21.2 (2022-03-18)
 ### Documentation
 * Add hint towards Linux installation ([`ce2c75b`](https://github.com/Sieboldianus/lbsntransform/commit/ce2c75b68912a2485ae2ef195a7e4bd8dc4137d8))
