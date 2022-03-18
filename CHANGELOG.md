@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.21.2 (2022-03-18)
+### Documentation
+* Add hint towards Linux installation ([`ce2c75b`](https://github.com/Sieboldianus/lbsntransform/commit/ce2c75b68912a2485ae2ef195a7e4bd8dc4137d8))
+
 ## v0.21.1 (2022-03-17)
 ### Fix
 * ScalarMapContainer not found in protobuf dependency (Windows only) ([`7d469f5`](https://github.com/Sieboldianus/lbsntransform/commit/7d469f5fa2e2ec93a0f02d5ae0c08384cf5c3ec0))
