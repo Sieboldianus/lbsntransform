@@ -166,3 +166,23 @@ python setup.py install
 [1]: https://stackoverflow.com/q/27734053/4556479#comment43880476_27734053
 [psycopg2]: https://www.psycopg.org/install/
 [Gohlke wheels]: https://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+## Optional feature: NLTK stopwords filter
+
+If you want to filter list of terms based on [NLTK stopwords][nltk],
+install nltk and download the stopwords once.
+
+You can actrivate this optional feature during installation of
+lbsntransform using extras:
+```python
+pip install 'lbsntransform[nltk_stopwords]'
+python -c 'import nltk;nltk.download("stopwords")'
+```
+
+.. or afterwards:
+```python
+pip install nltk
+python -c 'import nltk;nltk.download("stopwords")'
+```
+
+[nltk]: https://www.nltk.org/book/ch02.html
