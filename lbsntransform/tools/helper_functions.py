@@ -37,7 +37,7 @@ else:
     from google.protobuf.internal.containers import \
         RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
     from google.protobuf.internal.containers import \
-        ScalarMapContainer  # pylint: disable=no-name-in-module
+        ScalarMap  # pylint: disable=no-name-in-module
 
 NLTK_AVAIL = True
 try:
@@ -705,7 +705,7 @@ class HelperFunctions():
                 return True
             return False
         if isinstance(
-                in_obj, (RepeatedCompositeFieldContainer, ScalarMapContainer)):
+                in_obj, (RepeatedCompositeFieldContainer, ScalarMap)):
             return True
         return False
 
