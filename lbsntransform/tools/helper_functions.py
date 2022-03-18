@@ -9,6 +9,9 @@ import datetime as dt
 import importlib.util
 import json
 import logging
+# due to different protocol buffers implementations on Unix, MacOS and Windows
+# import types based on OS
+import platform
 import re
 import string
 from datetime import timezone
@@ -18,13 +21,23 @@ from typing import List, Optional, Set, Union
 
 import emoji
 import regex
-from google.protobuf.internal.containers import \
-    RepeatedCompositeFieldContainer, ScalarMap  # pylint: disable=no-name-in-module
 from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure import lbsnstructure_pb2 as lbsn
 from lbsntransform.output.shared_structure import Coordinates
 from shapely import geos, wkt
 from shapely.geometry import Point, Polygon
+
+PLATFORM_SYS = platform.system()
+if PLATFORM_SYS == 'Linux':
+    from google.protobuf.pyext._message import \
+        RepeatedCompositeContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.pyext._message import \
+        ScalarMapContainer  # pylint: disable=no-name-in-module
+else:
+    from google.protobuf.internal.containers import \
+        RepeatedCompositeFieldContainer  # pylint: disable=no-name-in-module
+    from google.protobuf.internal.containers import \
+        ScalarMapContainer  # pylint: disable=no-name-in-module
 
 NLTK_AVAIL = True
 try:
@@ -686,14 +699,19 @@ class HelperFunctions():
     @staticmethod
     def is_composite_field_container(in_obj):
         """Checks whether in_obj is of type RepeatedCompositeFieldContainer"""
+        if PLATFORM_SYS == 'Linux':
+            if isinstance(
+                    in_obj, (RepeatedCompositeContainer, ScalarMapContainer)):
+                return True
+            return False
         if isinstance(
-                in_obj, (RepeatedCompositeFieldContainer, ScalarMap)):
+                in_obj, (RepeatedCompositeFieldContainer, ScalarMapContainer)):
             return True
         return False
 
     @staticmethod
     def map_to_dict(proto_map):
-        """Converts protobuf field map (ScalarMap)
+        """Converts protobuf field map (ScalarMapContainer)
         to Dictionary"""
         if proto_map:
             mapped_dict = dict(zip(proto_map.keys(), proto_map.values()))
