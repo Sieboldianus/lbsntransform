@@ -1,4 +1,8 @@
 # Installation
+
+!!! info
+    We recommend installation in Linux (or Windows Subsystem for Linux).
+    Native Windows installations are not heavily tested.
 ## Installation with conda
 
 This is the recommended way for all systems.
