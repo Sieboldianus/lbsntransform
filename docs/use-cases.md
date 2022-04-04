@@ -7,13 +7,13 @@ The following two primary use cases exist:
 1. **Importing lbsntransform as a package**
    Use this approach to convert data, such as individual posts 
    retrieved from an API, on-the-fly (in-memory), in your own
-   python package.
+   python package. See the [developers section](../package/#importing-lbsntransform-as-a-package) for examples.
 
 2. **Using the command line interface (cli) to perform batch conversions**
    Use this approach if you want to convert batches of data stored as
    arbitrary json/csv files, or if you want to convert from a database 
    with the raw lbsn structure to a database with the privacy-aware hll 
-   format.
+   format. As a starting point, have a look at the [Input Types and Parameters](../input-types/) section.
 
 For any conversion,  
 
