@@ -172,7 +172,7 @@ python setup.py install
 If you want to filter list of terms based on [NLTK stopwords][nltk],
 install nltk and download the stopwords once.
 
-You can actrivate this optional feature during installation of
+You can activate this optional feature during installation of
 lbsntransform using extras:
 ```python
 pip install 'lbsntransform[nltk_stopwords]'
