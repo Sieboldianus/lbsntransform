@@ -33,6 +33,8 @@ class TimestampBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         self.key["timestamp"] = post_date_time
 
 
@@ -105,6 +107,8 @@ class TimeofdayBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         # remove microseconds from datetime
         self.key['timeofday'] = post_date_time.time.replace(
             microsecond=0)
@@ -122,6 +126,8 @@ class HourofdayBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         # remove seconds and microseconds from datetime
         self.key['hourofday'] = post_date_time.time.replace(
             second=0, microsecond=0)
@@ -139,6 +145,8 @@ class DayofweekBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         self.key['weekday'] = post_date_time.weekday
 
 
@@ -154,6 +162,8 @@ class DayofmonthBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         self.key['dayofmonth'] = post_date_time.day
 
 
@@ -170,6 +180,8 @@ class DayofyearBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         self.key['month'] = post_date_time.month
         self.key['day'] = post_date_time.day
 
@@ -186,6 +198,8 @@ class MonthofyearBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
+        if post_date_time is None:
+            return
         self.key['monthofyear'] = post_date_time.month
 
 class MonthHashtagBase(hll.HllBase):
