@@ -322,6 +322,11 @@ class importer():
         set_lbsn_attr(post, "post_url", record)
         post_type = record.get("post_type")
         if post_type:
+            # compatibility: earlier lbsnstructure
+            # had 'carousel' as post type available,
+            # which is now 'image'
+            if post_type == 'carousel':
+                post_type = 'image'
             # get enum value
             post.post_type = lbsn.Post.PostType.Value(
                 post_type.upper())
