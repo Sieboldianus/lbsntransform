@@ -2,6 +2,20 @@
 
 <!--next-version-placeholder-->
 
+## v0.22.0 (2022-04-08)
+### Feature
+* Allow --commit_volume to be overriden ([`50c4bf8`](https://github.com/Sieboldianus/lbsntransform/commit/50c4bf849dc453ccad778f5735a19c8a00d068cf))
+
+### Fix
+* Skip all base records with any empty key ([`e3caac1`](https://github.com/Sieboldianus/lbsntransform/commit/e3caac1437a4c1ef95ef14ad2be5488eb9c438b2))
+* Skip empty keys for temporal hll structures ([`263774c`](https://github.com/Sieboldianus/lbsntransform/commit/263774c3f815b2bc66dc54e8f8d780400eb512f3))
+* Compatibility for 'carousel' types from previous lbsnstructure ([`caf21c3`](https://github.com/Sieboldianus/lbsntransform/commit/caf21c3af7882beb70525008a016ccb563dd4357))
+
+### Documentation
+* Fix typo ([`4034867`](https://github.com/Sieboldianus/lbsntransform/commit/4034867ef09d357b730b00b8ea2db84abbad4a17))
+* Add internal links to Use Cases ([`da93d5c`](https://github.com/Sieboldianus/lbsntransform/commit/da93d5c053b94a16a76803abde486e36e95d15fa))
+* Add twitterparser example to use lbsntransform as a package ([`2a68f08`](https://github.com/Sieboldianus/lbsntransform/commit/2a68f086ebfdf8d64d15e6072b4c1a66249539c4))
+
 ## v0.21.3 (2022-03-18)
 ### Fix
 * Pin google.protobuf to latest release 3.19.4 or earlier ([`f591487`](https://github.com/Sieboldianus/lbsntransform/commit/f591487a8d4c3fb71040a26caba2267049f1b657))
