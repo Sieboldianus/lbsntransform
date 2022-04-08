@@ -347,9 +347,9 @@ class BaseConfig():
                                    '* Default for rawdb: 100000 '
                                    '  '
                                    '  '
-                                   '!!! warning  '
+                                   '!!! info  '
                                    '    If you have concurrent writes to the DB (e.g. multiple lbsntransform processes) '
-                                   '    and if you see transaction deadlocks, reduce the commit_volume. ',
+                                   '    and if you see transaction deadlocks, reduce the commit_volume.  ',
                                    type=int)
         settings_args.add_argument("--records_tofetch",
                                    default=10000,
