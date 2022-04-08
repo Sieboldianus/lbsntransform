@@ -79,6 +79,7 @@ class BaseConfig():
         self.mappings_path = None
         self.dry_run = None
         self.hmac_key = None
+        self.commit_volume = None
 
         BaseConfig.set_options()
 
@@ -334,6 +335,21 @@ class BaseConfig():
                                    '    total number of records transferred. `--transfer_count` '
                                    '    instead defines the _batch_ count that is used to transfer '
                                    '    data incrementally.  ',
+                                   type=int)
+        settings_args.add_argument("--commit_volume",
+                                   default=None,
+                                   help='Commits changes to the output database after x entries. '
+                                   '  '
+                                   'Updated entries in the output database are only written from the WAL buffer '
+                                   'after a commit.'
+                                   '  '
+                                   '* Default for rawdb: 10000 '
+                                   '* Default for rawdb: 100000 '
+                                   '  '
+                                   '  '
+                                   '!!! warning  '
+                                   '    If you have concurrent writes to the DB (e.g. multiple lbsntransform processes) '
+                                   '    and if you see transaction deadlocks, reduce the commit_volume. ',
                                    type=int)
         settings_args.add_argument("--records_tofetch",
                                    default=10000,
@@ -738,6 +754,10 @@ class BaseConfig():
             self.transferlimit = args.transferlimit
             if self.transferlimit == 0:
                 self.transferlimit = None
+        if args.commit_volume:
+            self.commit_volume = args.commit_volume
+            if self.commit_volume == 0:
+                self.commit_volume = None
         if args.transfer_count:
             self.transfer_count = args.transfer_count
         if args.records_tofetch:

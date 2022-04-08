@@ -59,7 +59,8 @@ class LBSNTransform():
             dbformat_output=None, dbuser_hllworker=None,
             dbserveraddress_hllworker=None, dbname_hllworker=None,
             dbpassword_hllworker=None, dbserverport_hllworker=None,
-            include_lbsn_bases=None, dry_run=None, hmac_key=None):
+            include_lbsn_bases=None, dry_run=None, hmac_key=None,
+            commit_volume=None):
         """Init settings for LBSNTransform"""
 
         # init logger level
@@ -99,6 +100,7 @@ class LBSNTransform():
             db_cursor=cursor_output,
             db_connection=conn_output,
             store_csv=csv_output,
+            commit_volume=commit_volume,
             SUPPRESS_LINEBREAKS=csv_suppress_linebreaks,
             dbformat_output=dbformat_output,
             hllworker_cursor=cursor_hllworker,

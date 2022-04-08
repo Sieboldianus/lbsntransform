@@ -70,7 +70,8 @@ def main():
         dbserverport_hllworker=config.dbserverport_hllworker,
         include_lbsn_bases=config.include_lbsn_bases,
         dry_run=config.dry_run,
-        hmac_key=config.hmac_key)
+        hmac_key=config.hmac_key,
+        commit_volume=config.commit_volume)
 
     # initialize input reader
     input_data = LoadData(
