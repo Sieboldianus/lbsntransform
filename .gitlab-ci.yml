@@ -29,6 +29,8 @@ test:
   script:
     # test dev install
     - pip install -e . --no-dependencies
+    # copy changelog
+    - cp CHANGELOG.md docs/changelog.md
     # argparse to markdown conversion
     # for mkdocs args page
     - python docs/argparse/argparse_doc.py
@@ -55,6 +57,7 @@ test:
       - '*.svg'
       - docs/argparse/args.md
       - docs/api/
+      - docs/changelog.md
   rules:
     # always execute on master or ci-test
     - if:

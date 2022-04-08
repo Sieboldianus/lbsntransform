@@ -42,4 +42,5 @@ nav:
         - Developers: package.md
         - API Reference (external): api/lbsntransform_.html
         - Additional resources: resources.md
+        - Changelog: changelog.md
     - About: about.md
