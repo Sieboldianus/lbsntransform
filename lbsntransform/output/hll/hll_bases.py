@@ -115,6 +115,14 @@ def merge_base_metrics(base1, base2):
             continue
         base1.metrics[key] |= new_set
 
+def append_baserecord(
+        base_records: List['HllBase'], base_record: 'HllBase'):
+    """Append base_record to list, if all keys have valid values (not None)"""
+    if not base_record:
+        return
+    if None in base_record.key.values():
+        return
+    base_records.append(base_record)
 
 def base_factory(facet=None, base=None, record: lbsn.Post = None):
     """Base is initialized based on facet-base tuple
@@ -164,32 +172,32 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
         all_post_terms = HF.get_all_post_terms(record)
         for term in all_post_terms:
             # create base for each term
-            records.append(
-                base_structure(record=record, term=term))
+            base_record = base_structure(record=record, term=term)
+            append_baserecord(records, base_record)
     elif base == '_hashtag_latlng':
         # any hashtag explicitly used
         tag_terms = HF.filter_terms(record.hashtags)
         for tag in tag_terms:
-            records.append(
-                base_structure(record=record, hashtag=tag))
+            base_record = base_structure(record=record, hashtag=tag)
+            append_baserecord(records, base_record)
     elif base == '_emoji_latlng':
         # any term mentioned in title,
         # body or hashtag
         all_post_emoji = HF.get_all_post_emoji(record.post_body)
         for emoji in all_post_emoji:
-            # create base for each term
-            records.append(
-                base_structure(record=record, emoji=emoji))
+            # create base for each emoji
+            base_record = base_structure(record=record, emoji=emoji)
+            append_baserecord(records, base_record)
     elif base == '_month_hashtag':
         # any hashtag explicitly used
         tag_terms = HF.filter_terms(record.hashtags)
         for tag in tag_terms:
-            records.append(
-                base_structure(record=record, hashtag=tag))
+            base_record = base_structure(record=record, hashtag=tag)
+            append_baserecord(records, base_record)
     else:
         # init for all other bases with single lbsn record
-        record = base_structure(record)
-        records.append(record)
+        base_record = base_structure(record)
+        append_baserecord(records, base_record)
     return records
 
 

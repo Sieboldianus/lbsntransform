@@ -11,17 +11,7 @@ from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 FACET = 'temporal'
 
-
-class TemporalBase(hll.HllBase):
-    """Intermediate temporal base class that extends HllBase
-    for a number of temporal classes
-    """
-
-    def __init__(self):
-        super().__init__()
-
-
-class TimestampBase(TemporalBase):
+class TimestampBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='timestamp')
 
@@ -33,12 +23,11 @@ class TimestampBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        self.key["timestamp"] = post_date_time
+        if post_date_time:
+            self.key["timestamp"] = post_date_time
 
 
-class DateBase(TemporalBase):
+class DateBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='date')
 
@@ -51,13 +40,13 @@ class DateBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        # optional: add name of date (e.g. "New Year's Day")
-        self.key['date'] = post_date_time.date()
+        if post_date_time:
+            # optional: add name of date here (e.g. "New Year's Eve")
+            date = post_date_time.date()
+            self.key['date'] = date
 
 
-class MonthBase(TemporalBase):
+class MonthBase(hll.HllBase):
     """Extends Temporal Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='month')
 
@@ -70,14 +59,13 @@ class MonthBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        date = post_date_time.date()
-        self.key['year'] = date.year
-        self.key['month'] = date.month
+        if post_date_time:
+            date = post_date_time.date()
+            self.key['year'] = date.year
+            self.key['month'] = date.month
 
 
-class YearBase(TemporalBase):
+class YearBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='year')
 
@@ -89,13 +77,12 @@ class YearBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        date = post_date_time.date()
-        self.key['year'] = date.year
+        if post_date_time:
+            date = post_date_time.date()
+            self.key['year'] = date.year
 
 
-class TimeofdayBase(TemporalBase):
+class TimeofdayBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='timeofday')
 
@@ -107,14 +94,13 @@ class TimeofdayBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        # remove microseconds from datetime
-        self.key['timeofday'] = post_date_time.time.replace(
-            microsecond=0)
+        if post_date_time:
+            # remove microseconds from datetime
+            self.key['timeofday'] = post_date_time.time.replace(
+                microsecond=0)
 
 
-class HourofdayBase(TemporalBase):
+class HourofdayBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='hourofday')
 
@@ -126,14 +112,13 @@ class HourofdayBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        # remove seconds and microseconds from datetime
-        self.key['hourofday'] = post_date_time.time.replace(
-            second=0, microsecond=0)
+        if post_date_time:
+            # remove seconds and microseconds from datetime
+            self.key['hourofday'] = post_date_time.time.replace(
+                second=0, microsecond=0)
 
 
-class DayofweekBase(TemporalBase):
+class DayofweekBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='dayofweek')
 
@@ -145,12 +130,11 @@ class DayofweekBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        self.key['weekday'] = post_date_time.weekday
+        if post_date_time:
+            self.key['weekday'] = post_date_time.weekday
 
 
-class DayofmonthBase(TemporalBase):
+class DayofmonthBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='dayofmonth')
 
@@ -162,12 +146,11 @@ class DayofmonthBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        self.key['dayofmonth'] = post_date_time.day
+        if post_date_time:
+            self.key['dayofmonth'] = post_date_time.day
 
 
-class DayofyearBase(TemporalBase):
+class DayofyearBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='dayofyear')
 
@@ -180,13 +163,12 @@ class DayofyearBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        self.key['month'] = post_date_time.month
-        self.key['day'] = post_date_time.day
+        if post_date_time:
+            self.key['month'] = post_date_time.month
+            self.key['day'] = post_date_time.day
 
 
-class MonthofyearBase(TemporalBase):
+class MonthofyearBase(hll.HllBase):
     """Extends Base Class"""
     NAME = hll.HllBaseRef(facet=FACET, base='monthofyear')
 
@@ -198,9 +180,8 @@ class MonthofyearBase(TemporalBase):
             return
         post_date_time = HLF.merge_dates_post(
             record)
-        if post_date_time is None:
-            return
-        self.key['monthofyear'] = post_date_time.month
+        if post_date_time:
+            self.key['monthofyear'] = post_date_time.month
 
 class MonthHashtagBase(hll.HllBase):
     """Composite Base (c-base) that extends from HLL base Class
@@ -225,11 +206,10 @@ class MonthHashtagBase(hll.HllBase):
         if isinstance(record, lbsn.Post):
             post_date_time = HLF.merge_dates_post(
                 record)
-            if post_date_time is None:
-                return
-            date = post_date_time.date()
-            self.key['year'] = date.year
-            self.key['month'] = date.month
+            if post_date_time:
+                date = post_date_time.date()
+                self.key['year'] = date.year
+                self.key['month'] = date.month
         else:
             raise ValueError(
                 "Parsing of MonthHashtagBase only supported "
@@ -243,7 +223,7 @@ class MonthLatLngBase(hll.HllBase):
     """
     NAME = hll.HllBaseRef(facet=FACET, base='_month_latlng')
 
-    def __init__(self, record: lbsn.Post = None, hashtag: str = None):
+    def __init__(self, record: lbsn.Post = None):
         super().__init__()
         self.key['year'] = None
         self.key['month'] = None
