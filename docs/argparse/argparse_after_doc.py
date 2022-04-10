@@ -27,6 +27,16 @@ def format_markdown():
             newline = newline.replace('\n*\n','\n* ')
             newlines.append(newline)
     all_lines = ''.join(newlines)
+    # insert header lines
+    
+    all_lines = all_lines.replace(
+        'Arguments and Usage\n', 'Arguments and Usage\nThis page is generated from the source code '
+        '([config.py](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/blob/master/lbsntransform/config/config.py)) and '
+        'provides an overview of lbsntransform command line arguments.\n\n')
+    all_lines = all_lines.replace('Quick reference table\n', 'Quick reference table\n'
+        'The quick reference table contains truncated short summaries of descriptions. Jump to individual arguments '
+        'in the navigation submenu on the left side.\n\n'
+        )
     # fix code blocks from argdown
     # first remove all line breaks
     # and add valid ones afterwards
