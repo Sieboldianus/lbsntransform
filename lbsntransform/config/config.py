@@ -338,16 +338,19 @@ class BaseConfig():
                                    type=int)
         settings_args.add_argument("--commit_volume",
                                    default=None,
-                                   help='Commits changes to the output database after x entries. '
-                                   '  '
-                                   'Updated entries in the output database are only written from the WAL buffer '
-                                   'after a commit.'
-                                   '  '
-                                   '* Default for rawdb: 10000 '
-                                   '* Default for rawdb: 100000 '
+                                   help='After x commit_volume, changes (transactions) will be written to '
+                                   'the output database (a [Postgres COMMIT](https://www.postgresql.org/docs/current/sql-commit.html)). '
                                    '  '
                                    '  '
-                                   '!!! info  '
+                                   'Note that updated entries in the output database are only written from the WAL buffer '
+                                   'after a commit. '
+                                   '  '
+                                   '  '
+                                   '* Default for rawdb: 10000  '
+                                   '* Default for rawdb: 100000  '
+                                   '  '
+                                   '  '
+                                   '!!! warning  '
                                    '    If you have concurrent writes to the DB (e.g. multiple lbsntransform processes) '
                                    '    and if you see transaction deadlocks, reduce the commit_volume.  ',
                                    type=int)
@@ -615,10 +618,21 @@ class BaseConfig():
                                    'Bases not included will be skipped. Per '
                                    'default, **no bases** will be considered. '
                                    '  '
+                                   '  '
                                    'Example:  '
                                    '```bash'
                                    '--include_lbsn_bases hashtag,place,date,community  '
                                    '```'
+                                   '  '
+                                   'This will update entries in the Postgres [hlldb](https://gitlab.vgiscience.de/lbsn/databases/hlldb) tables '
+                                   '`topical.hashtag`, `spatial.place`, `temporal.date` and `social.community`. '
+                                   'Non-existing entries will be created, existing ones will be updated (a `hll_union`). '
+                                   '  '
+                                   '  '
+                                   'See the structure definition in SQL '
+                                   '[here](https://gitlab.vgiscience.de/lbsn/structure/hlldb/-/blob/master/structure/98-create-tables.sql) '
+                                   'for a full list of hlldb table structures.  '
+                                   '  '
                                    'Argument only allowed one time.',
                                    type=str)
         settings_args.add_argument("--override_lbsn_query_schema",
