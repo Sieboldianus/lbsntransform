@@ -90,7 +90,7 @@ class BaseConfig():
 
         Arguments:
             parser: Optional parser with extended arguments. This
-            can be used to include lbsntransofmr in another package.
+            can be used to include lbsntransform in another package.
 
         Note: All args are optional, but some groups need to be defined
             together.
