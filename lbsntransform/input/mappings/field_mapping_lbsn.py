@@ -32,6 +32,11 @@ def set_lbsn_attr(lbsn_obj, attr_name, in_record, geom: Optional[bool] = None):
     if isinstance(attr_value, (list, dict)):
         if len(attr_value) == 0:
             return
+        if isinstance(attr_value, list):
+            # filter None values,
+            # for backwards compatibility with lbsn databases
+            # with erroneous empty data written
+            attr_value = list(filter(None, attr_value))
         getattr(lbsn_obj, attr_name).extend(attr_value)
         return
     if geom:
