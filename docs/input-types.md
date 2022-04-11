@@ -68,4 +68,4 @@ The following cli arguments are available for the two types.
         Excluded objects will not be queried, but empty objects may be created due to referenced 
         foreign key relationships. Defaults to `origin,post`.
         
-See the full list of CLI arguments [here](/argparse/args/).
+See the full list of CLI arguments [here](../argparse/args/).
