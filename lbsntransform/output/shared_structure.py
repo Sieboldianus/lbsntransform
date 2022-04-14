@@ -130,7 +130,7 @@ class LBSNRecordDicts():
         """
         for lbsn_dict, __ in self.all_dicts:
             lbsn_dict.clear()
-        for __, key_set in self.key_hashes:
+        for key_set in self.key_hashes.values():
             key_set.clear()
         self.count_glob_total += self.count_glob
         self.count_glob = 0
