@@ -126,10 +126,12 @@ class LBSNRecordDicts():
             self.key_hashes[record.DESCRIPTOR.name].add(record.pkey.id)
 
     def clear(self):
-        """Clears all records from all dicts
+        """Clears all records and hashes from all dicts
         """
         for lbsn_dict, __ in self.all_dicts:
             lbsn_dict.clear()
+        for __, key_set in self.key_hashes:
+            key_set.clear()
         self.count_glob_total += self.count_glob
         self.count_glob = 0
         self.count_dup_merge_total += self.count_dup_merge
