@@ -827,5 +827,5 @@ class HelperFunctions():
         if skipped_geo is None and skipped_ignore is None:
             return ''
         else:
-            report_str = ' '.join([skipped_geo, skipped_ignore])
+            report_str = ' '.join(filter(None, [skipped_geo, skipped_ignore]))
             return report_str
