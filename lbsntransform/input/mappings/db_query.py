@@ -19,6 +19,7 @@ LBSN_SCHEMA = [
     (lbsn.Post().DESCRIPTOR.name, "topical", "post", "post_guid"),
     (lbsn.PostReaction().DESCRIPTOR.name,
      "topical", "post_reaction", "reaction_guid"),
+    (lbsn.Event().DESCRIPTOR.name, "temporal", "event", "event_guid"),
 ]
 
 
@@ -56,7 +57,7 @@ class InputSQL(enum.Enum):
     """SQL for default JSON records stored in DB
 
     In this example, records are stored in table "input" in schema
-    public. They're 3 columns, in_id, insert_time and data.
+    public. There are 3 columns, in_id, insert_time and data.
     Table data is cast to json type.
 
     The two %s string formatters allow substitution of values
