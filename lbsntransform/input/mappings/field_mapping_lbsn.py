@@ -275,6 +275,9 @@ class importer():
 
     @classmethod
     def extract_post(cls, record, origin):
+        """Extract post attributes
+
+        TODO: Extract nested LBSN objects (e.g. spatial.city etc.)"""
         post = HF.new_lbsn_record_with_id(
             lbsn.Post(),
             record.get('post_guid'),
@@ -306,7 +309,6 @@ class importer():
                 post.post_publish_date,
                 pub_date)
         set_lbsn_attr(post, "post_body", record)
-        post.post_geoaccuracy
         geo_acc = record.get("post_geoaccuracy")
         if geo_acc:
             # get enum value
