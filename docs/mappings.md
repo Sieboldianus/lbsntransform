@@ -73,7 +73,7 @@ lbsntransform --origin 0 \
               --dbname_input "rawdb" \
               --dbformat_input "lbsn" \
               --include_lbsn_bases hashtag,place,date,community \
-              --include_lbsn_objects "origin,post"
+              --include_lbsn_objects "origin,country,city,place,user,post"
 ```
 
 !!! note
