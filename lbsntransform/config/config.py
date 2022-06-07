@@ -442,6 +442,7 @@ class BaseConfig():
             'resume processing (e.g.) '
             'if a transfer has been aborted. '
             '  '
+            '  '
             '* Provide a number (row-id) to start '
             'processing from live db.  '
             '* If input db type '
