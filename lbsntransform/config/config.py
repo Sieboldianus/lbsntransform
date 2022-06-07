@@ -449,7 +449,7 @@ class BaseConfig():
             'is `lbsn`, this is the primary key, without the `origin_id`, '
             '(e.g. the `post_guid`, `place_guid` etc.).  '
             '* This flag will only work if processing a '
-            'single lbsn object (e.g. lbsn.Post).  '
+            'single lbsn object (e.g. `--include_lbsn_objects "post"`).  '
             '  '
             'Example:  '
             '`--startwith_db_rownumber "123456789"`  '
