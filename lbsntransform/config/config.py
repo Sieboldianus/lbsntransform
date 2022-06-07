@@ -438,14 +438,29 @@ class BaseConfig():
             help='Start with db row x. '
             '  '
             '  '
+            'If transferring from a databse (input), this flag can be used to '
+            'resume processing (e.g.) '
+            'if a transfer has been aborted. '
+            '  '
             '* Provide a number (row-id) to start '
             'processing from live db.  '
             '* If input db type '
-            'is `lbsn`, provide the primary key '
-            'to start from '
+            'is `lbsn`, this is the primary key, without the `origin_id`, '
             '(e.g. post_guid, place_guid etc.).  '
             '* This flag will only work if processing a '
-            'single lbsn object (e.g. lbsnPost).  ',
+            'single lbsn object (e.g. lbsn.Post).  '
+            '  '
+            'Example:  '
+            '`--startwith_db_rownumber "123456789"`  '
+            'will lead to the first batch-query from the DB looking like this:  '
+            '```sql'
+            'SELECT * FROM topical."post"  '
+            'WHERE post_guid > \'123456789\'  '
+            'ORDER BY post_guid ASC  '
+            'LIMIT 10000;  '
+            '```'
+            '  '
+            '  ',
             type=str)
         settings_args.add_argument(
             "--endwith_db_rownumber",
