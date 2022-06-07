@@ -447,7 +447,7 @@ class BaseConfig():
             'processing from live db.  '
             '* If input db type '
             'is `lbsn`, this is the primary key, without the `origin_id`, '
-            '(e.g. post_guid, place_guid etc.).  '
+            '(e.g. the `post_guid`, `place_guid` etc.).  '
             '* This flag will only work if processing a '
             'single lbsn object (e.g. lbsn.Post).  '
             '  '
