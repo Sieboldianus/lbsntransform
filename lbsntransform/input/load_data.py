@@ -62,8 +62,6 @@ class LoadData():
             self.start_number = startwith_db_rownumber
         else:
             self.continue_number = 0
-            if skip_until_file is not None:
-                self.continue_number = skip_until_file
             self.skip_until_record = skip_until_record
         self.source_web = source_web
         if zip_records is None:
@@ -476,7 +474,7 @@ class LoadData():
 
     @staticmethod
     def _read_local_files(input_path=None, recursive_load=None,
-                          local_file_type=None, skip_until_file=None):
+                          local_file_type=None, skip_until_file=None) -> List[str]:
         """Read Local Files according to config parameters and
         returns list of file-paths
         """
@@ -485,22 +483,39 @@ class LoadData():
                                  "02_UserData", "03_ClippedData", "04_MapVis"]
             excludestartswithfile = ["log", "settings", "GridCoordinates"]
             loc_filelist = \
-                LoadData.scan_rec(input_path,
-                                  file_format=local_file_type,
-                                  excludefolderlist=excludefolderlist,
-                                  excludestartswithfile=excludestartswithfile)
+                LoadData.scan_rec(
+                    input_path,
+                    file_format=local_file_type,
+                    excludefolderlist=excludefolderlist,
+                    excludestartswithfile=excludestartswithfile)
         else:
             loc_filelist_gen = input_path.glob(f'*.{local_file_type}')
             loc_filelist = []
             for file_path in loc_filelist_gen:
                 loc_filelist.append(file_path)
         if skip_until_file:
-            print("Implement skip until file")
+            file_index = LoadData._item_index_list(
+                loc_filelist, skip_until_file)
+            logging.getLogger('__main__').info(
+                f"\nSkipped {len(loc_filelist) - len(loc_filelist[file_index:])}"
+                f" input files. \n")
+            loc_filelist = loc_filelist[file_index:]
         input_count = (len(loc_filelist))
         if input_count == 0:
             sys.exit("No location files found.")
         else:
             return loc_filelist
+
+    @staticmethod
+    def _item_index_list(item_list, value, split_filename = True):
+        index = 0
+        for element in item_list:
+            if split_filename:
+                element = os.path.split(element)[1]
+            if element == value:
+                return index
+            index += 1
+        return -1
 
     @staticmethod
     def load_geocodes(geo_config):
