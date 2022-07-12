@@ -379,12 +379,12 @@ class BaseConfig():
             '  '
             '  '
             '* Default for rawdb: 10000  '
-            '* Default for rawdb: 100000  '
+            '* Default for hlldb: 100000  '
             '  '
             '  '
             '!!! warning  '
             '    If you have concurrent writes to the DB (e.g. multiple '
-            '    lbsntransform processes) and if you see transaction deadlocks,  '
+            '    lbsntransform processes) and if you see transaction deadlocks, '
             '    reduce the commit_volume.  ',
             type=int)
         settings_args.add_argument(
