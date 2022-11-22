@@ -7,7 +7,7 @@ dependencies:
   - pip
   - emoji>=2.0.0
   - numpy
-  - protobuf<=3.19.4
+  - protobuf<=4.21.9
   - shapely
   - requests
   - nltk
