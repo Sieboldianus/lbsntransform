@@ -3,12 +3,12 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
+  - python>=3.5
   - pip
   - emoji>=0.5.1
   - numpy
   - pycodestyle
-  - protobuf
+  - protobuf<=3.19.4
   - psycopg2
   - pylint
   - shapely
