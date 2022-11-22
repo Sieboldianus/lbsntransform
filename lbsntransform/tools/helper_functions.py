@@ -17,9 +17,9 @@ import string
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Union, Dict
+from emoji import distinct_emoji_list
 
-import emoji
 import regex
 from google.protobuf.timestamp_pb2 import Timestamp
 from lbsnstructure import lbsnstructure_pb2 as lbsn
@@ -58,8 +58,6 @@ if NLTK_AVAIL:
             'nltk stopwords filter..')
         NLTK_AVAIL = False
 # pylint: disable=no-member
-
-
 class HelperFunctions():
     """Collection of helper functions being used in lbsntransform package"""
 
@@ -132,12 +130,6 @@ class HelperFunctions():
         all_post_terms = set.union(
             body_terms, title_terms, tag_terms)
         return all_post_terms
-
-    @staticmethod
-    def get_all_post_emoji(
-            post_body: str) -> Set[str]:
-        """Returns all post emoji combined in single set"""
-        return set(HelperFunctions.extract_emoji(post_body))
 
     @staticmethod
     def select_terms(
@@ -394,46 +386,10 @@ class HelperFunctions():
         return cleantext
 
     @staticmethod
-    def extract_emoji_fast(str_text: str):
-        """Extract list of emoji from string
-
-        Note:
-            cannot detect grapheme clusters or flags"""
-        # str = str.decode('utf-32').encode('utf-32', 'surrogatepass')
-        # return list(c for c in str if c in emoji.UNICODE_EMOJI)
-        return set(c for c in str_text if c in emoji.UNICODE_EMOJI)
-
-    @staticmethod
-    def extract_emoji(string_with_emoji: str) -> Set[str]:
-        """Extract emoji and flags using regex package
-
-        This is a new version to extract emoji (see old method:
-        _extract_emoji_old). Code source:
-        https://stackoverflow.com/a/49242754/4556479
-        This method supports extracting grapheme clusters,
-        emoji constructed of multiple emoji (the "perceived
-        pictograms")
-
-        Compare:
-        A: _extract_emoji_old:
-        Total emoji count for the 100 most
-        used emoji in selected area: 27722.
-        Total distinct emoji (DEC): 918
-        B: _extract_emoji:
-        Total emoji count for the 100 most
-        used emoji in selected area: 25793.
-        Total distinct emoji (DEC): 1349
-
-        Original Code @ sheldonzy:
-        https://stackoverflow.com/a/49242754/4556479
-        """
-        emoji_set = set()
-        # use \X (eXtended grapheme cluster) regular expression:
-        data = regex.findall(r'\X', string_with_emoji)
-        for grapheme in data:
-            if any(char in emoji.UNICODE_EMOJI["en"] for char in grapheme):
-                emoji_set.add(grapheme)
-        return emoji_set
+    def extract_emoji(
+            string_with_emoji: str) -> Set[str]:
+        """Extract distinct set of emoji from string"""
+        return distinct_emoji_list(string_with_emoji)
 
     @staticmethod
     def get_rectangle_bounds(points):
