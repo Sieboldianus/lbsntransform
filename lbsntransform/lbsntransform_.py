@@ -31,10 +31,13 @@ class LBSNTransform():
         - local CSV or Json (stacked/regular/line separated)
         - Postgres DB connection
     Output can be:
-        - local CSV
-        - local file with ProtoBuf encoded records
-        - local SQL file ready for "Import from" in Postgres LBSN db
-        - Postgres DB connection (with existing LBSN DB Structure)
+        - (local CSV)*
+        - (local file with ProtoBuf encoded records)*
+        - (local SQL file ready for "Import from" in Postgres LBSN db)*
+        - Postgres DB connection (with existing LBSN raw DB Structure)
+        - Postgres DB connection (with existing LBSN hll DB Structure)
+
+        \* currently not supported
 
     Parameters
     ----------
