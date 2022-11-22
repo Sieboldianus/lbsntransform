@@ -141,7 +141,7 @@ class LBSNRecordDicts():
         """Do a deep compare & merge of two lbsn records
 
         ProtoBuf MergeFrom does a fine job
-        only problem is it concatenates repeate strings,
+        only problem is it concatenates repeated strings,
         which may result in duplicate entries
         we take care of this prior to submission (see submitData classes)
         """
