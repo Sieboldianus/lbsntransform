@@ -2,6 +2,27 @@
 
 <!--next-version-placeholder-->
 
+## v0.22.1 (2022-11-22)
+### Fix
+* EMOJI_UNICODE deprecated in emoji>=2.0.0 ([`599158a`](https://github.com/lbsn/lbsntransform/commit/599158abf4126981314472878662cfb2d773ba01))
+* Typo ([`5145455`](https://github.com/lbsn/lbsntransform/commit/51454555c9f6ed51e8a56ff76c1d6ac2a8dcd90b))
+* --skip_until_file not implemented ([`18e7665`](https://github.com/lbsn/lbsntransform/commit/18e7665fed14a027889e93f59f4e022702a86500))
+* Fix TypeError NoneType for skipped_geo reporting ([`fe67231`](https://github.com/lbsn/lbsntransform/commit/fe6723137a7ac6c1170acea55c1353698058d3b0))
+* Catch empty values in lbsn database record arrays ([`6ad2d82`](https://github.com/lbsn/lbsntransform/commit/6ad2d82876e75533d8fd3ec072e03775311383e0))
+
+### Documentation
+* Fix typo ([`63ba7e4`](https://github.com/lbsn/lbsntransform/commit/63ba7e4eac6902777cedcd605496e7e91d0b60ab))
+* Fix typo in --commit_volume cli docs ([`c36d9aa`](https://github.com/lbsn/lbsntransform/commit/c36d9aab72738859906af73a925cb6ee05f19ad7))
+* Better explain the use of ([`e43afdd`](https://github.com/lbsn/lbsntransform/commit/e43afdd8e359143cdb58cad3c5d00019cf237fa9))
+* Clarify to use all lbsn objects by default when mapping from lbsn raw ([`202fd75`](https://github.com/lbsn/lbsntransform/commit/202fd759e9127d2761ff189623b5c8d9d9ad8c6e))
+* Fix internal link ([`67f4c90`](https://github.com/lbsn/lbsntransform/commit/67f4c90ab77e780b60018483a8ec9891fd08cab0))
+* Improve description of --include_lbsn_bases and --commit_volume args ([`b7697a3`](https://github.com/lbsn/lbsntransform/commit/b7697a315c01eb09513cc75048fc5151cdfed91f))
+* Add header information on command line interface page ([`9602c47`](https://github.com/lbsn/lbsntransform/commit/9602c47dad3eddb5b32941619d124e794406be6b))
+* Add changelog to documentation ([`766a40d`](https://github.com/lbsn/lbsntransform/commit/766a40d8335f7d7f32fa801f4b8ef75d43e6401c))
+
+### Performance
+* Clear key hashes on finalize_output() ([`864336d`](https://github.com/lbsn/lbsntransform/commit/864336deee218c48602d17a20586ad285e300482))
+
 ## v0.22.0 (2022-04-08)
 ### Feature
 * Allow --commit_volume to be overriden ([`50c4bf8`](https://github.com/Sieboldianus/lbsntransform/commit/50c4bf849dc453ccad778f5735a19c8a00d068cf))
