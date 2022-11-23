@@ -39,25 +39,30 @@ else:
     from google.protobuf.internal.containers import \
         ScalarMap  # pylint: disable=no-name-in-module
 
-NLTK_AVAIL = True
+NLTK_AVAIL = None
+STOPWORDS = None
 try:
     # check if nltk is installed
     import nltk
+    NLTK_AVAIL = True
 except ImportError:
-    NLTK_AVAIL = False
+    pass
 
 if NLTK_AVAIL:
     try:
         # check if stopwords corpus is available
         from nltk.corpus import stopwords
+        STOPWORDS = stopwords.words('english')
     except LookupError:
         print(
             'Please use '
             '`python -c \'import nltk;nltk.download("stopwords")\'` '
             'to install stopwords resource globally. Continuing without '
             'nltk stopwords filter..')
-        NLTK_AVAIL = False
+        STOPWORDS = None
 # pylint: disable=no-member
+
+
 class HelperFunctions():
     """Collection of helper functions being used in lbsntransform package"""
 
@@ -174,10 +179,10 @@ class HelperFunctions():
         return resultwords
 
     @staticmethod
-    def nltk_stopword_filter(term: str) -> bool:
+    def nltk_stopword_filter(term: str, nltk_avail=NLTK_AVAIL, stopwords=STOPWORDS) -> bool:
         """Filter term against nltk stopwords (english)"""
-        if NLTK_AVAIL:
-            if term in stopwords.words('english'):
+        if nltk_avail is not None and stopwords is not None:
+            if term in stopwords:
                 return False
         return True
 
@@ -224,7 +229,7 @@ class HelperFunctions():
 
     @staticmethod
     def extract_hashtags_from_string(
-        text_str: str) -> Set[str]:
+            text_str: str) -> Set[str]:
         """Extract hashtags with leading hash-character (#) from string
 
         - removes # from hashtags
@@ -239,7 +244,7 @@ class HelperFunctions():
 
     @staticmethod
     def extract_atmentions_from_string(
-        text_str: str) -> Set[str]:
+            text_str: str) -> Set[str]:
         """Extract @-mentions with leading hash-character (@) from string
 
         - removes @ from mentions
