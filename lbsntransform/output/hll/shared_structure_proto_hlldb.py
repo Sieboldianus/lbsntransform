@@ -19,7 +19,8 @@ HllBases = Union[
     spatial.CityBase, spatial.CountryBase,
     temporal.DateBase, temporal.MonthBase,
     temporal.YearBase, temporal.MonthLatLngBase,
-    temporal.MonthHashtagBase, topical.TermBase,
+    temporal.MonthHashtagBase,
+    temporal.MonthHashtagLatLngBase, topical.TermBase,
     topical.EmojiBase, topical.TermLatLngBase,
     topical.HashtagLatLngBase, topical.EmojiLatLngBase,
     social.CommunityBase]
@@ -136,7 +137,8 @@ class ProtoHLLMapping():
                     base_list.extend(base_records)
             # Temporal Facet
             temporal_bases = [
-                'date', 'month', 'year', '_month_latlng', '_month_hashtag']
+                'date', 'month', 'year', '_month_latlng', '_month_hashtag',
+                '_month_hashtag_latlng']
             temporal_bases = self.filter_bases(
                 temporal_bases, include_lbsn_bases)
             base_records = self.make_bases(
