@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.23.0 (2022-11-23)
+### Feature
+* Add experimental temporal._month_hashtag_latlng base processing ([`60da223`](https://github.com/Sieboldianus/lbsntransform/commit/60da223bdaa56f714b4d6fb8889ad879183790b9))
+
+### Fix
+* NLTK stopwords not available notice ([`c395bcb`](https://github.com/Sieboldianus/lbsntransform/commit/c395bcb1404cc135a85f1e65efd29af57efed4d2))
+
 ## v0.22.1 (2022-11-22)
 ### Fix
 * EMOJI_UNICODE deprecated in emoji>=2.0.0 ([`3097a42`](https://github.com/Sieboldianus/lbsntransform/commit/3097a42df36e245234562582c97b6b93f655cccd))
