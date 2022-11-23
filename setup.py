@@ -35,7 +35,7 @@ setup(name="lbsntransform",
       include_package_data=True,
       install_requires=[
           'lbsnstructure>=0.5.1',
-          'protobuf<=3.19.5',
+          'protobuf<=4.21.9',
           'psycopg2',
           'ppygis3',
           'shapely',
