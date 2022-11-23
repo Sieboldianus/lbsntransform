@@ -115,6 +115,7 @@ def merge_base_metrics(base1, base2):
             continue
         base1.metrics[key] |= new_set
 
+
 def append_baserecord(
         base_records: List['HllBase'], base_record: 'HllBase'):
     """Append base_record to list, if all keys have valid values (not None)"""
@@ -123,6 +124,7 @@ def append_baserecord(
     if None in base_record.key.values():
         return
     base_records.append(base_record)
+
 
 def base_factory(facet=None, base=None, record: lbsn.Post = None):
     """Base is initialized based on facet-base tuple
@@ -189,6 +191,12 @@ def base_factory(facet=None, base=None, record: lbsn.Post = None):
             base_record = base_structure(record=record, emoji=emoji)
             append_baserecord(records, base_record)
     elif base == '_month_hashtag':
+        # any hashtag explicitly used
+        tag_terms = HF.filter_terms(record.hashtags)
+        for tag in tag_terms:
+            base_record = base_structure(record=record, hashtag=tag)
+            append_baserecord(records, base_record)
+    elif base == '_month_hashtag_latlng':
         # any hashtag explicitly used
         tag_terms = HF.filter_terms(record.hashtags)
         for tag in tag_terms:

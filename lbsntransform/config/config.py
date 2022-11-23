@@ -671,6 +671,7 @@ class BaseConfig():
             '* _term_latlng  '
             '* _emoji_latlng  '
             '* _month_hashtag  '
+            '* _month_hashtag_latlng  '
             '* _month_latlng  '
             '* monthofyear  '
             '* month  '

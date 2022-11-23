@@ -87,6 +87,7 @@ class LBSNTransfer():
             temporal.YearBase.NAME: dict(),
             temporal.MonthLatLngBase.NAME: dict(),
             temporal.MonthHashtagBase.NAME: dict(),
+            temporal.MonthHashtagLatLngBase.NAME: dict(),
             topical.TermBase.NAME: dict(),
             topical.HashtagBase.NAME: dict(),
             topical.EmojiBase.NAME: dict(),
