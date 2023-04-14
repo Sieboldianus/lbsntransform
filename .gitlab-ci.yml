@@ -64,7 +64,7 @@ test:
         $CI_COMMIT_BRANCH == "master" ||
         $CI_COMMIT_BRANCH == "ci-test"
 
-mkdocs:
+pages:
   stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
   script:
@@ -85,21 +85,6 @@ mkdocs:
     - if:
         $CI_COMMIT_BRANCH == "master" ||
         $CI_COMMIT_BRANCH == "ci-test"
-
-rsync:
-  stage: deploy
-  image: registry.gitlab.vgiscience.org/lbsn/lbsn.vgiscience.org/rsync-ssh:latest
-  before_script:
-  - eval $(ssh-agent -s)
-  - echo "${SSH_PRIVKEY}" | ssh-add -
-  - mkdir -p ~/.ssh
-  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-  script:
-  - ssh "${STAGING_SERVER}" mkdir -p "${STAGING_PATH}${REL_NAMESPACE}"
-  - rsync -avu -zz --no-perms --omit-dir-times --del --chown=www-data:www-data --chmod=D775,F664 "public/${REL_NAMESPACE}" "${STAGING_SERVER}:${STAGING_PATH}${REL_NAMESPACE}"
-  rules:
-    # always execute on master or ci-test
-    - if: $CI_COMMIT_BRANCH == "master"
 
 docker-image-branch:
   stage: deploy
