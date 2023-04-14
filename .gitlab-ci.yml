@@ -68,7 +68,7 @@ pages:
     - cp *.svg "public/"
     # build docs
     - mkdocs build
-    - mv site "public/"
+    - mv site/* "public/docs/"
     # copy pdoc3 compiled API ref
     - mv docs/api/lbsntransform/* "public/docs/api/"
   artifacts:
