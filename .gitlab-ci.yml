@@ -1,7 +1,3 @@
-variables:
-  # relative namespace of project
-  REL_NAMESPACE: "/lbsntransform/"
-
 stages:
   - test
   - mkdocs
@@ -68,14 +64,13 @@ pages:
   stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
   script:
-    - mkdir -p "public/${REL_NAMESPACE}"
-    - cp *.svg "public/${REL_NAMESPACE}"
+    - cp *.svg "public/"
     # build docs
     - mkdocs build
-    - mv site "public/${REL_NAMESPACE}"
+    - mv site "public/"
     # copy pdoc3 compiled API ref
-    - mv docs/api/lbsntransform/* "public/${REL_NAMESPACE}/site/api/"
-    - mv public/lbsntransform/site "public/${REL_NAMESPACE}/docs"
+    - mv docs/api/lbsntransform/* "public/site/api/"
+    - mv public/lbsntransform/site "public/docs"
   artifacts:
     name: pages
     paths:
