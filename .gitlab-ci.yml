@@ -64,6 +64,7 @@ pages:
   stage: mkdocs
   image: registry.gitlab.vgiscience.org/tud_ifk/alpine-mkdocs
   script:
+    - mkdir -p public/
     - cp *.svg "public/"
     # build docs
     - mkdocs build
