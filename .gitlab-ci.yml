@@ -70,8 +70,7 @@ pages:
     - mkdocs build
     - mv site "public/"
     # copy pdoc3 compiled API ref
-    - mv docs/api/lbsntransform/* "public/site/api/"
-    - mv public/lbsntransform/site "public/docs"
+    - mv docs/api/lbsntransform/* "public/docs/api/"
   artifacts:
     name: pages
     paths:
