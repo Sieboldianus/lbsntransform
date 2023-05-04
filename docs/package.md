@@ -39,3 +39,9 @@ You can contribute:
 - Feedback, submit issues for bugs etc. on [Github](https://github.com/Sieboldianus/lbsntransform)  
 - Improve the concept, see [lbsn.vgiscience.org](https://lbsn.vgiscience.org/) and get [in contact](/about/) with use  
 - Provide [custom mappings](/lbsntransform/docs/mappings/) for different data sources  
+
+## Structure of the project
+
+The project structure follows the [src-layout](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout).
+
+The packaging is organized as described in the setuptools [declarative config](https://setuptools.pypa.io/en/latest/userguide/declarative_config.html)
