@@ -142,7 +142,6 @@ For most Linux users, it is recommended to first create some type of virtual env
 and then install lbsntransform in the virtual env, e.g.:
 
 ```bash
-apt-get install -y libpq-dev # required for psycopg2
 apt-get install python3-venv # required for virtual env
 python3 -m venv lbsntransform_env
 source ./lbsntransform_env/bin/activate
@@ -160,7 +159,7 @@ pip install lbsntransform
 ```bash
 git clone https://github.com/Sieboldianus/lbsntransform.git
 cd lbsntransform
-python setup.py install
+pip install .
 ```
 
 [1]: https://stackoverflow.com/q/27734053/4556479#comment43880476_27734053
