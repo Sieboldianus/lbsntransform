@@ -1,3 +1,4 @@
 include README.md
-include VERSION
-recursive-include lbsntransform/ *.py
+include LICENSE.md
+include CHANGELOG.md
+recursive-include src/lbsntransform/ *.py

@@ -1,14 +1,13 @@
 FROM python:slim
 
-COPY lbsntransform/ ./lbsntransform/
+COPY src/ ./src/
 COPY resources/ ./resources/
-COPY setup.py README.md ./
+COPY setup.cfg pyproject.toml README.md ./
 
 RUN set -ex; \
     \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        libpq-dev \
         build-essential \
     ; \
     pip install --upgrade pip; \
