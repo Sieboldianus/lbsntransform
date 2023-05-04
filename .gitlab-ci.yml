@@ -41,8 +41,9 @@ test:
     - score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
     - echo "Pylint score was $score"
     - anybadge -l pylint --value=$score --file=pylint.svg 2=red 4=orange 9=yellow 10=green
-    - anybadge -l pipeline --value=passing --file=pipeline.svg passing=green failing=red
-    - version_var=$(sed -n "s#__version__ =\s*'\(.*\)'#\1#p" lbsntransform/version.py)
+    - git fetch --tags
+    - version_str=$(git describe --tags $(git rev-list --tags --max-count=1))
+    - version_var=$(echo $version_str | grep -E 'v[0-9].[0-9].[0-9]' | tail -n 1 | cut -c2-)
     - echo "Version for badges $version_var"
     - anybadge -l version --value="${version_var}" --file=pypi.svg --color=green
     - anybadge -l mkdocs --value="Documentation" --file=documentation.svg --color=green
