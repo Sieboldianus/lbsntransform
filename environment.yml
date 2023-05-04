@@ -8,7 +8,7 @@ dependencies:
   - emoji>=2.0.0
   - numpy
   - protobuf<=4.21.9
-  - shapely
+  - shapely<2.0.0
   - requests
   - nltk
   - psycopg2
