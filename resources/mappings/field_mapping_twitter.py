@@ -10,7 +10,7 @@ import logging
 import re
 
 import shapely.geometry as geometry
-from lbsnstructure import lbsnstructure_pb2 as lbsn
+import lbsnstructure as lbsn
 from shapely.geometry.polygon import Polygon
 
 from lbsntransform.tools.helper_functions import HelperFunctions as HF

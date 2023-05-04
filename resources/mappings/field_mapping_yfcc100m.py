@@ -11,7 +11,7 @@ from decimal import Decimal
 from urllib.parse import unquote
 from typing import List, Optional
 
-from lbsnstructure import lbsnstructure_pb2 as lbsn
+import lbsnstructure as lbsn
 
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
@@ -22,44 +22,99 @@ MAPPING_ID = 21
 # module level constants
 # for FLickr yfcc100m mapping
 FLICKR_COUNTRY_MATCH = {
-    "country", "timezone", "state", "territory",
-    "state/territory", "land", "arrondissement", "prefecture",
-    "island", "disputed territory", "overseas collectivity",
-    "overseas region", "island group", "kingdom"}
+    "country",
+    "timezone",
+    "state",
+    "territory",
+    "state/territory",
+    "land",
+    "arrondissement",
+    "prefecture",
+    "island",
+    "disputed territory",
+    "overseas collectivity",
+    "overseas region",
+    "island group",
+    "kingdom",
+}
 FLICKR_CITY_MATCH = {
-    "city", "town", "region", "special administrative region",
-    "county", "district", "zip", "province",
-    "district/county", "autonomous community", "municipality",
-    "department", "district/town/township", "township",
-    "historical town", "governorate", "commune", "canton",
-    "muhafazah", "local government area", "division", "periphery",
-    "zone", "sub-region", "district/town/county", "sub-district",
-    "parish", "federal district", "neighborhood", "chome", "ward",
-    "sub-division", "community", "autonomous region",
-    "municipal region", "emirate", "autonomous province",
-    "historical county", "constituency", "entity", "colloquial",
-    "circle", "quarter", "dependency", "sub-prefecture", "insular area",
-    "island council"}
+    "city",
+    "town",
+    "region",
+    "special administrative region",
+    "county",
+    "district",
+    "zip",
+    "province",
+    "district/county",
+    "autonomous community",
+    "municipality",
+    "department",
+    "district/town/township",
+    "township",
+    "historical town",
+    "governorate",
+    "commune",
+    "canton",
+    "muhafazah",
+    "local government area",
+    "division",
+    "periphery",
+    "zone",
+    "sub-region",
+    "district/town/county",
+    "sub-district",
+    "parish",
+    "federal district",
+    "neighborhood",
+    "chome",
+    "ward",
+    "sub-division",
+    "community",
+    "autonomous region",
+    "municipal region",
+    "emirate",
+    "autonomous province",
+    "historical county",
+    "constituency",
+    "entity",
+    "colloquial",
+    "circle",
+    "quarter",
+    "dependency",
+    "sub-prefecture",
+    "insular area",
+    "island council",
+}
 FLICKR_PLACE_MATCH = {
-    "poi", "land feature", "estate", "airport", "drainage",
-    "miscellaneous", "suburb"}
+    "poi",
+    "land feature",
+    "estate",
+    "airport",
+    "drainage",
+    "miscellaneous",
+    "suburb",
+}
 
 
-class importer():
-    """ Provides mapping function from Flickr YFCC100m to
-        protobuf lbsnstructure
+class importer:
+    """Provides mapping function from Flickr YFCC100m to
+    protobuf lbsnstructure
     """
+
     ORIGIN_NAME = "Flickr yfcc100m"
     ORIGIN_ID = 2
 
-    def __init__(self,
-                 disable_reaction_post_referencing=False,
-                 geocodes=False,
-                 map_full_relations=False,
-                 map_reactions=True,
-                 ignore_non_geotagged=False,
-                 ignore_sources_set=None,
-                 min_geoaccuracy=None):
+    def __init__(
+        self,
+        disable_reaction_post_referencing=False,
+        geocodes=False,
+        map_full_relations=False,
+        map_reactions=True,
+        ignore_non_geotagged=False,
+        ignore_sources_set=None,
+        min_geoaccuracy=None,
+    ):
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
@@ -67,7 +122,7 @@ class importer():
         origin.origin_id = lbsn.Origin.FLICKR
         self.origin = origin
         self.null_island = 0
-        self.log = logging.getLogger('__main__')  # get the main logger object
+        self.log = logging.getLogger("__main__")  # get the main logger object
         self.skipped_count = 0
         self.skipped_low_geoaccuracy = 0
         # some records in YFCC100m are larger
@@ -88,7 +143,7 @@ class importer():
             "No known copyright restrictions": 7,
             "United States Government Work": 8,
             "Public Domain Dedication (CC0)": 9,
-            "Public Domain Mark": 10
+            "Public Domain Mark": 10,
         }
 
     def parse_csv_record(self, record, record_type: Optional[str] = None):
@@ -161,80 +216,80 @@ class importer():
         post_guid = record[1]
         if not HF.check_notice_empty_post_guid(post_guid):
             return None
-        post_record = HF.new_lbsn_record_with_id(lbsn.Post(),
-                                                 post_guid,
-                                                 self.origin)
-        user_record = HF.new_lbsn_record_with_id(lbsn.User(),
-                                                 record[3],
-                                                 self.origin)
-        user_record.user_name = unquote(record[4]).replace(
-            '+', ' ')
-        user_record.url = f'http://www.flickr.com/photos/{user_record.pkey.id}/'
+        post_record = HF.new_lbsn_record_with_id(lbsn.Post(), post_guid, self.origin)
+        user_record = HF.new_lbsn_record_with_id(lbsn.User(), record[3], self.origin)
+        user_record.user_name = unquote(record[4]).replace("+", " ")
+        user_record.url = f"http://www.flickr.com/photos/{user_record.pkey.id}/"
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
         lbsn_records.append(user_record)
         post_record.post_latlng = self.flickr_extract_postlatlng(record)
-        geoaccuracy = importer.flickr_map_geoaccuracy(
-            record[14])
+        geoaccuracy = importer.flickr_map_geoaccuracy(record[14])
         if geoaccuracy:
             post_record.post_geoaccuracy = geoaccuracy
         # place record available in separate yfcc100m dataset
         # if record[1]:
-            # we need some information from postRecord to create placeRecord
-            # (e.g.  user language, geoaccuracy, post_latlng)
-            # some of the information from place will also modify postRecord
-            # place_record = HF.new_lbsn_record_with_id(lbsn.Place(),
-            #                                           record[1],
-            #                                           self.origin)
-            # lbsn_records.append(place_record)
-            # post_record.place_pkey.CopyFrom(place_record.pkey)
+        # we need some information from postRecord to create placeRecord
+        # (e.g.  user language, geoaccuracy, post_latlng)
+        # some of the information from place will also modify postRecord
+        # place_record = HF.new_lbsn_record_with_id(lbsn.Place(),
+        #                                           record[1],
+        #                                           self.origin)
+        # lbsn_records.append(place_record)
+        # post_record.place_pkey.CopyFrom(place_record.pkey)
         post_record.post_publish_date.CopyFrom(
-            HF.parse_timestamp_string_to_protobuf(record[6]))
+            HF.parse_timestamp_string_to_protobuf(record[6])
+        )
         post_created_date = HF.parse_csv_datestring_to_protobuf(
-            record[5], t_format='%Y-%m-%d %H:%M:%S.%f')
+            record[5], t_format="%Y-%m-%d %H:%M:%S.%f"
+        )
         if post_created_date:
-            post_record.post_create_date.CopyFrom(
-                post_created_date
-            )
+            post_record.post_create_date.CopyFrom(post_created_date)
         post_record.post_views_count = 0
         post_record.post_comment_count = 0
         post_record.post_like_count = 0
         post_record.post_url = record[15]
         # YFCC100M dataset contains HTML codes (%20) and
         # space character is replaced by +
-        post_record.post_body = unquote(record[9]).replace(
-            '+', ' ')
-        post_record.post_title = unquote(record[8]).replace(
-            '+', ' ')
+        post_record.post_body = unquote(record[9]).replace("+", " ")
+        post_record.post_title = unquote(record[8]).replace("+", " ")
         post_record.post_thumbnail_url = record[16]  # note: fullsize url!
         # split tags by , and + because by lbsn-spec,
         # tags are limited to single word
         record_tags_list = list(
-            set(filter(
-                None,
-                [HF.remove_prefix(unquote(tag), "#")
-                 for tag in re.split("[,+]+", record[10])]
-            )))
+            set(
+                filter(
+                    None,
+                    [
+                        HF.remove_prefix(unquote(tag), "#")
+                        for tag in re.split("[,+]+", record[10])
+                    ],
+                )
+            )
+        )
         if record_tags_list:
             for tag in record_tags_list:
                 tag = importer.clean_tags_from_flickr(tag)
                 post_record.hashtags.append(tag)
         record_machine_tags = list(
-            set(filter(None, [unquote(mtag) for mtag in re.split("[,+]+", record[11])])))
-        if 'video' in record_machine_tags:
+            set(filter(None, [unquote(mtag) for mtag in re.split("[,+]+", record[11])]))
+        )
+        if "video" in record_machine_tags:
             # all videos appear to have 'video' in machine tags
             post_record.post_type = lbsn.Post.VIDEO
         else:
             post_record.post_type = lbsn.Post.IMAGE
         # replace text-string of content license by integer-id
         if record[17] is not None:
-            post_record.post_content_license = \
+            post_record.post_content_license = (
                 self.get_license_number_from_license_name(record[17])
+            )
         # place record available in separate yfcc100m dataset
         # if records parsed as joined urls, length is larger than 25
         if len(record) > 25:
             post_plus_place_records = self.extract_flickr_place(
-                record[25:], post_record=post_record)
+                record[25:], post_record=post_record
+            )
             if post_plus_place_records is None:
                 lbsn_records.append(post_record)
             else:
@@ -257,8 +312,8 @@ class importer():
             # verify matching guids
             if not post_record.pkey.id == post_guid:
                 raise ValueError(
-                    f"Post_guids not in sync: {post_record.pkey.id} "
-                    f"/ {post_guid}")
+                    f"Post_guids not in sync: {post_record.pkey.id} " f"/ {post_guid}"
+                )
         if not record[1]:
             # skip empty records
             return None
@@ -268,28 +323,29 @@ class importer():
         # 28350827:Asia%2FHong_Kong:Timezone
         place_records = record[1].split(",")
         for place_record in place_records:
-            lbsn_place_record = \
-                importer.process_place_record(
-                    place_record, self.origin)
+            lbsn_place_record = importer.process_place_record(place_record, self.origin)
             lbsn_records.append(lbsn_place_record)
         # create or update post record with entries from place record
         post_record = self.update_post_with_place(
-            post_record=post_record,
-            post_guid=post_guid,
-            place_records=lbsn_records)
+            post_record=post_record, post_guid=post_guid, place_records=lbsn_records
+        )
         lbsn_records.append(post_record)
         return lbsn_records
 
     def update_post_with_place(
-            self, post_record: lbsn.Post = None, post_guid: str = None,
-            place_records: List[lbsn.Place] = None):
+        self,
+        post_record: lbsn.Post = None,
+        post_guid: str = None,
+        place_records: List[lbsn.Place] = None,
+    ):
         """Update post record with entries from place record"""
         if post_record is None:
             if post_guid is None:
                 raise ValueError("Cannot create lbsn.Post without post_guid")
             # create new post record
             post_record = HF.new_lbsn_record_with_id(
-                lbsn.Post(), post_guid, self.origin)
+                lbsn.Post(), post_guid, self.origin
+            )
         if place_records is None:
             return post_record
         for place_record in place_records:
@@ -312,31 +368,35 @@ class importer():
         place_record_split = place_record.split(":")
         if not len(place_record_split) == 3:
             raise ValueError(
-                f'Malformed place entry:\n'
-                f'place_record: {place_record}')
+                f"Malformed place entry:\n" f"place_record: {place_record}"
+            )
         place_guid = unquote(place_record_split[0])
-        place_name = unquote(place_record_split[1]).replace(
-            '+', ' ')
+        place_name = unquote(place_record_split[1]).replace("+", " ")
         place_type = unquote(place_record_split[2])
         place_type_lw = place_type.lower()
         place_type_lw_split = place_type_lw.split("/")
         # assignment
         if any(ptls in FLICKR_COUNTRY_MATCH for ptls in place_type_lw_split):
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                lbsn.Country(), place_guid, origin)
+                lbsn.Country(), place_guid, origin
+            )
         elif any(ptls in FLICKR_CITY_MATCH for ptls in place_type_lw_split):
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                lbsn.City(), place_guid, origin)
+                lbsn.City(), place_guid, origin
+            )
         elif any(ptls in FLICKR_PLACE_MATCH for ptls in place_type_lw_split):
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                lbsn.Place(), place_guid, origin)
+                lbsn.Place(), place_guid, origin
+            )
         else:
-            logging.getLogger('__main__').debug(
-                f'Could not assign place type {place_type_lw}\n'
-                f'found in place_record: {place_record}\n'
-                f'Will assign default "lbsn.Place"')
+            logging.getLogger("__main__").debug(
+                f"Could not assign place type {place_type_lw}\n"
+                f"found in place_record: {place_record}\n"
+                f'Will assign default "lbsn.Place"'
+            )
             lbsn_place_record = HF.new_lbsn_record_with_id(
-                lbsn.Place(), place_guid, origin)
+                lbsn.Place(), place_guid, origin
+            )
         lbsn_place_record.name = place_name
         if isinstance(lbsn_place_record, lbsn.City):
             # record sub types only for city and place
@@ -351,11 +411,10 @@ class importer():
 
     @staticmethod
     def clean_tags_from_flickr(tag):
-        """Clean special vars not allowed in tags.
-        """
-        characters_to_replace = ('{', '}')
+        """Clean special vars not allowed in tags."""
+        characters_to_replace = ("{", "}")
         for char_check in characters_to_replace:
-            tag = tag.replace(char_check, '')
+            tag = tag.replace(char_check, "")
         return tag
 
     def get_license_number_from_license_name(self, license_name: str):
@@ -385,7 +444,7 @@ class importer():
         (String, e.g.: "Level12")
         """
         lbsn_geoaccuracy = False
-        stripped_level = flickr_geo_accuracy_level.lstrip('Level').strip()
+        stripped_level = flickr_geo_accuracy_level.lstrip("Level").strip()
         if stripped_level.isdigit():
             stripped_level = int(stripped_level)
             if stripped_level >= 15:
@@ -407,8 +466,8 @@ class importer():
 
     def flickr_extract_postlatlng(self, record):
         """Basic routine for extracting lat/lng coordinates from post.
-           - checks for consistency and errors
-           - in case of any issue, entry is submitted to Null island (0, 0)
+        - checks for consistency and errors
+        - in case of any issue, entry is submitted to Null island (0, 0)
         """
         lat_entry = record[13]
         lng_entry = record[12]
@@ -420,22 +479,25 @@ class importer():
                 l_lat = Decimal(lat_entry)
             except ValueError:
                 l_lat, l_lng = 0, 0
-        if ((l_lat == 0 and l_lng == 0)
-                or l_lat > 90 or l_lat < -90
-                or l_lng > 180 or l_lng < -180):
+        if (
+            (l_lat == 0 and l_lng == 0)
+            or l_lat > 90
+            or l_lat < -90
+            or l_lng > 180
+            or l_lng < -180
+        ):
             l_lat, l_lng = 0, 0
             self.send_to_null_island()
         return importer.lat_lng_to_wkt(l_lat, l_lng)
 
     @staticmethod
     def lat_lng_to_wkt(lat, lng):
-        """Convert lat lng to WKT (Well-Known-Text)
-        """
+        """Convert lat lng to WKT (Well-Known-Text)"""
         point_latlng_string = "POINT(%s %s)" % (lng, lat)
         return point_latlng_string
 
     def send_to_null_island(self):
         """Logs entries with problematic lat/lng's,
-           increases Null Island Counter by 1.
+        increases Null Island Counter by 1.
         """
         self.null_island += 1
