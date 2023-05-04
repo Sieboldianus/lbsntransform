@@ -45,3 +45,10 @@ You can contribute:
 The project structure follows the [src-layout](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout).
 
 The packaging is organized as described in the setuptools [declarative config](https://setuptools.pypa.io/en/latest/userguide/declarative_config.html)
+
+Releases are made with [python-semantic-release](https://github.com/python-semantic-release/python-semantic-release). At the
+moment, releases are triggered manually after cerain progress is available. Preview release flow with:
+
+```bash
+semantic-release publish --verbosity=DEBUG --noop
+```
