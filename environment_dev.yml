@@ -19,6 +19,6 @@ dependencies:
   - pip:
     - pylint-exit
     - ppygis3
-    - lbsnstructure>=0.5.1
+    - lbsnstructure>=1.0.3
     - geos
 

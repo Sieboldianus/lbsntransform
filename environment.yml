@@ -14,7 +14,7 @@ dependencies:
   - psycopg2
   - regex
   - pip:
-    - lbsnstructure>=0.5.1
+    - lbsnstructure>=1.0.3
     - ppygis3>=0.4
     - geos
 
