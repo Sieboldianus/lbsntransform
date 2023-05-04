@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.24.0 (2023-05-04)
+### Feature
+* Migrate from setup.py to pyproject.toml ([`7de0de0`](https://github.com/Sieboldianus/lbsntransform/commit/7de0de0480fb1b9956de5cc0c34c52536627b892))
+
+### Documentation
+* Add information regarding semantic release versioning ([`eb667d4`](https://github.com/Sieboldianus/lbsntransform/commit/eb667d4d866826ed34bbda174bb4f8f9034e33bb))
+* Update installation instructions based on new dependencies and deprecated setup.py ([`416c869`](https://github.com/Sieboldianus/lbsntransform/commit/416c869d41dace88c12f8e6270644f470d02332e))
+* Add a short description of the file structure and layout ([`d56041d`](https://github.com/Sieboldianus/lbsntransform/commit/d56041d16c06b6389b67bf3aaad7e98dae43978f))
+
 ## v0.23.0 (2022-11-23)
 ### Feature
 * Add experimental temporal._month_hashtag_latlng base processing ([`60da223`](https://github.com/Sieboldianus/lbsntransform/commit/60da223bdaa56f714b4d6fb8889ad879183790b9))
