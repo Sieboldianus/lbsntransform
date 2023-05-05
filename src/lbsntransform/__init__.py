@@ -2,8 +2,7 @@
 
 """LBSNtransform package import specifications"""
 
-import importlib.metadata
-__version__ = importlib.metadata.version("lbsntransform")
+from lbsntransform.version import __version__
 
 from lbsntransform.lbsntransform_ import LBSNTransform
 from lbsntransform.config.config import BaseConfig

@@ -52,3 +52,18 @@ moment, releases are triggered manually after cerain progress is available. Prev
 ```bash
 semantic-release publish --verbosity=DEBUG --noop
 ```
+
+Without `--noop`, semantic-release will do the [following](https://python-semantic-release.readthedocs.io/en/latest/#semantic-release-publish):
+
+1. Update changelog file.
+2. Run [semantic-release version](https://python-semantic-release.readthedocs.io/en/latest/#cmd-version).
+3. Push changes to git.
+4. Run [build_command](https://python-semantic-release.readthedocs.io/en/latest/configuration.html#config-build-command) and upload the distribution files to Pypi.
+5. Run [semantic-release changelog](https://python-semantic-release.readthedocs.io/en/latest/#cmd-changelog) and post to Gitlab/Github.
+6. Attach the files created by [build_command](https://python-semantic-release.readthedocs.io/en/latest/configuration.html#config-build-command) to the release.
+
+To trigger a test build:
+```bash
+pip install -q build
+python -m build
+```

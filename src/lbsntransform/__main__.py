@@ -15,8 +15,6 @@ Output options:
 
 __author__ = "Alexander Dunkel"
 __license__ = "GNU GPLv3"
-
-
 # version: see version.py
 
 import sys
