@@ -2,9 +2,9 @@
 
 <!--next-version-placeholder-->
 
-## v0.24.0 (2023-05-04)
+## v0.24.1 (2023-05-05)
 ### Feature
-* Migrate from setup.py to pyproject.toml ([`7de0de0`](https://github.com/Sieboldianus/lbsntransform/commit/7de0de0480fb1b9956de5cc0c34c52536627b892))
+* Migrate from setup.py to setup.cfg & pyproject.toml ([`7de0de0`](https://github.com/Sieboldianus/lbsntransform/commit/7de0de0480fb1b9956de5cc0c34c52536627b892))
 
 ### Documentation
 * Add information regarding semantic release versioning ([`eb667d4`](https://github.com/Sieboldianus/lbsntransform/commit/eb667d4d866826ed34bbda174bb4f8f9034e33bb))
