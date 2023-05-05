@@ -41,7 +41,7 @@ test:
     - score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
     - echo "Pylint score was $score"
     - anybadge -l pylint --value=$score --file=pylint.svg 2=red 4=orange 9=yellow 10=green
-    - version_var=$(sed -n "s#__version__ =\s*'\(.*\)'#\1#p" lbsntransform/version.py)
+    - version_var=$(sed -n "s#__version__ =\s*'\(.*\)'#\1#p" src/lbsntransform/version.py)
     - echo "Version for badges $version_var"
     - anybadge -l version --value="${version_var}" --file=pypi.svg --color=green
     - anybadge -l mkdocs --value="Documentation" --file=documentation.svg --color=green
