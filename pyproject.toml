@@ -18,6 +18,7 @@ exclude = '''
   | mkdocs_env/
   | lbsntransform_env/
   | dev/
+  | src/lbsntransform/config/config.py
 )/
 '''
 
