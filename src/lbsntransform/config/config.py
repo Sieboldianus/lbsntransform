@@ -27,16 +27,16 @@ class BaseConfig:
         """
         self.origin = 0
         self.is_local_input = False
-        self.local_file_type = "json"
+        self.local_file_type = 'json'
         self.input_path = None
         self.is_stacked_json = False
         self.is_line_separated_json = False
-        self.dbuser_input = "example-user-name"
-        self.dbpassword_input = "example-user-password"
-        self.dbserveraddress_input = "222.22.222.22"
+        self.dbuser_input = 'example-user-name'
+        self.dbpassword_input = 'example-user-password'
+        self.dbserveraddress_input = '222.22.222.22'
         self.dbserverport_input = 5432
-        self.dbformat_input = "json"
-        self.dbname_input = "test_db2"
+        self.dbformat_input = 'json'
+        self.dbname_input = 'test_db2'
         self.dbname_hllworker = None
         self.dbuser_hllworker = None
         self.dbpassword_hllworker = None
@@ -44,7 +44,7 @@ class BaseConfig:
         self.dbserverport_hllworker = 5432
         self.dbname_hllworker = None
         self.dbuser_output = None
-        self.dbformat_output = "lbsn"
+        self.dbformat_output = 'lbsn'
         self.dbpassword_output = None
         self.dbserveraddress_output = None
         self.dbserverport_output = 5432
@@ -57,7 +57,7 @@ class BaseConfig:
         self.ignore_non_geotagged = False
         self.startwith_db_rownumber = None
         self.endwith_db_rownumber = None
-        self.debug_mode = "INFO"
+        self.debug_mode = 'INFO'
         self.geocode_locations = False
         self.ignore_input_source_list = False
         self.input_lbsn_type = None
@@ -85,8 +85,7 @@ class BaseConfig:
 
     @staticmethod
     def get_arg_parser(
-        parser: argparse.ArgumentParser = None,
-    ) -> argparse.ArgumentParser:
+        parser: argparse.ArgumentParser = None) -> argparse.ArgumentParser:
         """Define lbsntransform cli arguments
 
         Arguments:
@@ -102,706 +101,667 @@ class BaseConfig:
         if parser is None:
             parser = argparse.ArgumentParser()
         parser.add_argument(
-            "--version", action="version", version=f"lbsntransform {__version__}"
-        )
+            '--version',
+            action='version',
+            version=f'lbsntransform {__version__}')
         parser.add_argument(
-            "-o",
-            "--origin",
+            '-o', "--origin",
             default=0,
-            help="Input source type (id). "
-            "  "
-            "  "
-            "* Defaults to `0`: LBSN  "
-            "  "
-            "Other possible values:  "
-            "* `1` - Instagram  "
-            "* `2` - Flickr  "
-            "* `21` - Flickr YFCC100M  "
-            "* `3` - Twitter  ",
-            type=int,
-        )
+            help='Input source type (id). '
+            '  '
+            '  '
+            '* Defaults to `0`: LBSN  '
+            '  '
+            'Other possible values:  '
+            '* `1` - Instagram  '
+            '* `2` - Flickr  '
+            '* `21` - Flickr YFCC100M  '
+            '* `3` - Twitter  ',
+            type=int)
         parser.add_argument(
             "--dry-run",
-            action="store_true",
-            help="Perform a trial run "
-            "  "
-            "with no changes made "
-            "to database/output",
-        )
+            action='store_true',
+            help='Perform a trial run '
+            '  '
+            'with no changes made '
+            'to database/output')
         # Local Input
-        local_input_args = parser.add_argument_group("Local Input")
+        local_input_args = parser.add_argument_group('Local Input')
         local_input_args.add_argument(
-            "-l",
-            "--file_input",
-            action="store_true",
-            help="This flag enables file input  "
-            "  "
-            "(instead of reading data from a database). "
-            "  "
-            "  "
-            "* To specify which files to process, see "
-            "parameter `--input_path_url`.  "
-            "* To specify file types, e.g. whether to "
-            "process data from `json` "
-            "or `csv`, or from URLs,  "
-            "  see `--file_type`  ",
-        )
+            '-l', "--file_input",
+            action='store_true',
+            help='This flag enables file input  '
+            '  '
+            '(instead of reading data from a database). '
+            '  '
+            '  '
+            '* To specify which files to process, see '
+            'parameter `--input_path_url`.  '
+            '* To specify file types, e.g. whether to '
+            'process data from `json` '
+            'or `csv`, or from URLs,  '
+            '  see `--file_type`  ')
         local_input_args.add_argument(
             "--file_type",
-            default="json",
-            help="Specify filetype  "
-            "  "
-            " (`json`, `csv` etc.) "
-            "  "
-            "  "
-            "* only applies if `--file_input` is used.  ",
-            type=str,
-        )
+            default='json',
+            help='Specify filetype  '
+            '  '
+            ' (`json`, `csv` etc.) '
+            '  '
+            '  '
+            '* only applies if `--file_input` is used.  ',
+            type=str)
         local_input_args.add_argument(
             "--input_path_url",
             default="01_Input",
-            help="Path to input folder.  "
-            "  "
-            "* If not provided, subfolder `./01_Input/` "
-            " will be used.  "
-            "* You can also provide a web-url, "
-            "starting with `http(s)`  "
-            "* URLs will be accessed using "
-            "`requests.get(url, stream=True)`.  "
-            "* To separate multiple urls, use "
-            "semicolon (`;`). In this case, see also "
-            "`--zip_records`.  ",
-            type=str,
-        )
+            help='Path to input folder.  '
+            '  '
+            '* If not provided, subfolder `./01_Input/` '
+            ' will be used.  '
+            '* You can also provide a web-url, '
+            'starting with `http(s)`  '
+            '* URLs will be accessed using '
+            '`requests.get(url, stream=True)`.  '
+            '* To separate multiple urls, use '
+            'semicolon (`;`). In this case, see also '
+            '`--zip_records`.  ',
+            type=str)
         local_input_args.add_argument(
             "--is_stacked_json",
-            action="store_true",
+            action='store_true',
             default=False,
-            help="Input is stacked json. "
-            "  "
-            "  "
-            "* The typical form of json is "
-            "`[{json1},{json2}]`  "
-            "* If `--is_stacked_json` is set, "
-            "it will process stacked jsons in the form "
-            "of `{json1}{json2}` (no comma)  ",
-        )
+            help='Input is stacked json. '
+            '  '
+            '  '
+            '* The typical form of json is '
+            '`[{json1},{json2}]`  '
+            '* If `--is_stacked_json` is set, '
+            'it will process stacked jsons in the form '
+            'of `{json1}{json2}` (no comma)  ')
         local_input_args.add_argument(
             "--is_line_separated_json",
-            action="store_true",
+            action='store_true',
             default=False,
-            help="Json is line separated "
-            "  "
-            "  "
-            "* The typical form is "
-            "`[{json1},{json2}]`  "
-            "* If `--is_line_separated_json` is set, "
-            "it will process stacked jsons in the form "
-            "of `{json1}\n{json2}` (with linebreak)  "
-            "* Unix style linebreaks (CR) will be used "
-            "across platforms  "
-            "* Windows users, use (e.g.) notepad++ to "
-            "convert from Windows style linebreaks (CRLF)  ",
-        )
+            help='Json is line separated '
+            '  '
+            '  '
+            '* The typical form is '
+            '`[{json1},{json2}]`  '
+            '* If `--is_line_separated_json` is set, '
+            'it will process stacked jsons in the form '
+            'of `{json1}\n{json2}` (with linebreak)  '
+            '* Unix style linebreaks (CR) will be used '
+            'across platforms  '
+            '* Windows users, use (e.g.) notepad++ to '
+            'convert from Windows style linebreaks (CRLF)  ')
         # HLL Worker
-        hllworker_args = parser.add_argument_group("HLL Worker")
+        hllworker_args = parser.add_argument_group('HLL Worker')
         hllworker_args.add_argument(
             "--dbpassword_hllworker",
-            help="Password for hllworker db  "
-            "  "
-            "  "
-            "* If reading data into `hlldb`, all "
-            "HLL Worker parameters must be supplied by"
-            "default.  "
-            "* You can substitute hlldb parameters here  "
-            "* In this case, lbsntransform will use "
-            "hlldb to convert and union hll sets "
-            "_and_ to store output results  "
-            "* Currently, this re-use of hlldb requires "
-            "to supply the same set of parameters twice  "
-            "* For separation of concerns, it is recommended "
-            "to use a separate HLL Worker database  ",
-            type=str,
-        )
+            help='Password for hllworker db  '
+            '  '
+            '  '
+            '* If reading data into `hlldb`, all '
+            'HLL Worker parameters must be supplied by'
+            'default.  '
+            '* You can substitute hlldb parameters here  '
+            '* In this case, lbsntransform will use '
+            'hlldb to convert and union hll sets '
+            '_and_ to store output results  '
+            '* Currently, this re-use of hlldb requires '
+            'to supply the same set of parameters twice  '
+            '* For separation of concerns, it is recommended '
+            'to use a separate HLL Worker database  ',
+            type=str)
         hllworker_args.add_argument(
             "--dbuser_hllworker",
             default="postgres",
-            help="Username for hllworker db.",
-            type=str,
-        )
+            help='Username for hllworker db.',
+            type=str)
         hllworker_args.add_argument(
             "--dbserveraddress_hllworker",
-            help="IP for hllworker db  "
-            "  "
-            "  "
-            "* e.g. `111.11.11.11`  "
-            "* Optionally add "
-            "port the to use, e.g. `111.11.11.11:5432`.  "
-            "* `5432` is the default port  ",
-            type=str,
-        )
+            help='IP for hllworker db  '
+            '  '
+            '  '
+            '* e.g. `111.11.11.11`  '
+            '* Optionally add '
+            'port the to use, e.g. `111.11.11.11:5432`.  '
+            '* `5432` is the default port  ',
+            type=str)
         hllworker_args.add_argument(
             "--dbname_hllworker",
-            help="DB name for hllworker db " "  " "  " "* e.g. `hllworkerdb`  ",
-            type=str,
-        )
+            help='DB name for hllworker db '
+            '  '
+            '  '
+            '* e.g. `hllworkerdb`  ',
+            type=str)
         # DB Output
-        dboutput_args = parser.add_argument_group("DB Output")
+        dboutput_args = parser.add_argument_group(
+            'DB Output')
         dboutput_args.add_argument(
-            "-p",
-            "--dbpassword_output",
-            help="Password for out-db  " "  " "(postgres raw/hll db)",
-            type=str,
-        )
+            '-p', "--dbpassword_output",
+            help='Password for out-db  '
+            '  '
+            '(postgres raw/hll db)',
+            type=str)
         dboutput_args.add_argument(
-            "-u",
-            "--dbuser_output",
+            '-u', "--dbuser_output",
             default="postgres",
-            help="Username for out-db.  " "  " "Default: `example-user-name2`",
-            type=str,
-        )
+            help='Username for out-db.  '
+            '  '
+            'Default: `example-user-name2`',
+            type=str)
         dboutput_args.add_argument(
-            "-a",
-            "--dbserveraddress_output",
-            help="IP for output db, "
-            "  "
-            "  "
-            "* e.g. `111.11.11.11`  "
-            "* Optionally add "
-            "port to use, e.g. `111.11.11.11:5432`.  "
-            "* `5432` is the default port  ",
-            type=str,
-        )
+            '-a', "--dbserveraddress_output",
+            help='IP for output db, '
+            '  '
+            '  '
+            '* e.g. `111.11.11.11`  '
+            '* Optionally add '
+            'port to use, e.g. `111.11.11.11:5432`.  '
+            '* `5432` is the default port  ',
+            type=str)
         dboutput_args.add_argument(
-            "-n",
-            "--dbname_output",
-            help="DB name for output db " "  " "  " "* e.g. `rawdb` or `hlldb`  ",
-            type=str,
-        )
+            '-n', "--dbname_output",
+            help='DB name for output db '
+            '  '
+            '  '
+            '* e.g. `rawdb` or `hlldb`  ',
+            type=str)
         dboutput_args.add_argument(
             "--dbformat_output",
             default="lbsn",
-            help="Format of the out-db. "
-            "  "
-            "  "
-            "* Either `hll` or `lbsn`.  "
-            "* This setting "
-            "affects how data is stored, either "
-            "in anonymized and aggregate form (`hll`), or in "
-            "the [lbsn raw structure](https://lbsn.vgiscience.org/structure/) "
-            "(`lbsn`).  ",
-            type=str,
-        )
+            help='Format of the out-db. '
+            '  '
+            '  '
+            '* Either `hll` or `lbsn`.  '
+            '* This setting '
+            'affects how data is stored, either '
+            'in anonymized and aggregate form (`hll`), or in '
+            'the [lbsn raw structure](https://lbsn.vgiscience.org/structure/) '
+            '(`lbsn`).  ',
+            type=str)
         # DB Input
-        dbinput_args = parser.add_argument_group("DB Input")
+        dbinput_args = parser.add_argument_group(
+            'DB Input')
         dbinput_args.add_argument(
-            "--dbpassword_input", help="Password for input-db", type=str
-        )
+            "--dbpassword_input",
+            help='Password for input-db',
+            type=str)
         dbinput_args.add_argument(
             "--dbuser_input",
             default="postgres",
-            help="Username for input-db.",
-            type=str,
-        )
+            help='Username for input-db.',
+            type=str)
         dbinput_args.add_argument(
             "--dbserveraddress_input",
-            help="IP for input-db, "
-            "  "
-            "  "
-            "* e.g. `111.11.11.11`  "
-            "* Optionally add port to use, e.g. "
-            "`111.11.11.11:5432`.  "
-            "* `5432` is the default port  ",
-            type=str,
-        )
+            help='IP for input-db, '
+            '  '
+            '  '
+            '* e.g. `111.11.11.11`  '
+            '* Optionally add port to use, e.g. '
+            '`111.11.11.11:5432`.  '
+            '* `5432` is the default port  ',
+            type=str)
         dbinput_args.add_argument(
             "--dbname_input",
-            help="DB name for input-db, " "  " "  " "* e.g.: `rawdb`  ",
-            type=str,
-        )
+            help='DB name for input-db, '
+            '  '
+            '  '
+            '* e.g.: `rawdb`  ',
+            type=str)
         dbinput_args.add_argument(
             "--dbformat_input",
             default="json",
-            help="Format of the input-db. "
-            "  "
-            "  "
-            "* Either `lbsn` or `json`  "
-            "* If lbsn is used, the native lbsn raw "
-            "input mapping (`0`) will be used  "
-            "* If `json` is used, a custom mapping for "
-            "json must be provided, for mapping database "
-            "json's to the lbsn structure. See "
-            "[input mappings](https://lbsn.vgiscience.org/lbsntransform/docs/mappings/#input-mappings)  ",
-            type=str,
-        )
+            help='Format of the input-db. '
+            '  '
+            '  '
+            '* Either `lbsn` or `json`  '
+            '* If lbsn is used, the native lbsn raw '
+            'input mapping (`0`) will be used  '
+            '* If `json` is used, a custom mapping for '
+            'json must be provided, for mapping database '
+            'json\'s to the lbsn structure. See '
+            '[input mappings](https://lbsn.vgiscience.org/lbsntransform/docs/mappings/#input-mappings)  ',
+            type=str)
         # Additional args
-        settings_args = parser.add_argument_group("Additional settings")
+        settings_args = parser.add_argument_group(
+            'Additional settings')
         settings_args.add_argument(
-            "-t",
-            "--transferlimit",
-            help="Abort after x records. "
-            "  "
-            "  "
-            "* This can be used to limit the number of "
-            "records that will be processed.  "
-            "* e.g. `--transferlimit 10000` will process "
-            "the first 10000 input records  "
-            "* Defaults to None (= process all)  "
-            "* Note that one input record can map to "
-            "many output records. This number applies to "
-            "the number of input records, not the output count.  ",
-            type=int,
-        )
+            '-t', "--transferlimit",
+            help='Abort after x records. '
+            '  '
+            '  '
+            '* This can be used to limit the number of '
+            'records that will be processed.  '
+            '* e.g. `--transferlimit 10000` will process '
+            'the first 10000 input records  '
+            '* Defaults to None (= process all)  '
+            '* Note that one input record can map to '
+            'many output records. This number applies to '
+            'the number of input records, not the output count.  ',
+            type=int)
         settings_args.add_argument(
             "--transfer_count",
             default=50000,
-            help="Transfer batch limit x. "
-            "  "
-            "  "
-            "* Defines after how many "
-            "parsed records the results will be "
-            "transferred to the DB.  "
-            "* Defaults to 50000  "
-            "* If you have a slow server, but a fast machine, larger values "
-            "improve speed because duplicate "
-            "check happens in Python, and not in "
-            "Postgres coalesce;  "
-            "* However, larger values require "
-            "more local memory. If you have a fast server, but a slow machine, "
-            "try if a smaller batch `--transfer_count` (e.g. 5000) improves speed.  "
-            "  "
-            "  "
-            "!!! note  "
-            "    Use `--transferlimit` to limit the "
-            "    total number of records transferred. `--transfer_count` "
-            "    instead defines the _batch_ count that is used to transfer "
-            "    data incrementally.  ",
-            type=int,
-        )
+            help='Transfer batch limit x. '
+            '  '
+            '  '
+            '* Defines after how many '
+            'parsed records the results will be '
+            'transferred to the DB.  '
+            '* Defaults to 50000  '
+            '* If you have a slow server, but a fast machine, larger values '
+            'improve speed because duplicate '
+            'check happens in Python, and not in '
+            'Postgres coalesce;  '
+            '* However, larger values require '
+            'more local memory. If you have a fast server, but a slow machine, '
+            'try if a smaller batch `--transfer_count` (e.g. 5000) improves speed.  '
+            '  '
+            '  '
+            '!!! note  '
+            '    Use `--transferlimit` to limit the '
+            '    total number of records transferred. `--transfer_count` '
+            '    instead defines the _batch_ count that is used to transfer '
+            '    data incrementally.  ',
+            type=int)
         settings_args.add_argument(
             "--commit_volume",
             default=None,
-            help="After x commit_volume, changes (transactions) will be written to "
-            "the output database (a "
-            "[Postgres COMMIT](https://www.postgresql.org/docs/current/sql-commit.html)). "
-            "  "
-            "  "
-            "Note that updated entries in the output database are only written "
-            "from the WAL buffer after a commit. "
-            "  "
-            "  "
-            "* Default for rawdb: 10000  "
-            "* Default for hlldb: 100000  "
-            "  "
-            "  "
-            "!!! warning  "
-            "    If you have concurrent writes to the DB (e.g. multiple "
-            "    lbsntransform processes) and if you see transaction deadlocks, "
-            "    reduce the commit_volume.  ",
-            type=int,
-        )
+            help='After x commit_volume, changes (transactions) will be written to '
+            'the output database (a '
+            '[Postgres COMMIT](https://www.postgresql.org/docs/current/sql-commit.html)). '
+            '  '
+            '  '
+            'Note that updated entries in the output database are only written '
+            'from the WAL buffer after a commit. '
+            '  '
+            '  '
+            '* Default for rawdb: 10000  '
+            '* Default for hlldb: 100000  '
+            '  '
+            '  '
+            '!!! warning  '
+            '    If you have concurrent writes to the DB (e.g. multiple '
+            '    lbsntransform processes) and if you see transaction deadlocks, '
+            '    reduce the commit_volume.  ',
+            type=int)
         settings_args.add_argument(
             "--records_tofetch",
             default=10000,
-            help="Fetch x records /batch. "
-            "  "
-            "  "
-            "* If retrieving data from a db (`lbsn`), "
-            "limit the number of records to fetch at once.  "
-            "* Defaults to 10000  ",
-            type=int,
-        )
+            help='Fetch x records /batch. '
+            '  '
+            '  '
+            '* If retrieving data from a db (`lbsn`), '
+            'limit the number of records to fetch at once.  '
+            '* Defaults to 10000  ',
+            type=int)
         settings_args.add_argument(
             "--disable_transfer_reactions",
-            action="store_true",
-            help="Disable reactions. "
-            "  "
-            "  "
-            "* If set, processing of lbsn reactions will be skipped,  "
-            "* only original posts are transferred.  "
-            "* This is usefull to reduce "
-            "processing and data footprint for some service data, "
-            "e.g. for Twitter, with a large "
-            "number of reactions containing little original content.  ",
-        )
+            action='store_true',
+            help='Disable reactions. '
+            '  '
+            '  '
+            '* If set, processing of lbsn reactions will be skipped,  '
+            '* only original posts are transferred.  '
+            '* This is usefull to reduce '
+            'processing and data footprint for some service data, '
+            'e.g. for Twitter, with a large '
+            'number of reactions containing little original content.  ')
         settings_args.add_argument(
             "--disable_reaction_post_referencing",
-            action="store_true",
+            action='store_true',
             default=False,
-            help="Disable reactions-refs. "
-            "  "
-            "  "
-            "Enable this option in args "
-            "to prevent empty posts being stored "
-            "due to Foreign-Key-Exists Requirement. "
-            "  "
-            "Possible parameters:  "
-            "* `0` = Save Original Tweets of Retweets as `posts`;  "
-            "* `1` = do not store Original Tweets of Retweets;  "
-            "* `2` = !Not implemented: Store Original Tweets of Retweets as "
-            "`post_reactions`  ",
-        )
+            help='Disable reactions-refs. '
+            '  '
+            '  '
+            'Enable this option in args '
+            'to prevent empty posts being stored '
+            'due to Foreign-Key-Exists Requirement. '
+            '  '
+            'Possible parameters:  '
+            '* `0` = Save Original Tweets of Retweets as `posts`;  '
+            '* `1` = do not store Original Tweets of Retweets;  '
+            '* `2` = !Not implemented: Store Original Tweets of Retweets as '
+            '`post_reactions`  ')
         settings_args.add_argument(
             "--ignore_non_geotagged",
-            action="store_true",
-            help="Ignore none-geotagged. "
-            "  "
-            "  "
-            "If set, posts that are not geotagged "
-            "are ignored during processing.",
-        )
+            action='store_true',
+            help='Ignore none-geotagged. '
+            '  '
+            '  '
+            'If set, posts that are not geotagged '
+            'are ignored during processing.')
         settings_args.add_argument(
             "--startwith_db_rownumber",
-            help="Start with db row x. "
-            "  "
-            "  "
-            "If transferring from a databse (input), this flag can be used to "
-            "resume processing (e.g.) "
-            "if a transfer has been aborted. "
-            "  "
-            "  "
-            "* Provide a number (row-id) to start "
-            "processing from live db.  "
-            "* If input db type "
-            "is `lbsn`, this is the primary key, without the `origin_id`, "
-            "(e.g. the `post_guid`, `place_guid` etc.).  "
-            "* This flag will only work if processing a "
+            help='Start with db row x. '
+            '  '
+            '  '
+            'If transferring from a databse (input), this flag can be used to '
+            'resume processing (e.g.) '
+            'if a transfer has been aborted. '
+            '  '
+            '  '
+            '* Provide a number (row-id) to start '
+            'processing from live db.  '
+            '* If input db type '
+            'is `lbsn`, this is the primary key, without the `origin_id`, '
+            '(e.g. the `post_guid`, `place_guid` etc.).  '
+            '* This flag will only work if processing a '
             'single lbsn object (e.g. `--include_lbsn_objects "post"`).  '
-            "  "
-            "Example:  "
+            '  '
+            'Example:  '
             '`--startwith_db_rownumber "123456789"`  '
-            "will lead to the first batch-query from the DB looking like this:  "
-            "```sql"
+            'will lead to the first batch-query from the DB looking like this:  '
+            '```sql'
             'SELECT * FROM topical."post"  '
-            "WHERE post_guid > '123456789'  "
-            "ORDER BY post_guid ASC  "
-            "LIMIT 10000;  "
-            "```"
-            "  "
-            "  ",
-            type=str,
-        )
+            'WHERE post_guid > \'123456789\'  '
+            'ORDER BY post_guid ASC  '
+            'LIMIT 10000;  '
+            '```'
+            '  '
+            '  ',
+            type=str)
         settings_args.add_argument(
             "--endwith_db_rownumber",
-            help="End with db row x. "
-            "  "
-            "  "
-            "Provide a number (row-id) to end "
-            "processing from live db",
-            type=int,
-        )
-        settings_args.add_argument("--debug_mode", help="Enable debug mode.", type=str)
+            help='End with db row x. '
+            '  '
+            '  '
+            'Provide a number (row-id) to end '
+            'processing from live db', type=int)
+        settings_args.add_argument(
+            "--debug_mode",
+            help='Enable debug mode.',
+            type=str)
         settings_args.add_argument(
             "--geocode_locations",
-            help="Path to loc-geocodes. "
-            "  "
-            "  "
-            "* Provide path to a CSV file with "
-            "location geocodes  "
-            "* CSV Header must be: "
-            "`lat, lng, name`).  "
-            "* This can be used in mappings to assign "
-            "coordinates (lat, lng) "
-            "to use provided locations as text  ",
-            type=str,
-        )
+            help='Path to loc-geocodes. '
+            '  '
+            '  '
+            '* Provide path to a CSV file with '
+            'location geocodes  '
+            '* CSV Header must be: '
+            '`lat, lng, name`).  '
+            '* This can be used in mappings to assign '
+            'coordinates (lat, lng) '
+            'to use provided locations as text  ',
+            type=str)
         settings_args.add_argument(
             "--ignore_input_source_list",
-            help="Path to input ignore. "
-            "  "
-            "  "
-            "Provide a path to a list of input_source "
-            "types that will be ignored (e.g. to "
-            "ignore certain bots etc.)",
-            type=str,
-        )
+            help='Path to input ignore. '
+            '  '
+            '  '
+            'Provide a path to a list of input_source '
+            'types that will be ignored (e.g. to '
+            'ignore certain bots etc.)',
+            type=str)
         settings_args.add_argument(
             "--mappings_path",
-            help="Path mappings folder. "
-            "  "
-            "  "
-            "Provide a path to a custom folder "
-            "that contains "
-            "one or more input mapping modules (`*.py`). "
-            "  "
-            "  "
-            "* Have a look at the two sample mappings "
-            "in [the resources folder](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/tree/master/resources/mappings).  "
-            "* See how to define custom input mappings "
-            "in the [docs](https://lbsn.vgiscience.org/lbsntransform/docs/mappings/#input-mappings)  ",
-            type=str,
-        )
+            help='Path mappings folder. '
+            '  '
+            '  '
+            'Provide a path to a custom folder '
+            'that contains '
+            'one or more input mapping modules (`*.py`). '
+            '  '
+            '  '
+            '* Have a look at the two sample mappings '
+            'in [the resources folder](https://gitlab.vgiscience.de/lbsn/lbsntransform/-/tree/master/resources/mappings).  '
+            '* See how to define custom input mappings '
+            'in the [docs](https://lbsn.vgiscience.org/lbsntransform/docs/mappings/#input-mappings)  ',
+            type=str)
         settings_args.add_argument(
             "--input_lbsn_type",
-            help="Input sub-type "
-            "  "
-            "  "
-            "* e.g. `post`, `profile`, "
-            "`friendslist`, `followerslist` etc.  "
-            "* This can be used to select an appropiate "
-            "mapping procedure in a single mapping module.  ",
-            type=str,
-        )
+            help='Input sub-type '
+            '  '
+            '  '
+            '* e.g. `post`, `profile`, '
+            '`friendslist`, `followerslist` etc.  '
+            '* This can be used to select an appropiate '
+            'mapping procedure in a single mapping module.  ',
+            type=str)
         settings_args.add_argument(
             "--map_full_relations",
-            action="store_true",
-            help="Map full relations. "
-            "  "
-            "  "
-            "Set to true to map full relations, "
-            "e.g. many-to-many relationships, "
-            "such as `user_follows`, "
-            "`user_friend`, or `user_mentions` etc. are "
-            "mapped in a separate table. "
-            "Defaults to False.",
-        )
+            action='store_true',
+            help='Map full relations. '
+            '  '
+            '  '
+            'Set to true to map full relations, '
+            'e.g. many-to-many relationships, '
+            'such as `user_follows`, '
+            '`user_friend`, or `user_mentions` etc. are '
+            'mapped in a separate table. '
+            'Defaults to False.')
         settings_args.add_argument(
             "--csv_output",
-            action="store_true",
-            help="Store to local CSV. "
-            "  "
-            "  "
-            "If set, will store all "
-            "submit values to local CSV instead. "
-            "Currently, this type of output is not available.",
-        )
+            action='store_true',
+            help='Store to local CSV. '
+            '  '
+            '  '
+            'If set, will store all '
+            'submit values to local CSV instead. '
+            'Currently, this type of output is not available.')
         settings_args.add_argument(
             "--csv_allow_linebreaks",
-            action="store_true",
-            help=repr(
-                "Disable linebreak-rem. "
-                "  "
-                "  "
-                "If set, will not "
-                "remove intext-linebreaks (`\r` or `\n`) "
-                "in output CSVs"
-            )[1:-1],
-        )
+            action='store_true',
+            help=repr('Disable linebreak-rem. '
+            '  '
+            '  '
+            'If set, will not '
+            'remove intext-linebreaks (`\r` or `\n`) '
+            'in output CSVs')[1:-1])
         settings_args.add_argument(
             "--csv_delimiter",
             default=",",
             help=repr(
-                "CSV delimiter. "
-                "  "
-                "  "
-                "* Provide the CSV delimiter to be used.  "
-                "* Default is comma (`,`).  "
-                "* Note: to pass tab, "
-                'use variable substitution (`$"\t"`)  '
-            )[1:-1],
-            type=str,
-        )
+                'CSV delimiter. '
+                '  '
+                '  '
+                '* Provide the CSV delimiter to be used.  '
+                '* Default is comma (`,`).  '
+                '* Note: to pass tab, '
+                'use variable substitution (`$"\t"`)  ')[1:-1],
+            type=str)
         settings_args.add_argument(
             "--use_csv_dictreader",
-            action="store_true",
-            help="Use csv.DictReader. "
-            "  "
-            "  "
-            "By default, CSVs will be read line by line,  "
-            "using the standard csv.reader().  "
-            "  "
-            "This will enable "
-            "[csv.DictReader()](https://docs.python.org/3/library/csv.html#csv.DictReader),  "
-            "which allows to access CSV fields by name in mappings.  "
-            "  "
-            "A CSV with a header is required for this setting to work.  "
-            "  "
-            "Note that `csv.DictReader()` may be slower than the default "
-            "`csv.reader()`.",
-        )
+            action='store_true',
+            help='Use csv.DictReader. '
+            '  '
+            '  '
+            'By default, CSVs will be read line by line,  '
+            'using the standard csv.reader().  '
+            '  '
+            'This will enable '
+            '[csv.DictReader()](https://docs.python.org/3/library/csv.html#csv.DictReader),  '
+            'which allows to access CSV fields by name in mappings.  '
+            '  '
+            'A CSV with a header is required for this setting to work.  '
+            '  '
+            'Note that `csv.DictReader()` may be slower than the default '
+            '`csv.reader()`.')
         settings_args.add_argument(
             "--recursive_load",
-            action="store_true",
-            default=False,
-            help="Recursive local sub dirs. "
-            "  "
-            "  "
-            "If set, process input directories "
-            "recursively (default depth: `2`)",
-        )
+            action='store_true', default=False,
+            help='Recursive local sub dirs. '
+            '  '
+            '  '
+            'If set, process input directories '
+            'recursively (default depth: `2`)')
         settings_args.add_argument(
             "--skip_until_file",
-            help="Skip until file x. "
-            "  "
-            "  "
-            "If local input, skip all files "
-            "until file with name `x` appears "
-            "(default: start immediately)",
-            type=str,
-        )
+            help='Skip until file x. '
+            '  '
+            '  '
+            'If local input, skip all files '
+            'until file with name `x` appears '
+            '(default: start immediately)',
+            type=str)
         settings_args.add_argument(
             "--skip_until_record",
-            help="Skip until record x. "
-            "  "
-            "  "
-            "If local input, skip all records "
-            "until record `x` "
-            "(default: start with first)",
-            type=int,
-        )
+            help='Skip until record x. '
+            '  '
+            '  '
+            'If local input, skip all records '
+            'until record `x` '
+            '(default: start with first)',
+            type=int)
         settings_args.add_argument(
             "--zip_records",
-            action="store_true",
-            default=False,
-            help="Zip records parallel. "
-            "  "
-            "  "
-            "* Use this flag to zip records of "
-            "multiple input files  "
-            "* e.g. `List1[A,B,C]`, `List2[1,2,3]` will be "
-            "combined (zipped) on read to "
-            "`List[A1,B2,C3]`  ",
-        )
+            action='store_true', default=False,
+            help='Zip records parallel. '
+            '  '
+            '  '
+            '* Use this flag to zip records of '
+            'multiple input files  '
+            '* e.g. `List1[A,B,C]`, `List2[1,2,3]` will be '
+            'combined (zipped) on read to '
+            '`List[A1,B2,C3]`  ')
         settings_args.add_argument(
             "--min_geoaccuracy",
-            help="Min geoaccuracy to use "
-            "  "
-            "  "
-            "Set to `latlng`, `place`, "
-            "or `city` to limit processing of records based "
-            "on mininum geoaccuracy (default: no limit)",
-            type=str,
-        )
+            help='Min geoaccuracy to use '
+            '  '
+            '  '
+            'Set to `latlng`, `place`, '
+            'or `city` to limit processing of records based '
+            'on mininum geoaccuracy (default: no limit)',
+            type=str)
         settings_args.add_argument(
             "--include_lbsn_objects",
-            help="lbsn objects to process "
-            "  "
-            "  "
-            "If processing from lbsn db (`rawdb`), "
-            "provide a comma separated list "
-            "of [lbsn objects][1] to include. "
-            "  "
-            "May contain:  "
-            "* origin  "
-            "* country  "
-            "* city  "
-            "* place  "
-            "* user_groups  "
-            "* user  "
-            "* post  "
-            "* post_reaction  "
-            "  "
-            "Notes:  "
-            "* Excluded objects will not be queried, but empty "
-            "objects may be created due to referenced "
-            "foreign key relationships.  "
-            "* Defaults to "
-            "`origin,post`  "
-            "[1]: https://lbsn.vgiscience.org/structure/",
-            type=str,
-        )
+            help='lbsn objects to process '
+            '  '
+            '  '
+            'If processing from lbsn db (`rawdb`), '
+            'provide a comma separated list '
+            'of [lbsn objects][1] to include. '
+            '  '
+            'May contain:  '
+            '* origin  '
+            '* country  '
+            '* city  '
+            '* place  '
+            '* user_groups  '
+            '* user  '
+            '* post  '
+            '* post_reaction  '
+            '  '
+            'Notes:  '
+            '* Excluded objects will not be queried, but empty '
+            'objects may be created due to referenced '
+            'foreign key relationships.  '
+            '* Defaults to '
+            '`origin,post`  '
+            '[1]: https://lbsn.vgiscience.org/structure/',
+            type=str)
         settings_args.add_argument(
             "--include_lbsn_bases",
-            help="lbsn bases to update "
-            "  "
-            "  "
-            "If the target output type is `hll`, "
-            "provide a comma separated list "
-            "of lbsn bases to include/update/store to. "
-            "  "
-            "  "
-            "Currently supported:  "
-            "* hashtag  "
-            "* emoji  "
-            "* term  "
-            "* _hashtag_latlng  "
-            "* _term_latlng  "
-            "* _emoji_latlng  "
-            "* _month_hashtag  "
-            "* _month_hashtag_latlng  "
-            "* _month_latlng  "
-            "* monthofyear  "
-            "* month  "
-            "* dayofmonth  "
-            "* dayofweek  "
-            "* hourofday  "
-            "* year  "
-            "* month  "
-            "* date  "
-            "* timestamp  "
-            "* country  "
-            "* region  "
-            "* city  "
-            "* place  "
-            "* latlng  "
-            "* community  "
-            "  "
-            "Bases not included will be skipped. Per "
-            "default, **no bases** will be considered. "
-            "  "
-            "  "
-            "Example:  "
-            "```bash"
-            "--include_lbsn_bases hashtag,place,date,community  "
-            "```"
-            "  "
-            "This will update entries in the Postgres "
-            "[hlldb](https://gitlab.vgiscience.de/lbsn/databases/hlldb) tables "
-            "`social.community`. `topical.hashtag`, `spatial.place`, "
-            "`temporal.date` and non-existing entries will be created, existing "
-            "ones will be updated (a `hll_union`). "
-            "  "
-            "  "
-            "See the structure definition in SQL "
-            "[here](https://gitlab.vgiscience.de/lbsn/structure/hlldb/-/blob/master/structure/98-create-tables.sql) "
-            "for a full list of hlldb table structures.  "
-            "  "
-            "Argument only allowed one time.",
-            type=str,
-        )
+            help='lbsn bases to update '
+            '  '
+            '  '
+            'If the target output type is `hll`, '
+            'provide a comma separated list '
+            'of lbsn bases to include/update/store to. '
+            '  '
+            '  '
+            'Currently supported:  '
+            '* hashtag  '
+            '* emoji  '
+            '* term  '
+            '* _hashtag_latlng  '
+            '* _term_latlng  '
+            '* _emoji_latlng  '
+            '* _month_hashtag  '
+            '* _month_hashtag_latlng  '
+            '* _month_latlng  '
+            '* monthofyear  '
+            '* month  '
+            '* dayofmonth  '
+            '* dayofweek  '
+            '* hourofday  '
+            '* year  '
+            '* month  '
+            '* date  '
+            '* timestamp  '
+            '* country  '
+            '* region  '
+            '* city  '
+            '* place  '
+            '* latlng  '
+            '* community  '
+            '  '
+            'Bases not included will be skipped. Per '
+            'default, **no bases** will be considered. '
+            '  '
+            '  '
+            'Example:  '
+            '```bash'
+            '--include_lbsn_bases hashtag,place,date,community  '
+            '```'
+            '  '
+            'This will update entries in the Postgres '
+            '[hlldb](https://gitlab.vgiscience.de/lbsn/databases/hlldb) tables '
+            '`social.community`. `topical.hashtag`, `spatial.place`, '
+            '`temporal.date` and non-existing entries will be created, existing '
+            'ones will be updated (a `hll_union`). '
+            '  '
+            '  '
+            'See the structure definition in SQL '
+            '[here](https://gitlab.vgiscience.de/lbsn/structure/hlldb/-/blob/master/structure/98-create-tables.sql) '
+            'for a full list of hlldb table structures.  '
+            '  '
+            'Argument only allowed one time.',
+            type=str)
         settings_args.add_argument(
             "--override_lbsn_query_schema",
-            help="Override schema and table name "
-            "  "
-            "  "
-            "This can be used to redirect lbsn queries on "
-            "the given object from input db to a specific schema/table "
-            "such as a materialized view. "
-            "  "
-            "  "
-            "This can be usefull (e.g.) to limit "
-            "processing of input data to a specific "
-            "query.  "
-            "  "
-            "Format is `lbsn_type,schema.table`.  "
-            "  "
-            "Example:  "
-            "```bash"
-            "--override_lbsn_query_schema post,mviews.mypostquery  "
-            "```"
-            "Argument can be used multiple times.",
-            action="append",
-            type=str,
-        )
+            help='Override schema and table name '
+            '  '
+            '  '
+            'This can be used to redirect lbsn queries on '
+            'the given object from input db to a specific schema/table '
+            'such as a materialized view. '
+            '  '
+            '  '
+            'This can be usefull (e.g.) to limit '
+            'processing of input data to a specific '
+            'query.  '
+            '  '
+            'Format is `lbsn_type,schema.table`.  '
+            '  '
+            'Example:  '
+            '```bash'
+            '--override_lbsn_query_schema post,mviews.mypostquery  '
+            '```'
+            'Argument can be used multiple times.',
+            action='append',
+            type=str)
         settings_args.add_argument(
             "--hmac_key",
-            help="Override db hmac key "
-            "  "
-            "  "
-            "The hmac key that is used for cryptographic hashing "
-            "during creation of HLL sets. Override what is "
-            "set in hllworker database here. "
-            "  "
-            "  "
-            "Remember to re-use the same hmac key for any "
-            "consecutive update of HLL sets. "
-            "  "
-            "  "
-            "The crypt.salt variable can also be set (temporarily or permanently) in the "
-            "hll worker database itself. "
-            "  "
-            "Example:  "
-            "```sql"
-            "ALTER DATABASE hllworkerdb SET crypt.salt = 'CRYPTSALT';  "
-            "```"
-            "  "
-            "  "
-            "Further information is available in the [YFCC HLL tutorial][2]. "
-            "  "
-            "[2]: https://lbsn.vgiscience.org/tutorial/yfcc-geohash/#prepare-query-and-cryptographic-hashing",
-            action="append",
-            type=str,
-        )
+            help='Override db hmac key '
+            '  '
+            '  '
+            'The hmac key that is used for cryptographic hashing '
+            'during creation of HLL sets. Override what is '
+            'set in hllworker database here. '
+            '  '
+            '  '
+            'Remember to re-use the same hmac key for any '
+            'consecutive update of HLL sets. '
+            '  '
+            '  '
+            'The crypt.salt variable can also be set (temporarily or permanently) in the '
+            'hll worker database itself. '
+            '  '
+            'Example:  '
+            '```sql'
+            'ALTER DATABASE hllworkerdb SET crypt.salt = \'CRYPTSALT\';  '
+            '```'
+            '  '
+            '  '
+            'Further information is available in the [YFCC HLL tutorial][2]. '
+            '  '
+            '[2]: https://lbsn.vgiscience.org/tutorial/yfcc-geohash/#prepare-query-and-cryptographic-hashing',
+            action='append',
+            type=str)
         return parser
 
     def parse_args(self, args: List = None):
@@ -834,7 +794,8 @@ class BaseConfig:
         else:
             self.dbuser_input = args.dbuser_input
             self.dbpassword_input = args.dbpassword_input
-            input_ip, input_port = BaseConfig.get_ip_port(args.dbserveraddress_input)
+            input_ip, input_port = BaseConfig.get_ip_port(
+                args.dbserveraddress_input)
             self.dbserveraddress_input = input_ip
             if input_port:
                 self.dbserverport_input = input_port
@@ -842,19 +803,23 @@ class BaseConfig:
         if args.dry_run:
             self.dry_run = True
         if args.csv_output:
-            raise NotImplementedError("CSV output is currently not available.")
+            raise NotImplementedError(
+                "CSV output is currently not available.")
         if args.dbformat_input:
             self.dbformat_input = args.dbformat_input
         if args.origin:
             self.origin = args.origin
         if args.geocode_locations:
-            self.geocode_locations = Path(args.geocode_locations)
+            self.geocode_locations = Path(
+                args.geocode_locations)
         if args.ignore_input_source_list:
-            self.ignore_input_source_list = Path(args.ignore_input_source_list)
+            self.ignore_input_source_list = Path(
+                args.ignore_input_source_list)    
         if not self.csv_output and args.dbuser_output:
             self.dbuser_output = args.dbuser_output
             self.dbpassword_output = args.dbpassword_output
-            output_ip, output_port = BaseConfig.get_ip_port(args.dbserveraddress_output)
+            output_ip, output_port = BaseConfig.get_ip_port(
+                args.dbserveraddress_output)
             self.dbserveraddress_output = output_ip
             if output_port:
                 self.dbserverport_output = output_port
@@ -867,8 +832,7 @@ class BaseConfig:
                     self.dbuser_hllworker = args.dbuser_hllworker
                     self.dbpassword_hllworker = args.dbpassword_hllworker
                     hllworker_ip, hllworker_port = BaseConfig.get_ip_port(
-                        args.dbserveraddress_hllworker
-                    )
+                        args.dbserveraddress_hllworker)
                     self.dbserveraddress_hllworker = hllworker_ip
                     if hllworker_port:
                         self.dbserverport_hllworker = hllworker_port
@@ -878,8 +842,7 @@ class BaseConfig:
                         "a HLL Worker Connection (--dbname_hllworker, "
                         "--dbuser_hllworker, --dbpassword_hllworker, "
                         "--dbserveraddress_hllworker). You can also use the "
-                        "output hlldb again here."
-                    )
+                        "output hlldb again here.")
         if args.transferlimit:
             self.transferlimit = args.transferlimit
             if self.transferlimit == 0:
@@ -902,7 +865,8 @@ class BaseConfig:
             # hack: converts to int (row-count) if possible
             # otherwise uses str (row-id lookup)
             # TODO: separate into different cli args
-            self.startwith_db_rownumber = self.int_or_str(args.startwith_db_rownumber)
+            self.startwith_db_rownumber = self.int_or_str(
+                args.startwith_db_rownumber)
         if args.endwith_db_rownumber:
             self.endwith_db_rownumber = args.endwith_db_rownumber
         if args.debug_mode:
@@ -928,24 +892,24 @@ class BaseConfig:
         if args.mappings_path:
             self.mappings_path = Path(args.mappings_path)
         if args.min_geoaccuracy:
-            self.min_geoaccuracy = self.check_geoaccuracy_input(args.min_geoaccuracy)
+            self.min_geoaccuracy = self.check_geoaccuracy_input(
+                args.min_geoaccuracy)
         if args.include_lbsn_objects:
-            self.include_lbsn_objects = args.include_lbsn_objects.lower().split(",")
+            self.include_lbsn_objects = \
+                args.include_lbsn_objects.lower().split(",")
         else:
             self.include_lbsn_objects = ["origin,post"]
         if args.include_lbsn_bases:
             self.include_lbsn_bases = args.include_lbsn_bases.split(",")
         if args.override_lbsn_query_schema:
             self.override_lbsn_query_schema = self.compile_schema_override(
-                args.override_lbsn_query_schema
-            )
+                args.override_lbsn_query_schema)
         if args.hmac_key:
             self.hmac_key = args.hmac_key
 
     @classmethod
     def compile_schema_override(
-        cls, override_lbsn_query_schema: List[str]
-    ) -> List[Tuple[str, str]]:
+        cls, override_lbsn_query_schema: List[str]) -> List[Tuple[str, str]]:
         """Split lbsn_type from schema.table override"""
         lbsn_query_schema = []
         for override in override_lbsn_query_schema:
@@ -955,9 +919,9 @@ class BaseConfig:
                 raise ValueError(
                     f"Cannot split lbsn_type from schema.table ({override}). "
                     f"Make sure override_lbsn_query_schema entries are "
-                    f"formatted correctly, e.g. lbsn_type,schema.table"
-                ) from e
-            lbsn_query_schema.append((lbsn_type.lower(), schema_table_override.lower()))
+                    f"formatted correctly, e.g. lbsn_type,schema.table") from e
+            lbsn_query_schema.append(
+                (lbsn_type.lower(), schema_table_override.lower()))                         
         return lbsn_query_schema
 
     @staticmethod

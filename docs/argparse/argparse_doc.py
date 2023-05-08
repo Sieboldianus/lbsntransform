@@ -15,7 +15,7 @@ def extract_argscode():
     # extract source code of parse_args
     parse_args_source = inspect.getsource(BaseConfig.get_arg_parser)
     # remove first three lines
-    for __ in range(0, 4):
+    for __ in range(0, 3):
         parse_args_source = parse_args_source[parse_args_source.index("\n") + 1 :]
     # insert at beginning
     parse_args_source = (
