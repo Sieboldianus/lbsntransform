@@ -44,10 +44,10 @@ You can contribute:
 
 The project structure follows the [src-layout](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout).
 
-The packaging is organized as described in the setuptools [declarative config](https://setuptools.pypa.io/en/latest/userguide/declarative_config.html)
+The packaging is organized as described in the setuptools [declarative config (pyproject.toml)](https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html)
 
 Releases are made with [python-semantic-release](https://github.com/python-semantic-release/python-semantic-release). At the
-moment, releases are triggered manually after cerain progress is available. Preview release flow with:
+moment, releases are triggered manually after certain progress is available. Preview release flow with:
 
 ```bash
 semantic-release publish --verbosity=DEBUG --noop
@@ -58,7 +58,8 @@ Without `--noop`, semantic-release will do the [following](https://python-semant
 1. Update changelog file.
 2. Run [semantic-release version](https://python-semantic-release.readthedocs.io/en/latest/#cmd-version).
 3. Push changes to git.
-4. Run [build_command](https://python-semantic-release.readthedocs.io/en/latest/configuration.html#config-build-command) and upload the distribution files to Pypi.
+4. Run [build_command](https://python-semantic-release.readthedocs.io/en/latest/configuration.html#config-build-command) 
+   (`python -m build`) and upload the distribution files to Pypi.
 5. Run [semantic-release changelog](https://python-semantic-release.readthedocs.io/en/latest/#cmd-changelog) and post to Gitlab/Github.
 6. Attach the files created by [build_command](https://python-semantic-release.readthedocs.io/en/latest/configuration.html#config-build-command) to the release.
 
