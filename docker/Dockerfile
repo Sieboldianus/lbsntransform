@@ -2,7 +2,7 @@ FROM python:slim
 
 COPY src/ ./src/
 COPY resources/ ./resources/
-COPY setup.cfg pyproject.toml README.md ./
+COPY pyproject.toml README.md ./
 
 RUN set -ex; \
     \

@@ -1,3 +1,65 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lbsntransform"
+authors = [{name = "Alexander Dunkel", email = "alexander.dunkel@tu-dresden.de"}]
+license = {text = "GNU GPLv3 or any higher"}
+description = "Location based social network (LBSN) data structure format & transfer tool"
+requires-python = ">=3.8"
+dependencies = [
+    "lbsnstructure>=1.0.3",
+    "protobuf>=4.21.9,<5",
+    "psycopg2-binary",
+    "ppygis3",
+    "shapely<2.0.0",
+    "emoji>=2.0.0",
+    "requests",
+    "geos",
+    "numpy",
+    "requests",
+    "regex",
+]
+dynamic = ["version"]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://gitlab.vgiscience.de/lbsn/lbsntransform"
+
+[project.optional-dependencies]
+nltk_stopwords = ["nltk"]
+
+[project.scripts]
+lbsntransform = "lbsntransform.__main__:main"
+
+[tool.semantic_release]
+version_variable = "src/lbsntransform/version.py:__version__"
+version_source = "tag"
+branch = "master"
+build_command = "python -m build"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["README.md"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = [
+    "lbsntransform",
+    "lbsntransform.*",
+]
+namespaces = false
+
+[tool.setuptools.dynamic]
+version = {attr = "lbsntransform/version.__version__"}
+
 [tool.black]
 line-length = 88
 include = '\.pyi?$'
