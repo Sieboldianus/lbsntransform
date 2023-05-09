@@ -38,7 +38,7 @@ lbsntransform = "lbsntransform.__main__:main"
 
 [tool.semantic_release]
 version_variable = "src/lbsntransform/version.py:__version__"
-version_source = "tag"
+version_source = "commit"
 branch = "master"
 build_command = "python -m build"
 
