@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.24.2 (2023-05-09)
+### Fix
+* Update yml dependencies to use version range for protobuf, too ([`bfad7b2`](https://github.com/Sieboldianus/lbsntransform/commit/bfad7b26d2537a6855246f02885dd9b592938121))
+* Migrate from setup.cfg to pyproject.toml ([`7ee7598`](https://github.com/Sieboldianus/lbsntransform/commit/7ee759805566b58f7ec295b5ad2f70fc03a5dfd2))
+
+### Documentation
+* Update to reflect pyproject.toml only based setup ([`6bce8d9`](https://github.com/Sieboldianus/lbsntransform/commit/6bce8d9e4784709ab25d6ea6944edfd89edea880))
+* Fix formatting in cli-commands page ([`c482347`](https://github.com/Sieboldianus/lbsntransform/commit/c4823478aa9c7a2574fd06a26e57d6739de17542))
+
 ## v0.24.1 (2023-05-05)
 ### Feature
 * Migrate from setup.py to setup.cfg & pyproject.toml ([`7de0de0`](https://github.com/Sieboldianus/lbsntransform/commit/7de0de0480fb1b9956de5cc0c34c52536627b892))
