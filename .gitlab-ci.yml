@@ -25,7 +25,7 @@ test:
     - pip install --editable .
   stage: test
   script:
-    - pip install --editable .
+    - pip install --editable .[nltk_stopwords]
     # perform integration test
     - python tests/test_integration_yfcc.py
   rules:
@@ -45,7 +45,7 @@ artifacts:
     # contains anybadge
     - conda activate ci_env
     # install lbsntransfrom
-    - pip install --editable .
+    - pip install --editable .[nltk_stopwords]
     # install additional packages
     # needed in lbsntransform ci job
     - pip install git+https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.vgiscience.de/tud_ifk/argdown.git
