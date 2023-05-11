@@ -1,5 +1,15 @@
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  # see
+  # https://docs.gitlab.com/ee/ci/caching/#caching-python-dependencies
+  paths:
+    - .cache/pip
+
 stages:
   - test
+  - artifacts
   - mkdocs
   - deploy
 
@@ -12,19 +22,36 @@ test:
     # activate default ci_env from registry image
     # contains anybadge
     - conda activate ci_env
-    - conda env create -f environment_dev.yml
-    # activate tagmaps env
-    # with --stack environments
-    - conda activate lbsntransform --stack
+    - pip install --editable .
+  stage: test
+  script:
+    - pip install --editable .
+    # perform integration test
+    - python tests/test_integration_yfcc.py
+  rules:
+    - if:
+        $CI_COMMIT_BRANCH == "master" ||
+        $CI_COMMIT_BRANCH == "ci-test" ||
+        $CI_COMMIT_BRANCH == "dev" ||
+        $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+artifacts:
+  image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
+  before_script:
+    # initialize conda shell
+    - conda init bash
+    - source ~/.bashrc
+    # activate default ci_env from registry image
+    # contains anybadge
+    - conda activate ci_env
+    # install lbsntransfrom
+    - pip install --editable .
     # install additional packages
     # needed in lbsntransform ci job
     - pip install git+https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.vgiscience.de/tud_ifk/argdown.git
-    - conda install pylint bitarray
-    - pip install pdoc3 pylint-exit
-  stage: test
+    - pip install pylint bitarray pdoc3 pylint-exit
+  stage: artifacts
   script:
-    # test dev install
-    - pip install --no-dependencies --editable .
     # perform integration test
     - python tests/test_integration_yfcc.py
     # copy changelog
