@@ -26,16 +26,17 @@ from lbsntransform.config.config import BaseConfig
 from lbsntransform.lbsntransform_ import LBSNTransform
 
 
-def main():
-    """ Main function for cli-mode to process data
+def main(config: BaseConfig = None):
+    """Main function for cli-mode to process data
     from postgres db or local file input
     to postgres db or local file output
     """
 
-    # Load Config, will be overwritten if args are given
-    config = BaseConfig()
-    # Parse args
-    config.parse_args()
+    # Load Default Config, will be overwritten if args are given
+    if config is None:
+        config = BaseConfig()
+        # Parse args
+        config.parse_args()
 
     # initialize mapping class
     # depending on lbsn origin
