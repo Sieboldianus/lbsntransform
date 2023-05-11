@@ -22,11 +22,10 @@ test:
     # activate default ci_env from registry image
     # contains anybadge
     - conda activate ci_env
-    - pip install --editable .
-  stage: test
-  script:
     - pip install --editable .[nltk_stopwords]
     - python -c 'import nltk;nltk.download("stopwords")'
+  stage: test
+  script:
     # perform integration test
     - python tests/test_integration_yfcc.py
   rules:
