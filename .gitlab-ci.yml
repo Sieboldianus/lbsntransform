@@ -26,6 +26,7 @@ test:
   stage: test
   script:
     - pip install --editable .[nltk_stopwords]
+    - python -c 'import nltk;nltk.download("stopwords")'
     # perform integration test
     - python tests/test_integration_yfcc.py
   rules:
@@ -48,6 +49,7 @@ artifacts:
     - pip install --editable .[nltk_stopwords]
     # install additional packages
     # needed in lbsntransform ci job
+    - python -c 'import nltk;nltk.download("stopwords")'
     - pip install git+https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.vgiscience.de/tud_ifk/argdown.git
     - pip install pylint bitarray pdoc3 pylint-exit
   stage: artifacts
@@ -63,7 +65,6 @@ artifacts:
     - python docs/argparse/argparse_after_doc.py
     # to enable all warnings during ci doc generation
     # - export PYTHONWARNINGS='error::UserWarning'
-    - python -c "import nltk;nltk.download('stopwords')"
     - pdoc --config show_type_annotations=True --template-dir docs/apidoc/ --html --output-dir docs/api/ lbsntransform
     # create badges
     - pylint --output-format=text lbsntransform | tee pylint.txt || pylint-exit $?
