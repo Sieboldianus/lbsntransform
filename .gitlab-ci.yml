@@ -104,10 +104,9 @@ pages:
     paths:
     - public
   rules:
-    # always execute on master or ci-test
+    # only execute on master
     - if:
-        $CI_COMMIT_BRANCH == "master" ||
-        $CI_COMMIT_BRANCH == "ci-test"
+        $CI_COMMIT_BRANCH == "master"
 
 docker-image-branch:
   stage: deploy
