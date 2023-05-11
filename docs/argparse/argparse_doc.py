@@ -25,7 +25,7 @@ def extract_argscode():
     parse_args_source = parse_args_source.lstrip().replace("\n        ", "\n")
     # replace version string
     parse_args_source = parse_args_source.replace(
-        "lbsntransform {__version__}", f"lbsntransform {__version__}"
+        "{__version__}", f"{__version__}"
     )
     # replace package name
     parse_args_source = parse_args_source.replace(
