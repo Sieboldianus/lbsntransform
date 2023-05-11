@@ -24,7 +24,9 @@ test:
   stage: test
   script:
     # test dev install
-    - pip install -e . --no-dependencies
+    - pip install --no-dependencies --editable .
+    # perform integration test
+    - python tests/test_integration_yfcc.py
     # copy changelog
     - cp CHANGELOG.md docs/changelog.md
     # argparse to markdown conversion

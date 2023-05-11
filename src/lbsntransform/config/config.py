@@ -103,7 +103,7 @@ class BaseConfig:
         parser.add_argument(
             '--version',
             action='version',
-            version=f'lbsntransform {__version__}')
+            version=f'{__version__}')
         parser.add_argument(
             '-o', "--origin",
             default=0,

@@ -1,5 +1,4 @@
 build/
-tests/
 scripts/
 mkdocs_env/
 .vscode/

@@ -1,3 +1,9 @@
+# For convenience, this conda yml can be used to create a 
+# dev environment with the latest dependencies. Use with:
+# conda env create -n lbsntransform_dev -f environment_dev.yml
+# conda activate lbsntransform_dev
+# pip install --no-deps --editable .
+
 name: lbsntransform
 channels:
   - conda-forge
@@ -11,6 +17,7 @@ dependencies:
   - protobuf>=4.21.9,<5
   - psycopg2
   - pylint
+  - pytest
   - shapely<2.0.0
   - requests
   - bitarray

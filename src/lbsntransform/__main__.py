@@ -26,24 +26,24 @@ from lbsntransform.config.config import BaseConfig
 from lbsntransform.lbsntransform_ import LBSNTransform
 
 
-def main():
-    """ Main function for cli-mode to process data
+def main(config: BaseConfig = None):
+    """Main function for cli-mode to process data
     from postgres db or local file input
     to postgres db or local file output
     """
 
-    # Load Config, will be overwritten if args are given
-    config = BaseConfig()
-    # Parse args
-    config.parse_args()
+    # Load Default Config, will be overwritten if args are given
+    if config is None:
+        config = BaseConfig()
+        # Parse args
+        config.parse_args()
 
     # initialize mapping class
     # depending on lbsn origin
     # e.g. 1 = Instagram,
     #      2 = Flickr, 2.1 = Flickr YFCC100m,
     #      3 = Twitter)
-    importer = HF.load_importer_mapping_module(
-        config.origin, config.mappings_path)
+    importer = HF.load_importer_mapping_module(config.origin, config.mappings_path)
 
     # initialize lbsntransform
     lbsntransform = LBSNTransform(
@@ -72,7 +72,8 @@ def main():
         include_lbsn_bases=config.include_lbsn_bases,
         dry_run=config.dry_run,
         hmac_key=config.hmac_key,
-        commit_volume=config.commit_volume)
+        commit_volume=config.commit_volume,
+    )
 
     # initialize input reader
     input_data = LoadData(
@@ -102,7 +103,8 @@ def main():
         skip_until_record=config.skip_until_record,
         zip_records=config.zip_records,
         include_lbsn_objects=config.include_lbsn_objects,
-        override_lbsn_query_schema=config.override_lbsn_query_schema)
+        override_lbsn_query_schema=config.override_lbsn_query_schema,
+    )
 
     # Manually add entries that need submission prior to parsing data
     # add_bundestag_group_example(import_mapper)
@@ -120,36 +122,40 @@ def main():
                 stats_str = HF.report_stats(
                     input_data.count_glob,
                     input_data.continue_number,
-                    lbsntransform.lbsn_records)
-                print(stats_str, end='\r')
+                    lbsntransform.lbsn_records,
+                )
+                print(stats_str, end="\r")
                 sys.stdout.flush()
-            if (config.transferlimit and
-                    lbsntransform.processed_total >= config.transferlimit):
+            if (
+                config.transferlimit
+                and lbsntransform.processed_total >= config.transferlimit
+            ):
                 break
 
     # finalize output (close db connection, submit remaining)
     lbsntransform.log.info(
-        f'\nTransferring remaining '
-        f'{lbsntransform.lbsn_records.count_glob} to db.. '
-        f'{HF.null_notice(input_data.import_mapper.null_island)})')
+        f"\nTransferring remaining "
+        f"{lbsntransform.lbsn_records.count_glob} to db.. "
+        f"{HF.null_notice(input_data.import_mapper.null_island)})"
+    )
     lbsntransform.finalize_output()
 
     # final report
     lbsntransform.log.info(
-        f'\n\n{"".join([f"(Dry Run){chr(10)}" if config.dry_run else ""])}'
-        f'Processed {input_data.count_glob} input records '
-        f'(Input {input_data.start_number} to '
-        f'{input_data.continue_number}). '
-        f'\n\nIdentified {lbsntransform.processed_total} LBSN records, '
-        f'with {lbsntransform.lbsn_records.count_glob_total} '
-        f'distinct LBSN records overall. '
-        f'{HF.get_skipped_report(input_data.import_mapper)}. '
-        f'Merged {lbsntransform.lbsn_records.count_dup_merge_total} '
-        f'duplicate records.')
-    lbsntransform.log.info(
-        f'\n{HF.get_count_stats(lbsntransform.lbsn_records)}')
+        f"\n\n{''.join([f'(Dry Run){chr(10)}' if config.dry_run else ''])}"
+        f"Processed {input_data.count_glob} input records "
+        f"(Input {input_data.start_number} to "
+        f"{input_data.continue_number}). "
+        f"\n\nIdentified {lbsntransform.processed_total} LBSN records, "
+        f"with {lbsntransform.lbsn_records.count_glob_total} "
+        f"distinct LBSN records overall. "
+        f"{HF.get_skipped_report(input_data.import_mapper)}. "
+        f"Merged {lbsntransform.lbsn_records.count_dup_merge_total} "
+        f"duplicate records."
+    )
+    lbsntransform.log.info(f"\n{HF.get_count_stats(lbsntransform.lbsn_records)}")
 
-    lbsntransform.log.info(f'Done. {how_long.stop_time()}')
+    lbsntransform.log.info(f"Done. {how_long.stop_time()}")
 
     lbsntransform.close_log()
 
