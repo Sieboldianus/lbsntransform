@@ -91,6 +91,7 @@ line_length = 88
 
 [tool.pytest.ini_options]
 addopts = "-ra"
+testpaths = ["src/lbsnstransform", "tests"]
 
 [tool.mypy]
 # Error output
