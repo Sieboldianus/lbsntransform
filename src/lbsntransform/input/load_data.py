@@ -140,16 +140,21 @@ class LoadData:
             self.lbsn_schema = optional_schema_override(
                 LBSN_SCHEMA, override_lbsn_query_schema
             )
+        # these kwargs will be given to the dynamic mappings module
+        # only if defined in the module;
+        # these variables are made available via cli to the user;
+        # adding new options requires updating cli config
+        kwargs = {
+            "disable_reaction_post_referencing": disable_reactionpost_ref,
+            "geocodes": self.geocode_dict,
+            "map_full_relations": map_relations,
+            "map_reactions": transfer_reactions,
+            "ignore_non_geotagged": ignore_non_geotagged,
+            "ignore_sources_set": self.ignore_sources_set,
+            "min_geoaccuracy": min_geoaccuracy,
+        }
         # initialize field mapping structure
-        self.import_mapper = importer(
-            disable_reactionpost_ref,
-            self.geocode_dict,
-            map_relations,
-            transfer_reactions,
-            ignore_non_geotagged,
-            self.ignore_sources_set,
-            min_geoaccuracy,
-        )
+        self.import_mapper = importer(**kwargs)
         self.finished = False
 
     def __enter__(self) -> Iterator[LBSNObjects]:
@@ -343,17 +348,16 @@ class LoadData:
             if LoadData.skip_empty_or_other(single_record):
                 # skip empty or malformed records
                 continue
+            # pass arguments by position,
+            # record_type may not always be avaiable/ used by mapping
+            args = [single_record, record_type]
             if self.local_file_type == "json" or not self.is_local_input:
                 # note: db-records always returned as json-dict
-                lbsn_records = self.import_mapper.parse_json_record(
-                    single_record, record_type
-                )
+                lbsn_records = self.import_mapper.parse_json_record(*args)
             elif self.local_file_type in ("txt", "csv"):
-                lbsn_records = self.import_mapper.parse_csv_record(
-                    single_record, record_type
-                )
+                lbsn_records = self.import_mapper.parse_csv_record(*args)
             else:
-                sys.exit(f"Format {self.local_file_type} not supportet.")
+                sys.exit(f"Format {self.local_file_type} not supported.")
             # return record as pipe
             if lbsn_records is None:
                 continue
