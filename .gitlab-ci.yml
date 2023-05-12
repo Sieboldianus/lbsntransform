@@ -28,12 +28,6 @@ test:
   script:
     # perform integration test
     - python tests/test_integration_yfcc.py
-  rules:
-    - if:
-        $CI_COMMIT_BRANCH == "master" ||
-        $CI_COMMIT_BRANCH == "ci-test" ||
-        $CI_COMMIT_BRANCH == "dev" ||
-        $CI_PIPELINE_SOURCE == 'merge_request_event'
 
 artifacts:
   image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
