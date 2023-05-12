@@ -4,16 +4,14 @@
 Module for mapping Instagram (json) to common LBSN Structure.
 """
 
+import json
+
 # pylint: disable=no-member
-import sys
 import logging
 import re
-import json
-import shapely.geometry as geometry
+from typing import Any, Dict
 
-from typing import Dict, Any
 import lbsnstructure as lbsn
-from shapely.geometry.polygon import Polygon
 
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
@@ -30,13 +28,9 @@ class importer:
 
     def __init__(
         self,
-        disableReactionPostReferencing=False,
-        geocodes=False,
-        mapFullRelations=False,
-        map_reactions=True,
         ignore_non_geotagged=False,
-        ignore_sources_set=set(),
         min_geoaccuracy=None,
+        **_
     ):
         # Create the OriginID globally
         # this OriginID is required for all CompositeKeys
@@ -47,13 +41,8 @@ class importer:
         self.lbsn_records = []
         self.lbsn_relationships = []
         self.null_island = 0
-        self.log = logging.getLogger("__main__")  # logging.getLogger()
-        self.disable_reaction_post_referencing = disableReactionPostReferencing
-        self.map_full_relations = mapFullRelations
-        self.geocodes = geocodes
-        self.map_reactions = map_reactions
+        self.log = logging.getLogger("__main__")
         self.ignore_non_geotagged = ignore_non_geotagged
-        self.ignore_sources_set = ignore_sources_set
         self.min_geoaccuracy = min_geoaccuracy
         self.skipped_low_geoaccuracy = 0
 
@@ -61,7 +50,8 @@ class importer:
         """Get count of records skipped due to low geoaccuracy"""
         return self.skipped_low_geoaccuracy
 
-    def parse_json_record(self, json_string_dict, input_lbsn_type=None):
+    def parse_json_record(self, json_string_dict, *_):
+        """Parse a standard Instagram json record"""
         # clear any records from previous run
         self.lbsn_records.clear()
         if json_string_dict is None:

@@ -107,13 +107,9 @@ class importer:
 
     def __init__(
         self,
-        disable_reaction_post_referencing=False,
-        geocodes=False,
-        map_full_relations=False,
-        map_reactions=True,
-        ignore_non_geotagged=False,
-        ignore_sources_set=None,
-        min_geoaccuracy=None,
+        ignore_non_geotagged=False,  # not yet implemented
+        min_geoaccuracy=None,  # not yet implemented
+        **_ # remaining (unused) kwargs, to be ignored
     ):
         # We're dealing with Flickr in this class, lets create the OriginID
         # globally
@@ -146,7 +142,7 @@ class importer:
             "Public Domain Mark": 10,
         }
 
-    def parse_csv_record(self, record, record_type: Optional[str] = None):
+    def parse_csv_record(self, record, *_):
         """Entry point for flickr CSV data:
             - Decide if CSV record contains place-info or post-info
             - Skip empty or malformed records

@@ -8,29 +8,36 @@ Module for mapping Twitter to common LBSN Structure.
 
 import logging
 import re
+from typing import Optional
 
-import shapely.geometry as geometry
 import lbsnstructure as lbsn
+import shapely.geometry as geometry
 from shapely.geometry.polygon import Polygon
 
 from lbsntransform.tools.helper_functions import HelperFunctions as HF
 
 MAPPING_ID = 3
-class importer():
-    """ Provides mapping function from Twitter endpoints to
-        protobuf lbsnstructure
+
+
+class importer:
+    """Provides mapping function from Twitter endpoints to
+    protobuf lbsnstructure
     """
+
     ORIGIN_NAME = "Twitter"
     ORIGIN_ID = 3
 
-    def __init__(self,
-                 disableReactionPostReferencing=False,
-                 geocodes=False,
-                 mapFullRelations=False,
-                 map_reactions=True,
-                 ignore_non_geotagged=False,
-                 ignore_sources_set=None,
-                 min_geoaccuracy=None):
+    def __init__(
+        self,
+        disable_reaction_post_referencing=False,
+        geocodes=False,
+        map_full_relations=False,
+        map_reactions=True,
+        ignore_non_geotagged=False,
+        ignore_sources_set=None,
+        min_geoaccuracy=None,
+        **_
+    ):
         # We're dealing with Twitter in this class,
         # lets create the OriginID globally
         # this OriginID is required for all CompositeKeys
@@ -41,9 +48,9 @@ class importer():
         # self.lbsn_records = LBSNRecordDicts()
         self.lbsn_records = []
         self.null_island = 0
-        self.log = logging.getLogger('__main__')  # logging.getLogger()
-        self.disable_reaction_post_referencing = disableReactionPostReferencing
-        self.map_full_relations = mapFullRelations
+        self.log = logging.getLogger("__main__")
+        self.disable_reaction_post_referencing = disable_reaction_post_referencing
+        self.map_full_relations = map_full_relations
         self.geocodes = geocodes
         self.map_reactions = map_reactions
         self.ignore_non_geotagged = ignore_non_geotagged
@@ -60,7 +67,9 @@ class importer():
         """Get count of records skipped due to ignore list"""
         return self.skipped_ignore_list
 
-    def parse_json_record(self, json_string_dict, input_lbsn_type=None):
+    def parse_json_record(
+        self, json_string_dict, input_lbsn_type: Optional[str] = None
+    ):
         """Will parse Twitter json retrieved from Twitter API,
         returns a list of LBSN records.
 
@@ -89,16 +98,18 @@ class importer():
         # clear any records from previous run
         self.lbsn_records.clear()
         # decide if main object is post or user json
-        if input_lbsn_type and input_lbsn_type in ('friendslist',
-                                                   'followerslist'):
+        if input_lbsn_type and input_lbsn_type in ("friendslist", "followerslist"):
             for user, related_user_list in json_string_dict.items():
                 user_record = HF.new_lbsn_record_with_id(
-                    lbsn.User(), str(user), self.origin)
+                    lbsn.User(), str(user), self.origin
+                )
                 self.lbsn_records.append(user_record)
-                self.extract_related_users(related_user_list,
-                                           input_lbsn_type, user_record)
-        elif (input_lbsn_type and input_lbsn_type == 'profile') \
-                or 'screen_name' in json_string_dict:
+                self.extract_related_users(
+                    related_user_list, input_lbsn_type, user_record
+                )
+        elif (
+            input_lbsn_type and input_lbsn_type == "profile"
+        ) or "screen_name" in json_string_dict:
             # user
             user_record = self.extract_user(json_string_dict)
             self.lbsn_records.append(user_record)
@@ -107,16 +118,15 @@ class importer():
             if not user_record.is_private:
                 # if user profile is private, we cannot access posts
                 user_status = None
-                if 'status' in json_string_dict:
-                    user_status = json_string_dict.get('status')
-                elif 'quoted_status' in json_string_dict:
-                    user_status = json_string_dict.get('quoted_status')
-                elif 'retweeted_status' in json_string_dict:
-                    user_status = json_string_dict.get('retweeted_status')
+                if "status" in json_string_dict:
+                    user_status = json_string_dict.get("status")
+                elif "quoted_status" in json_string_dict:
+                    user_status = json_string_dict.get("quoted_status")
+                elif "retweeted_status" in json_string_dict:
+                    user_status = json_string_dict.get("retweeted_status")
                 # in case user status is available
                 if user_status:
-                    self.parse_json_post(
-                        user_status, user_pkey=user_record.pkey)
+                    self.parse_json_post(user_status, user_pkey=user_record.pkey)
         else:
             # otherwise, parse post
             self.parse_json_post(json_string_dict)
@@ -124,34 +134,33 @@ class importer():
         # finally, return list of all extracted records
         return self.lbsn_records
 
-    def extract_related_users(
-            self, related_user_list, input_lbsn_type, user_record):
+    def extract_related_users(self, related_user_list, input_lbsn_type, user_record):
         """Extract related users from user list"""
         for related_user in related_user_list:
-            related_record = HF.new_lbsn_record_with_id(lbsn.User(),
-                                                        str(related_user),
-                                                        self.origin)
+            related_record = HF.new_lbsn_record_with_id(
+                lbsn.User(), str(related_user), self.origin
+            )
             self.lbsn_records.append(related_record)
             # note the switch of order here,
             # direction is important for 'isConnected',
             # and the different list each give us a
             # different view on this relationship
-            if input_lbsn_type == 'friendslist':
-                relationship_record =\
-                    HF.new_lbsn_relation_with_id(lbsn.Relationship(),
-                                                 user_record.pkey.id,
-                                                 related_record.pkey.id,
-                                                 self.origin)
-            elif input_lbsn_type == 'followerslist':
-                relationship_record = \
-                    HF.new_lbsn_relation_with_id(lbsn.Relationship(),
-                                                 related_record.pkey.id,
-                                                 user_record.pkey.id,
-                                                 self.origin)
-            relationship_record.relationship_type = \
-                lbsn.Relationship.isCONNECTED
-            self.lbsn_records.add_relationship_to_dict(
-                relationship_record)
+            if input_lbsn_type == "friendslist":
+                relationship_record = HF.new_lbsn_relation_with_id(
+                    lbsn.Relationship(),
+                    user_record.pkey.id,
+                    related_record.pkey.id,
+                    self.origin,
+                )
+            elif input_lbsn_type == "followerslist":
+                relationship_record = HF.new_lbsn_relation_with_id(
+                    lbsn.Relationship(),
+                    related_record.pkey.id,
+                    user_record.pkey.id,
+                    self.origin,
+                )
+            relationship_record.relationship_type = lbsn.Relationship.isCONNECTED
+            self.lbsn_records.add_relationship_to_dict(relationship_record)
 
     def parse_json_post(self, json_string_dict, user_pkey=None):
         """Extract json post retrieved from Twitter API
@@ -181,8 +190,7 @@ class importer():
         therefore, records are first added to self.lbsn_records
         to be later returned together
         """
-        post_record = self.extract_post(
-            json_string_dict, user_pkey)
+        post_record = self.extract_post(json_string_dict, user_pkey)
 
         if not post_record:
             # in case no post record has been extracted
@@ -197,19 +205,20 @@ class importer():
             if self.map_reactions is False:
                 return
             post_reaction_record = self.map_postrecord_to_postreactionrecord(
-                post_record)
+                post_record
+            )
             refuser_pkey = None
-            if 'quoted_status' in json_string_dict:
+            if "quoted_status" in json_string_dict:
                 # Note: Quote is both: Share & Reply
-                if 'user' not in json_string_dict.get('quoted_status'):
-                    refuser_pkey = \
-                        HF.substitute_referenced_user(json_string_dict,
-                                                      self.origin,
-                                                      self.log)
+                if "user" not in json_string_dict.get("quoted_status"):
+                    refuser_pkey = HF.substitute_referenced_user(
+                        json_string_dict, self.origin, self.log
+                    )
                 post_reaction_record.reaction_type = lbsn.PostReaction.QUOTE
                 ref_post_record = self.extract_post(
-                    json_string_dict.get('quoted_status'))
-            elif 'retweeted_status' in json_string_dict:
+                    json_string_dict.get("quoted_status")
+                )
+            elif "retweeted_status" in json_string_dict:
                 # Note: No retweets are available when data is queried
                 # using Bounding Box because of Geo-Tweet limitation:
                 # "Note that native Retweets are not matched by this
@@ -217,44 +226,42 @@ class importer():
                 # the Retweet will not"
                 # see https://developer.twitter.com/en/docs/
                 # tweets/filter-realtime/guides/basic-stream-parameters.html
-                if 'user' not in json_string_dict.get('retweeted_status'):
+                if "user" not in json_string_dict.get("retweeted_status"):
                     # Current issue with Twitter search: the retweeting
                     # user is not returned in retweeted_status
                     # but we can get this from other information,
                     # such as user_mentions field from the retweet
                     # https://twittercommunity.com/t/status-retweeted-
                     # status-quoted-status-user-missing-from-search-tweets-json-response/63355
-                    refuser_pkey = \
-                        HF.substitute_referenced_user(json_string_dict,
-                                                      self.origin,
-                                                      self.log)
+                    refuser_pkey = HF.substitute_referenced_user(
+                        json_string_dict, self.origin, self.log
+                    )
                 post_reaction_record.reaction_type = lbsn.PostReaction.SHARE
-                retweet_post = json_string_dict.get('retweeted_status')
+                retweet_post = json_string_dict.get("retweeted_status")
                 ref_post_record = self.extract_post(retweet_post, refuser_pkey)
 
-            elif json_string_dict.get('in_reply_to_status_id_str'):
+            elif json_string_dict.get("in_reply_to_status_id_str"):
                 # if reply, original tweet is not available (?)
                 post_reaction_record.reaction_type = lbsn.PostReaction.COMMENT
-                ref_post_record = \
-                    HF.new_lbsn_record_with_id(
-                        lbsn.Post(), json_string_dict.get(
-                            'in_reply_to_status_id_str'),
-                        self.origin)
-                ref_user_record = \
-                    HF.new_lbsn_record_with_id(
-                        lbsn.User(),
-                        json_string_dict.get(
-                            'in_reply_to_user_id_str'),
-                        self.origin)
+                ref_post_record = HF.new_lbsn_record_with_id(
+                    lbsn.Post(),
+                    json_string_dict.get("in_reply_to_status_id_str"),
+                    self.origin,
+                )
+                ref_user_record = HF.new_lbsn_record_with_id(
+                    lbsn.User(),
+                    json_string_dict.get("in_reply_to_user_id_str"),
+                    self.origin,
+                )
                 ref_user_record.user_name = json_string_dict.get(
-                    'in_reply_to_screen_name')  # Needs to be saved
+                    "in_reply_to_screen_name"
+                )  # Needs to be saved
                 self.lbsn_records.append(ref_user_record)
                 ref_post_record.user_pkey.CopyFrom(ref_user_record.pkey)
 
             # add referenced post pkey to reaction
             if not self.disable_reaction_post_referencing:
-                post_reaction_record.referencedPost_pkey.CopyFrom(
-                    ref_post_record.pkey)
+                post_reaction_record.referencedPost_pkey.CopyFrom(ref_post_record.pkey)
                 # ToDo: if a Reaction refers to another
                 # reaction (Information Spread)
                 # This information is currently not
@@ -277,46 +284,50 @@ class importer():
         """Extract lbsn.User from Twitter json"""
         user = json_string_dict
         user_record = HF.new_lbsn_record_with_id(
-            lbsn.User(), user.get('id_str'), self.origin)
+            lbsn.User(), user.get("id_str"), self.origin
+        )
         # get additional information about the user, if available
-        user_record.user_fullname = user.get('name')
-        user_record.follows = user.get('friends_count')
-        user_record.is_private = user.get('protected')
-        user_record.followed = user.get('followers_count')
-        user_bio = user.get('description')
+        user_record.user_fullname = user.get("name")
+        user_record.follows = user.get("friends_count")
+        user_record.is_private = user.get("protected")
+        user_record.followed = user.get("followers_count")
+        user_bio = user.get("description")
         if user_bio:
             user_record.biography = user_bio
-        user_record.user_name = user.get('screen_name')
-        listed_count = user.get('listed_count')
+        user_record.user_name = user.get("screen_name")
+        listed_count = user.get("listed_count")
         if listed_count:
             user_record.group_count = listed_count
-        user_record.post_count = user.get('statuses_count')
-        user_record.url = f'https://twitter.com/intent/user?user_id=' \
-                          f'{user_record.pkey.id}'
+        user_record.post_count = user.get("statuses_count")
+        user_record.url = (
+            f"https://twitter.com/intent/user?user_id=" f"{user_record.pkey.id}"
+        )
         ref_user_language = lbsn.Language()
-        ref_user_language.language_short = user.get('lang')
+        ref_user_language.language_short = user.get("lang")
         user_record.user_language.CopyFrom(ref_user_language)
-        user_location = user.get('location')
+        user_location = user.get("location")
         if user_location:
             user_record.user_location = user_location
             if self.geocodes and user_record.user_location in self.geocodes:
                 l_lat = self.geocodes[user_record.user_location][0]
                 l_lng = self.geocodes[user_record.user_location][1]
-                user_record.user_location_geom = "POINT(%s %s)" % (
-                    l_lng, l_lat)
+                user_record.user_location_geom = "POINT(%s %s)" % (l_lng, l_lat)
         # userGeoLocation = user.get('profile_location') # todo!
-        user_record.liked_count = user.get('favourites_count')
+        user_record.liked_count = user.get("favourites_count")
         user_record.active_since.CopyFrom(
-            HF.json_date_string_to_proto(user.get('created_at')))
-        user_profile_image_url = user.get('profile_image_url')
-        if not user_profile_image_url == f'http://abs.twimg.com/sticky/' \
-                                         f'default_profile_images/' \
-                                         f'default_profile_normal.png':
+            HF.json_date_string_to_proto(user.get("created_at"))
+        )
+        user_profile_image_url = user.get("profile_image_url")
+        if (
+            not user_profile_image_url == f"http://abs.twimg.com/sticky/"
+            f"default_profile_images/"
+            f"default_profile_normal.png"
+        ):
             user_record.profile_image_url = user_profile_image_url
-        user_timezone = user.get('time_zone')
+        user_timezone = user.get("time_zone")
         if user_timezone:
             user_record.user_timezone = user_timezone
-        user_utc_offset = user.get('utc_offset')
+        user_utc_offset = user.get("utc_offset")
         if user_utc_offset:
             user_record.user_utc_offset = user_utc_offset
         # the following example demonstrates specific information
@@ -344,43 +355,43 @@ class importer():
         e.g.:
             (lbsn.Post(), [lbsn.Country(), lbsn.City(), lbsn.Place(), lbsn.User()])
         """
-        post_guid = json_string_dict.get('id_str')
+        post_guid = json_string_dict.get("id_str")
 
         if not HF.check_notice_empty_post_guid(post_guid):
             return None, None
-        post_record = HF.new_lbsn_record_with_id(lbsn.Post(),
-                                                 post_guid,
-                                                 self.origin)
+        post_record = HF.new_lbsn_record_with_id(lbsn.Post(), post_guid, self.origin)
         post_geoacc = None
         user_record = None
-        user_info = json_string_dict.get('user')
+        user_info = json_string_dict.get("user")
         if user_info:
             # Get lbsn.Post/Reaction Details of lbsn.User
-            user_record = self.extract_user(json_string_dict.get('user'))
+            user_record = self.extract_user(json_string_dict.get("user"))
         elif user_pkey:
             # userPkey is already available for posts that are statuses
-            user_record = HF.new_lbsn_record_with_id(lbsn.User(),
-                                                     user_pkey.id,
-                                                     self.origin)
+            user_record = HF.new_lbsn_record_with_id(
+                lbsn.User(), user_pkey.id, self.origin
+            )
         if user_record:
             # self.lbsn_records.append(user_record)
             self.lbsn_records.append(user_record)
         else:
-            self.log.warning(f'Record {self.lbsn_records.count_glob_total}: '
-                             f'No lbsn.User record found for post: {post_guid} '
-                             f'(post saved without userid)..')
-            print(f'Record {self.lbsn_records.count_glob_total}', end='\r')
+            self.log.warning(
+                f"Record {self.lbsn_records.count_glob_total}: "
+                f"No lbsn.User record found for post: {post_guid} "
+                f"(post saved without userid).."
+            )
+            print(f"Record {self.lbsn_records.count_glob_total}", end="\r")
 
         # Some preprocessing for all types:
-        post_coordinates = json_string_dict.get('coordinates')
+        post_coordinates = json_string_dict.get("coordinates")
         if post_coordinates:
-            l_lng = post_coordinates.get('coordinates')[0]
-            l_lat = post_coordinates.get('coordinates')[1]
+            l_lng = post_coordinates.get("coordinates")[0]
+            l_lat = post_coordinates.get("coordinates")[1]
             post_record.post_geoaccuracy = lbsn.Post.LATLNG
             post_record.post_latlng = "POINT(%s %s)" % (l_lng, l_lat)
 
         # Check if lbsn.Place is mentioned
-        post_place_json = json_string_dict.get('place')
+        post_place_json = json_string_dict.get("place")
         if post_place_json:
             # we need some information from postRecord to create placeRecord
             # (e.g. user language, geoaccuracy, post_latlng)
@@ -390,11 +401,9 @@ class importer():
                 user_lang = user_record.user_language
             else:
                 user_lang = None
-            place_record, \
-                post_geoacc, \
-                post_country = self.extract_place(post_place_json,
-                                                  post_record.post_geoaccuracy,
-                                                  user_lang)
+            place_record, post_geoacc, post_country = self.extract_place(
+                post_place_json, post_record.post_geoaccuracy, user_lang
+            )
             if not post_record.post_geoaccuracy:
                 post_record.post_geoaccuracy = post_geoacc
             # postRecord.post_geoaccuracy = twitterPostAttributes.geoaccuracy
@@ -422,78 +431,84 @@ class importer():
             self.null_island += 1
             post_record.post_latlng = "POINT(%s %s)" % (0, 0)
         if self.min_geoaccuracy:
-            if not HF.geoacc_within_threshold(post_record.post_geoaccuracy,
-                                              self.min_geoaccuracy):
+            if not HF.geoacc_within_threshold(
+                post_record.post_geoaccuracy, self.min_geoaccuracy
+            ):
                 self.skipped_low_geoaccuracy += 1
                 return None
         # Process attributes of twitter post
-        post_source = json_string_dict.get('source')
+        post_source = json_string_dict.get("source")
         if post_source:
-            post_record.input_source = HF.cleanhtml(
-                json_string_dict.get('source'))
-            if self.ignore_sources_set and \
-                    post_record.input_source in self.ignore_sources_set:
+            post_record.input_source = HF.cleanhtml(json_string_dict.get("source"))
+            if (
+                self.ignore_sources_set
+                and post_record.input_source in self.ignore_sources_set
+            ):
                 # skip entry if in ignore list
                 self.skipped_ignore_list += 1
                 return None
         post_record.post_publish_date.CopyFrom(
-            HF.json_date_string_to_proto(json_string_dict.get('created_at')))
+            HF.json_date_string_to_proto(json_string_dict.get("created_at"))
+        )
         if user_record:
             post_record.user_pkey.CopyFrom(user_record.pkey)
         post_record.post_quote_count = HF.value_count(
-            json_string_dict.get('quote_count'))
+            json_string_dict.get("quote_count")
+        )
         post_record.post_comment_count = HF.value_count(
-            json_string_dict.get('reply_count'))
+            json_string_dict.get("reply_count")
+        )
         post_record.post_share_count = HF.value_count(
-            json_string_dict.get('retweet_count'))
+            json_string_dict.get("retweet_count")
+        )
         post_record.post_like_count = HF.value_count(
-            json_string_dict.get('favorite_count'))
-        post_record.post_url = f'https://twitter.com/statuses/{post_guid}'
-        language_str = json_string_dict.get('lang')
+            json_string_dict.get("favorite_count")
+        )
+        post_record.post_url = f"https://twitter.com/statuses/{post_guid}"
+        language_str = json_string_dict.get("lang")
         if language_str:
             post_language = lbsn.Language()
-            post_language.language_short = json_string_dict.get('lang')
+            post_language.language_short = json_string_dict.get("lang")
             post_record.post_language.CopyFrom(post_language)
         # If Extended_tweet object is available,
         # process entities and post_body (text) data from extended object
-        is_truncated = json_string_dict.get('truncated')
-        if is_truncated and 'extended_tweet' in json_string_dict:
+        is_truncated = json_string_dict.get("truncated")
+        if is_truncated and "extended_tweet" in json_string_dict:
             # if the "truncated" field is set to true,
             # and the "extended_tweet" object provides complete
             # "full_text" and "entities" Tweet metadata
             # Source for all data is extended object, if available
-            json_string_dict = json_string_dict.get('extended_tweet')
-            post_record.post_body = json_string_dict.get('full_text')
+            json_string_dict = json_string_dict.get("extended_tweet")
+            post_record.post_body = json_string_dict.get("full_text")
             # else:
             #    self.log.warning(f'Truncated but no extended_tweet:'
             #                     f'{json_string_dict}')
             #    input("Press Enter to continue... (entry will be skipped)")
             #    return None
         else:
-            if 'full_text' in json_string_dict:
-                post_record.post_body = json_string_dict.get('full_text')
+            if "full_text" in json_string_dict:
+                post_record.post_body = json_string_dict.get("full_text")
             else:
-                post_record.post_body = json_string_dict.get('text')
+                post_record.post_body = json_string_dict.get("text")
         # entities section always exists and includes meta information
         # such as hashtags or user_mentions
-        entities_json = json_string_dict.get('entities')
+        entities_json = json_string_dict.get("entities")
         # extract hashtags
-        hashtags_json = entities_json.get('hashtags')
+        hashtags_json = entities_json.get("hashtags")
         if hashtags_json:
             for hashtag in hashtags_json:  # iterate over the list
                 post_record.hashtags.append(hashtag.get("text"))
         # Look for mentioned userRecords
-        user_mentions_json = entities_json.get('user_mentions')
+        user_mentions_json = entities_json.get("user_mentions")
         if user_mentions_json:
-            ref_user_records = HF.get_mentioned_users(user_mentions_json,
-                                                      self.origin)
+            ref_user_records = HF.get_mentioned_users(user_mentions_json, self.origin)
             # self.lbsn_records.append(ref_user_records)
             self.lbsn_records.append(ref_user_records)
             post_record.user_mentions_pkey.extend(
-                [user_ref.pkey for user_ref in ref_user_records])
+                [user_ref.pkey for user_ref in ref_user_records]
+            )
             if self.map_full_relations:
-                self.extract_mentioned_users(
-                    ref_user_records, user_record.pkey.id)
+                self.extract_mentioned_users(ref_user_records, user_record.pkey.id)
         # sometimes, extended_entities section exists and includes
         # additional information on media, but never hashtags or user_mentions
         # Since the media type metadata in the extended_entities section
@@ -502,9 +517,9 @@ class importer():
         # and supports up to 4 photos, it is the preferred metadata
         # source for native media. See:
         # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html#extended-entities-object
-        if 'extended_entities' in json_string_dict:
-            entities_json = json_string_dict.get('extended_entities')
-        media_json = entities_json.get('media')
+        if "extended_entities" in json_string_dict:
+            entities_json = json_string_dict.get("extended_entities")
+        media_json = entities_json.get("media")
         if media_json:
             post_record.post_type = HF.assign_media_post_type(media_json)
         else:
@@ -521,15 +536,14 @@ class importer():
     def extract_mentioned_users(self, ref_user_records, user_record_id):
         """Extract mentioned user from ref user records list"""
         for mentioned_user_record in ref_user_records:
-            relation_record = \
-                HF.new_lbsn_relation_with_id(lbsn.Relationship(),
-                                             user_record_id,
-                                             mentioned_user_record.pkey.id,
-                                             self.origin)
-            relation_record.relationship_type = \
-                lbsn.Relationship.MENTIONS_USER
-            self.lbsn_records.add_relationship_to_dict(
-                relation_record)
+            relation_record = HF.new_lbsn_relation_with_id(
+                lbsn.Relationship(),
+                user_record_id,
+                mentioned_user_record.pkey.id,
+                self.origin,
+            )
+            relation_record.relationship_type = lbsn.Relationship.MENTIONS_USER
+            self.lbsn_records.add_relationship_to_dict(relation_record)
 
     @classmethod
     def map_postrecord_to_postreactionrecord(cls, post_record):
@@ -539,61 +553,59 @@ class importer():
         post_reaction_record.user_pkey.CopyFrom(post_record.user_pkey)
         post_reaction_record.reaction_latlng = post_record.post_latlng
         # better post_create_date, but not available from Twitter
-        post_reaction_record.reaction_date.CopyFrom(
-            post_record.post_publish_date)
+        post_reaction_record.reaction_date.CopyFrom(post_record.post_publish_date)
         post_reaction_record.reaction_like_count = post_record.post_like_count
         post_reaction_record.reaction_content = post_record.post_body
-        post_reaction_record.user_mentions_pkey.extend(
-            post_record.user_mentions_pkey)
+        post_reaction_record.user_mentions_pkey.extend(post_record.user_mentions_pkey)
         return post_reaction_record
 
-    def extract_place(
-            self, postplace_json,
-            post_geoaccuracy, user_language=None):
+    def extract_place(self, postplace_json, post_geoaccuracy, user_language=None):
         """Extract lbsn.Place from twitter json"""
         place = postplace_json
-        place_id = place.get('id')
+        place_id = place.get("id")
         if not place_id:
-            self.log.warning(f'No PlaceGuid\n\n{place}')
+            self.log.warning(f"No PlaceGuid\n\n{place}")
             input("Press Enter to continue... (entry will be skipped)")
             return None, post_geoaccuracy, None
         lon_center = 0
         lat_center = 0
-        bounding_box = place.get('bounding_box')
+        bounding_box = place.get("bounding_box")
         if bounding_box:
-            bound_coordinates = bounding_box.get('coordinates')
+            bound_coordinates = bounding_box.get("coordinates")
             if bound_coordinates:
                 bounding_box_points = bound_coordinates[0]
-            lim_y_min, lim_y_max, lim_x_min, lim_x_max = \
-                HF.get_rectangle_bounds(bounding_box_points)
-            bound_points_shapely = \
-                geometry.MultiPoint([(lim_x_min, lim_y_min),
-                                     (lim_x_max, lim_y_max)])
+            lim_y_min, lim_y_max, lim_x_min, lim_x_max = HF.get_rectangle_bounds(
+                bounding_box_points
+            )
+            bound_points_shapely = geometry.MultiPoint(
+                [(lim_x_min, lim_y_min), (lim_x_max, lim_y_max)]
+            )
             # True centroid (coords may be multipoint)
             lon_center = bound_points_shapely.centroid.coords[0][0]
             lat_center = bound_points_shapely.centroid.coords[0][1]
-        place_type = place.get('place_type')
+        place_type = place.get("place_type")
         if place_type == "country":
             # country_guid
             # in case of country,
             # we do not need to save the GUID from Twitter
             # - country_code is already unique
-            country_code = place.get('country_code')
+            country_code = place.get("country_code")
             if country_code:
                 place_record = HF.new_lbsn_record_with_id(
-                    lbsn.Country(), place.get('country_code'),
-                    self.origin)
+                    lbsn.Country(), place.get("country_code"), self.origin
+                )
                 if not post_geoaccuracy:
                     post_geoaccuracy = lbsn.Post.COUNTRY
             else:
                 self.log.warning(
-                    f'No country_code\n\n{place}. '
-                    f'PlaceEntry will be skipped..')
+                    f"No country_code\n\n{place}. " f"PlaceEntry will be skipped.."
+                )
                 return None, post_geoaccuracy, None
         elif place_type in ("city", "neighborhood", "admin"):
             # city_guid
             place_record = HF.new_lbsn_record_with_id(
-                lbsn.City(), place.get('id'), self.origin)
+                lbsn.City(), place.get("id"), self.origin
+            )
             if not place_type == "city":
                 place_record.sub_type = place_type
             if not post_geoaccuracy or post_geoaccuracy == lbsn.Post.COUNTRY:
@@ -601,24 +613,27 @@ class importer():
         elif place_type == "poi":
             # place_guid
             # For POIs, lbsn.City is not available on Twitter
-            place_record = HF.new_lbsn_record_with_id(lbsn.Place(),
-                                                      place.get(
-                'id'),
-                self.origin)
+            place_record = HF.new_lbsn_record_with_id(
+                lbsn.Place(), place.get("id"), self.origin
+            )
             if not post_geoaccuracy or post_geoaccuracy in (
-                    lbsn.Post.COUNTRY, lbsn.Post.CITY):
+                lbsn.Post.COUNTRY,
+                lbsn.Post.CITY,
+            ):
                 post_geoaccuracy = lbsn.Post.PLACE
         else:
-            self.log.warning(f'No lbsn.Place Type Detected: {place}')
+            self.log.warning(f"No lbsn.Place Type Detected: {place}")
         # for some reason, twitter place entities sometimes contain
         # linebreaks or whitespaces. We don't want this.
-        place_name = place.get('name').replace('\n\r', '')
+        place_name = place.get("name").replace("\n\r", "")
         # remove multiple whitespace
-        place_name = re.sub(' +', ' ', place_name)
-        if place_type == "poi" or \
-           user_language is None \
-           or not user_language.language_short \
-           or user_language.language_short in ('en', 'und'):
+        place_name = re.sub(" +", " ", place_name)
+        if (
+            place_type == "poi"
+            or user_language is None
+            or not user_language.language_short
+            or user_language.language_short in ("en", "und")
+        ):
             # At the moment, English name are the main references;
             # all other language specific references are stored in
             # name_alternatives - except for places, where twitter
@@ -628,27 +643,27 @@ class importer():
             place_record.name = place_name
         else:
             place_record.name_alternatives.append(place_name)
-        place_record.url = place.get('url')
+        place_record.url = place.get("url")
         place_record.geom_center = "POINT(%s %s)" % (lon_center, lat_center)
         if bounding_box and bound_coordinates:
             # prints: 'POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))'
             place_record.geom_area = Polygon(bounding_box_points).wkt
         ref_country_record = None
         if not isinstance(place_record, lbsn.Country):
-            ref_country_code = place.get('country_code')
+            ref_country_code = place.get("country_code")
             if ref_country_code:
-                ref_country_record = \
-                    HF.new_lbsn_record_with_id(lbsn.Country(),
-                                               ref_country_code,
-                                               self.origin)
+                ref_country_record = HF.new_lbsn_record_with_id(
+                    lbsn.Country(), ref_country_code, self.origin
+                )
                 # At the moment, only English name references are processed
-                if user_language is None \
-                   or not user_language.language_short \
-                   or user_language.language_short in ('en', 'und'):
-                    ref_country_record.name = place.get(
-                        'country')  # Needs to be saved
+                if (
+                    user_language is None
+                    or not user_language.language_short
+                    or user_language.language_short in ("en", "und")
+                ):
+                    ref_country_record.name = place.get("country")  # Needs to be saved
                 else:
-                    alt_name = place.get('country')
+                    alt_name = place.get("country")
                     ref_country_record.name_alternatives.append(alt_name)
                 self.lbsn_records.append(ref_country_record)
         if post_geoaccuracy == lbsn.Post.CITY and ref_country_record:
