@@ -9,7 +9,6 @@ import datetime as dt
 import importlib.util
 import json
 import logging
-
 import re
 import string
 from datetime import timezone
@@ -19,10 +18,6 @@ from typing import List, Optional, Set, Union
 
 import lbsnstructure as lbsn
 from emoji import distinct_emoji_list
-from google.protobuf.internal.containers import (  # pylint: disable=no-name-in-module
-    RepeatedCompositeFieldContainer,
-    ScalarMap,
-)
 from google.protobuf.timestamp_pb2 import Timestamp
 from shapely import geos, wkt
 from shapely.geometry import Point, Polygon
@@ -642,13 +637,6 @@ class HelperFunctions:
             else:
                 return list_str
         return None
-
-    @staticmethod
-    def is_composite_field_container(in_obj):
-        """Checks whether in_obj is of type RepeatedCompositeFieldContainer"""
-        if isinstance(in_obj, (RepeatedCompositeFieldContainer, ScalarMap)):
-            return True
-        return False
 
     @staticmethod
     def map_to_dict(proto_map):
