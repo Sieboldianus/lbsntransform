@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.25.0 (2023-05-15)
+### Feature
+* Add mapping for Reddit comments and submissions ([`a665e9d`](https://github.com/Sieboldianus/lbsntransform/commit/a665e9da27b647c9e685f81b7b13a4f488268598))
+* Add new topic_group and post_downvotes attribute ([`12c6bbb`](https://github.com/Sieboldianus/lbsntransform/commit/12c6bbbf1db520fe456ffa04bc657111785230cb))
+* Allow handing pre-defined BaseConfig to main() ([`14549d9`](https://github.com/Sieboldianus/lbsntransform/commit/14549d954f2102cbc7a5d4bcb9471551600aeec9))
+
+### Fix
+* Report package version without package name ([`94081e0`](https://github.com/Sieboldianus/lbsntransform/commit/94081e0e0bc92cdd79edfb077f5c79ff0b7861f9))
+
 ## v0.24.2 (2023-05-09)
 ### Fix
 * Update yml dependencies to use version range for protobuf, too ([`bfad7b2`](https://github.com/Sieboldianus/lbsntransform/commit/bfad7b26d2537a6855246f02885dd9b592938121))
