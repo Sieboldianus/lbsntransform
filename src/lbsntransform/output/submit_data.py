@@ -593,22 +593,12 @@ class LBSNTransfer:
         """Remove duplicate values in repeated field, sort alphabetically
 
         ProtocolBuffers has no unique list field type. This function will
-        remove duplicates, which is needed for unique compare.
-
-        There is a 'bug' in Python implementation of ProtocolBuffers:
-        - depending on the implementation type in use, it is possible
-        to spot either 'RepeatedCompositeFieldContainer'
-            or 'RepeatedCompositeContainer'
-        - solution here: import and compare to both types
-        - this is not ideal, since both types are internal to PB and
-            subject to change
-        - see [proto-bug](https://github.com/protocolbuffers/
-            protobuf/issues/3870)
+        remove duplicates from lists, which is needed for unique compare.
         """
         for descriptor in record.DESCRIPTOR.fields:
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x_attr = getattr(record, descriptor.name)
-                if x_attr and not HF.is_composite_field_container(x_attr):
+                if x_attr and not len(x_attr) == 1:
                     x_attr_cleaned = set(x_attr)
                     x_attr_sorted = sorted(x_attr_cleaned)
                     # Complete clear of repeated field

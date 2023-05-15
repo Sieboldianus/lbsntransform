@@ -1,4 +1,4 @@
-# For convenience, this conda yml can be used to create a 
+# For convenience, this conda yml can be used to create a
 # dev environment with the latest dependencies. Use with:
 # conda env create -n lbsntransform_dev -f environment_dev.yml
 # conda activate lbsntransform_dev
@@ -26,6 +26,7 @@ dependencies:
   - pip:
     - pylint-exit
     - ppygis3
-    - lbsnstructure>=1.0.3
+    - lbsnstructure>=1.2.0
+    - pytest-mypy
     - geos
 

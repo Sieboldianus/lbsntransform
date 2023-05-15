@@ -9,20 +9,15 @@ import datetime as dt
 import importlib.util
 import json
 import logging
-
 import re
 import string
 from datetime import timezone
 from json import JSONDecodeError, JSONDecoder
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Union, Any, Dict
 
 import lbsnstructure as lbsn
 from emoji import distinct_emoji_list
-from google.protobuf.internal.containers import (  # pylint: disable=no-name-in-module
-    RepeatedCompositeFieldContainer,
-    ScalarMap,
-)
 from google.protobuf.timestamp_pb2 import Timestamp
 from shapely import geos, wkt
 from shapely.geometry import Point, Polygon
@@ -221,12 +216,13 @@ class HelperFunctions:
             - input: "#germany🇩🇪"
             - output: [germany]
         """
-        hashtag_pattern = re.compile("(?i)(?<=\#)\w+")
-        hashtag_list = hashtag_pattern.findall(text_str)
-        return set(hashtag_list)
+        startstring = "#"
+        return HelperFunctions.extract_special(text_str, startstring)
 
     @staticmethod
-    def extract_atmentions_from_string(text_str: str) -> Set[str]:
+    def extract_atmentions_from_string(
+        text_str: str, startstring: str = "@"
+    ) -> Set[str]:
         """Extract @-mentions with leading hash-character (@) from string
 
         - removes @ from mentions
@@ -234,10 +230,52 @@ class HelperFunctions:
         - removes special chars (emoji etc.) from mentions, e.g.:
             - input: "@userxyz🇩🇪"
             - output: [userxyz]
+        - will extract users with underscore character sin name (_) but not with
+          minus sign (-), since this is not allowed on Twitter
         """
-        mention_pattern = re.compile("(?i)(?<=\@)\w+")
-        mention_list = mention_pattern.findall(text_str)
-        return set(mention_list)
+        return HelperFunctions.extract_special(
+            text_str, startstring, allow_underscore=True
+        )
+
+    @staticmethod
+    def extract_user_mentions(
+        text_str: Optional[str], startstring: str = "/u/"
+    ) -> Optional[Set[str]]:
+        """Extract user mentions. Default value for startstring refers to /u/ on Reddit"""
+        if not text_str:
+            return
+        return HelperFunctions.extract_special(
+            text_str, startstring, allow_minus=True, allow_underscore=True
+        )
+
+    @staticmethod
+    def extract_special(
+        text_str: str,
+        startstring: str,
+        allow_minus: bool = False,
+        allow_underscore: bool = False,
+    ) -> Set[str]:
+        """Extract special strings based on starting character, e.g. /u/ (user mention), or #hashtags.
+
+        allow_minus: If True, extraction for positive find will not stop at Minus-character (-).
+            Usually, Minus-character is disallowed (e.g. Hashtags). But sometoimes (e.g. on Reddit
+            usernames), it is allowed and needed to extract the full reference.
+        allow_underscore: Same as allow_minus, just for underscore character (_)
+        """
+        optional_minus = ""
+        optional_underscore = ""
+        additional_chars = ""
+        if allow_minus:
+            optional_minus = "-"
+        if allow_underscore:
+            optional_underscore = "_"
+        if allow_minus or allow_underscore:
+            additional_chars = rf"[{optional_minus}{optional_underscore}]?\w+"
+        extract_special_pattern = re.compile(
+            rf"(?i)(?<={startstring})\w+{additional_chars}"
+        )
+        special_list = extract_special_pattern.findall(text_str)
+        return set(special_list)
 
     @staticmethod
     def json_read_wrapper(gen):
@@ -272,13 +310,13 @@ class HelperFunctions:
     @staticmethod
     def _log_json_decodeerror(record_str: str):
         logging.getLogger("__main__").warning(
-            f"\nJSONDecodeError: skipping entry\n{record_str}\n\n"
+            "\nJSONDecodeError: skipping entry\n%s\n\n", record_str
         )
 
     @staticmethod
-    def _log_unhandled_exception(e: str):
+    def _log_unhandled_exception(e: Any):
         logging.getLogger("__main__").warning(
-            f"\nUnhandled exception: \n{e}\n ..skipping entry\n"
+            "\nUnhandled exception: \n%s\n ..skipping entry\n", e
         )
 
     @staticmethod
@@ -442,6 +480,7 @@ class HelperFunctions:
         type_string = json_media_string[0].get("type")
         # type is either photo, video, or animated_gif
         # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/extended-entities-object.html
+        post_type = lbsn.Post.OTHER
         if type_string:
             if type_string == "photo":
                 post_type = lbsn.Post.IMAGE
@@ -449,9 +488,8 @@ class HelperFunctions:
                 post_type = lbsn.Post.VIDEO
 
         else:
-            post_type = lbsn.Post.OTHER
             logging.getLogger("__main__").debug(
-                f"Other lbsn.Post type detected: " f"{json_media_string}"
+                "Other lbsn.Post type detected: %s", json_media_string
             )
         return post_type
 
@@ -502,10 +540,10 @@ class HelperFunctions:
         return protobuf_timestamp_record
 
     @staticmethod
-    def get_mentioned_users(userMentions_jsonString, origin):
+    def get_mentioned_users(user_mentions_json: List[Dict[str, str]], origin):
         """Return list of mentioned users from json"""
         mentioned_users_list = []
-        for user_mention in userMentions_jsonString:  # iterate over the list
+        for user_mention in user_mentions_json:  # iterate over the list
             ref_user_record = HelperFunctions.new_lbsn_record_with_id(
                 lbsn.User(), user_mention.get("id_str"), origin
             )
@@ -513,6 +551,17 @@ class HelperFunctions:
                 "name"
             )  # Needs to be saved
             ref_user_record.user_name = user_mention.get("screen_name")
+            mentioned_users_list.append(ref_user_record)
+        return mentioned_users_list
+
+    @staticmethod
+    def create_mentioned_users(mentioned_users_list_str: Set[str], origin):
+        """Return list of mentioned users from json"""
+        mentioned_users_list = []
+        for user_mention in mentioned_users_list_str:  # iterate over the list
+            ref_user_record = HelperFunctions.new_lbsn_record_with_id(
+                lbsn.User(), user_mention, origin
+            )
             mentioned_users_list.append(ref_user_record)
         return mentioned_users_list
 
@@ -533,7 +582,7 @@ class HelperFunctions:
                 ref_user_records
                 and ref_user_records[0].user_name.lower()
                 in main_post.get("text").lower()
-                and main_post.get("text").startswith(f"RT @")
+                and main_post.get("text").startswith("RT @")
             ):
                 ref_user_pkey = ref_user_records[0].pkey
             if ref_user_pkey is None:
@@ -567,23 +616,23 @@ class HelperFunctions:
         with NOT NULL Constraint
         """
         if geom_attr is None or (isinstance(geom_attr, str) and geom_attr == ""):
-            null_island = "POINT(%s %s)" % (0, 0)
+            null_island = "POINT(0 0)"
             return null_island
         return geom_attr
 
     @staticmethod
-    def null_check_datetime(recordAttr):
+    def null_check_datetime(record_attr):
         """Check if date is null or empty and replace with default value"""
-        if not recordAttr:
+        if not record_attr:
             # will catch empty and None
-            return None
+            return
         try:
-            dt_attr = recordAttr.ToDatetime()
+            dt_attr = record_attr.ToDatetime()
         except:
-            return None
+            return
         if dt_attr == dt.datetime(1970, 1, 1, 0, 0, 0):
             return None
-        return recordAttr.ToDatetime()
+        return record_attr.ToDatetime()
 
     @staticmethod
     def return_ewkb_from_geotext(text):
@@ -644,13 +693,6 @@ class HelperFunctions:
         return None
 
     @staticmethod
-    def is_composite_field_container(in_obj):
-        """Checks whether in_obj is of type RepeatedCompositeFieldContainer"""
-        if isinstance(in_obj, (RepeatedCompositeFieldContainer, ScalarMap)):
-            return True
-        return False
-
-    @staticmethod
     def map_to_dict(proto_map):
         """Converts protobuf field map (ScalarMapContainer)
         to Dictionary"""
@@ -675,7 +717,7 @@ class HelperFunctions:
         if mappings_path is None or origin == 0:
             mappings_module_name = "lbsntransform.input.mappings"
             from lbsntransform.input.mappings.field_mapping_lbsn import (
-                importer as importer,
+                importer,
             )
 
             return importer
