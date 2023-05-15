@@ -36,7 +36,7 @@ class importer:
         ignore_non_geotagged=False,
         ignore_sources_set=None,
         min_geoaccuracy=None,
-        **_
+        **_,
     ):
         # We're dealing with Twitter in this class,
         # lets create the OriginID globally
@@ -503,6 +503,7 @@ class importer:
         if user_mentions_json:
             ref_user_records = HF.get_mentioned_users(user_mentions_json, self.origin)
             # self.lbsn_records.append(ref_user_records)
+            # TODO: Extend?
             self.lbsn_records.append(ref_user_records)
             post_record.user_mentions_pkey.extend(
                 [user_ref.pkey for user_ref in ref_user_records]
