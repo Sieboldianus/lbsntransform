@@ -9,7 +9,7 @@ license = {text = "GNU GPLv3 or any higher"}
 description = "Location based social network (LBSN) data structure format & transfer tool"
 requires-python = ">=3.8"
 dependencies = [
-    "lbsnstructure>=1.0.3",
+    "lbsnstructure>=1.2.0",
     "protobuf>=4.21.9,<5",
     "psycopg2-binary",
     "ppygis3",
