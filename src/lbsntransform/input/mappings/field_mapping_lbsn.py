@@ -284,6 +284,8 @@ class importer:
             # get enum value
             post.post_geoaccuracy = lbsn.Post.PostGeoaccuracy.Value(geo_acc.upper())
         set_lbsn_attr(post, "hashtags", record)
+        set_lbsn_attr(post, "topic_group", record)
+        set_lbsn_attr(post, "post_downvotes", record)
         set_lbsn_attr(post, "emoji", record)
         set_lbsn_attr(post, "post_like_count", record)
         set_lbsn_attr(post, "post_comment_count", record)

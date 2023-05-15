@@ -37,7 +37,7 @@ class ProtoLBSNMapping:
             "hashtags, emoji, post_like_count, post_comment_count, "
             "post_views_count, post_title, post_thumbnail_url, post_url, "
             "post_type, post_filter, post_quote_count, post_share_count, "
-            "input_source, post_content_license",
+            "input_source, post_content_license, topic_group, post_downvotes",
             lbsn.PostReaction.DESCRIPTOR.name: "origin_id, reaction_guid, reaction_latlng, user_guid, "
             "referencedPost_guid, referencedPostreaction_guid, "
             "reaction_type, reaction_date, reaction_content, "
@@ -237,6 +237,8 @@ class ProtoLBSNMapping:
             post_record.post_share_count,
             post_record.input_source,
             post_record.post_content_license,
+            post_record.topic_group,
+            post_record.post_downvotes,
         )
         return prepared_record
 
@@ -418,6 +420,8 @@ class PostAttrShared:
         self.post_share_count = HF.null_check(record.post_share_count)
         self.input_source = HF.null_check(record.input_source)
         self.post_content_license = HF.null_check(record.post_content_license)
+        self.topic_group = list(set(record.topic_group))
+        self.post_downvotes = HF.null_check(record.post_downvotes)
         # optional:
         self.latitude = 0
         self.longitude = 0

@@ -154,7 +154,12 @@ class LBSNSql:
                     topical."post".input_source),
                 post_content_license = COALESCE(
                     EXCLUDED.post_content_license,
-                        topical."post".post_content_license);
+                        topical."post".post_content_license),
+                topic_group = COALESCE(
+                    extensions.mergeArrays(EXCLUDED.topic_group,
+                    topical."post".topic_group), ARRAY[]::text[]),
+                post_downvotes = COALESCE(EXCLUDED.post_downvotes,
+                    topical."post".post_downvotes);
             """
         return insert_sql
 
