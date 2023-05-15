@@ -78,16 +78,7 @@ class importer:
     ORIGIN_NAME = "LBSN"
     ORIGIN_ID = 0
 
-    def __init__(
-        self,
-        disable_reaction_post_referencing=False,
-        geocodes=False,
-        map_full_relations=False,
-        map_reactions=True,
-        ignore_non_geotagged=False,
-        ignore_sources_set=None,
-        min_geoaccuracy=None,
-    ):
+    def __init__(self, **_):
         # We're dealing with LBSN in this class, lets create the OriginID
         # globally
         # this OriginID is required for all CompositeKeys
@@ -100,9 +91,6 @@ class importer:
         self.log = logging.getLogger("__main__")  # get the main logger object
         self.skipped_count = 0
         self.skipped_low_geoaccuracy = 0
-        # self.disableReactionPostReferencing = disableReactionPostReferencing
-        # self.mapFullRelations = mapFullRelations
-        # self.geocodes = geocodes
 
     @classmethod
     def get_func_record(cls, record: Dict[str, Any], input_type: Optional[str] = None):
