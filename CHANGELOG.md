@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.25.1 (2023-05-16)
+### Fix
+* TypeError for unhashable type: 'CompositeKey' (lazy-initialized) ([`68fd9c5`](https://github.com/Sieboldianus/lbsntransform/commit/68fd9c5e020a0636a477ef8dc5933d7329d69c64))
+
 ## v0.25.0 (2023-05-15)
 ### Feature
 * Add mapping for Reddit comments and submissions ([`a665e9d`](https://github.com/Sieboldianus/lbsntransform/commit/a665e9da27b647c9e685f81b7b13a4f488268598))
