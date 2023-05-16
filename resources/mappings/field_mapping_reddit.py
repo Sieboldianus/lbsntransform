@@ -149,11 +149,13 @@ class importer:
                 post_record.post_type = lbsn.Post.VIDEO
             else:
                 # dig deeper
-                media_type = is_media.get("oembed").get("type")
-                if media_type and media_type == "video":
-                    post_record.post_type = lbsn.Post.VIDEO
-                elif media_type and media_type == "rich":
-                    post_record.post_type = lbsn.Post.OTHER
+                media_type = is_media.get("oembed")
+                if media_type:
+                    media_oembed = media_type.get("type")
+                    if media_oembed and media_oembed == "video":
+                        post_record.post_type = lbsn.Post.VIDEO
+                    elif media_oembed and media_oembed == "rich":
+                        post_record.post_type = lbsn.Post.OTHER
         elif is_url:
             if is_url.endswith((".jpg", ".webp", ".jpeg", ".png", ".gif")):
                 post_record.post_type = lbsn.Post.IMAGE
