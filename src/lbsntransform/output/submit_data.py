@@ -599,7 +599,13 @@ class LBSNTransfer:
             if descriptor.label == descriptor.LABEL_REPEATED:
                 x_attr = getattr(record, descriptor.name)
                 if x_attr and not len(x_attr) == 1:
-                    x_attr_cleaned = set(x_attr)
+                    try:
+                        x_attr_cleaned = set(x_attr)
+                    except TypeError:
+                        # needed to catch
+                        # TypeError for unhashable type: 'CompositeKey'
+                        # (lazy-initialized)
+                        continue
                     x_attr_sorted = sorted(x_attr_cleaned)
                     # Complete clear of repeated field
                     for _ in range(0, len(x_attr)):
