@@ -204,7 +204,7 @@ class importer:
         if not parent_id:
             raise Warning("No reference/parent reaction/submission found for reaction")
         # strip t1_, t3_ etc.
-        parent_reaction = parent_id.split("_")[1]
+        parent_reaction_id = parent_id.split("_")[1]
         submission_id = json_string_dict.get("submission_id")
         # create submission (original post) stub
         ref_post_record = HF.new_lbsn_record_with_id(
@@ -221,15 +221,16 @@ class importer:
                     ref_post_record.topic_group.append(subreddit_l[0])
                     return_list.append(ref_post_record)
         # compare the parent reaction ID with the submission ID
-        if not parent_reaction == submission_id:
+        if not parent_reaction_id == submission_id:
             # not the first comment, but a nested one
             # first create the parent comment
             referenced_post_reaction = HF.new_lbsn_record_with_id(
-                lbsn.PostReaction(), parent_reaction, self.origin
+                lbsn.PostReaction(), parent_reaction_id, self.origin
             )
-            # we know that parent rwaction is of type comment
+            # we know that parent reaction is of type comment
             referenced_post_reaction.reaction_type = lbsn.PostReaction.COMMENT
-            referenced_post_reaction.referencedPost_pkey.CopyFrom(comment_stub.pkey)
+            # all comments reference the same original post
+            referenced_post_reaction.referencedPost_pkey.CopyFrom(ref_post_record.pkey)
             return_list.append(referenced_post_reaction)
             # append ID to comment as reference
             post_reaction_record.referencedPostreaction_pkey.CopyFrom(
