@@ -175,7 +175,7 @@ class importer:
             post_record.post_filter = flair
         subreddit = json_string_dict.get("subreddit")
         if subreddit:
-            post_record.topic_group.append(subreddit)
+            post_record.topic_group.append(subreddit.lower())
         downvotes = json_string_dict.get("downs")
         if downvotes:
             post_record.post_downvotes = downvotes
@@ -221,7 +221,7 @@ class importer:
             if permalink.startswith(reddit_pre):
                 subreddit_l = permalink.lstrip(reddit_pre).split("/")
                 if len(subreddit_l) > 0:
-                    ref_post_record.topic_group.append(subreddit_l[0])
+                    ref_post_record.topic_group.append(subreddit_l[0].lower())
                     return_list.append(ref_post_record)
         # compare the parent reaction ID with the submission ID
         if not parent_reaction_id == submission_id:
