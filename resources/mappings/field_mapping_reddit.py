@@ -67,12 +67,14 @@ class importer:
         if extracted is None:
             return
         post_record, user_record = extracted
-        return_list.extend([user_record, post_record])
         # self.lbsn_records.append(post_record)
         submission_id = json_string_dict.get("submission_id")
         if submission_id:
             return_objects = self.extract_comment(json_string_dict, post_record)
+            return_list.append(user_record)
             return_list.extend(return_objects)
+        else:
+            return_list.extend([user_record, post_record])
         # return list of submission and (optional) comment + parent comment
         return return_list
 
