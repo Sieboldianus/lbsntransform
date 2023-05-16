@@ -9,7 +9,7 @@ Module for storing common Proto LBSN Structure to PG DB.
 import traceback
 import logging
 import sys
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 import psycopg2
 
@@ -42,7 +42,7 @@ class LBSNTransfer:
         dbformat_output="lbsn",
         hllworker_cursor=None,
         include_lbsn_bases=None,
-        dry_run: bool = None,
+        dry_run: Optional[bool] = None,
     ):
         self.db_cursor = db_cursor
         self.db_connection = db_connection
