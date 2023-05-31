@@ -2,7 +2,11 @@
 
 ![](inputoutput.svg)
 
-Import, convert and export Location Based Social Media (LBSM) data, such as from Twitter and Flickr, to a common data structure format (lbsnstructure). lbsntransform can also anonymize data into a privacy-aware version of lbsnstructure using HyperLogLog.
+Import, convert and export Location Based Social Media (LBSM) data, such as from 
+Twitter and Flickr, to a common data structure format (lbsnstructure). lbsntransform 
+can also anonymize data into a privacy-aware version of lbsnstructure using HyperLogLog.
+
+Mappings currently exist for Reddit, Twitter, Flickr and Instagram.
 
 Input can be:  
 
