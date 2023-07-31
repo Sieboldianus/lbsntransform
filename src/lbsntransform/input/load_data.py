@@ -204,6 +204,13 @@ class LoadData:
             2) Optional information regarding type of records in list
         """
         if self.source_web:
+            if self.csv_delim is None:
+                self.csv_delim = ","
+            kwargs = {
+                "delimiter": self.csv_delim,
+                "quotechar": '"',
+                "quoting": csv.QUOTE_NONE,
+            }
             if len(self.filelist) == 1:
                 # single web file query
                 url = self.filelist[0]
@@ -212,10 +219,15 @@ class LoadData:
                         codecs.iterdecode(
                             file_handle.iter_lines(), "utf-8"
                         ),  # pylint: disable=maybe-no-member
-                        delimiter=self.csv_delim,
-                        quotechar='"',
-                        quoting=csv.QUOTE_NONE,
+                        **kwargs,
                     )
+                    if self.use_csv_dictreader:
+                        record_reader = csv.DictReader(
+                            codecs.iterdecode(
+                                file_handle.iter_lines(), "utf-8"
+                            ),  # pylint: disable=maybe-no-member
+                            **kwargs,
+                        )
                     for record in record_reader:
                         # for record in zip_longest(r1, r2)
                         yield record, None
@@ -229,6 +241,10 @@ class LoadData:
                     with closing(requests.get(url1, stream=True)) as fhandle1, closing(
                         requests.get(url2, stream=True)
                     ) as fhandle2:
+                        if self.use_csv_dictreader:
+                            logging.getLogger("__main__").warning(
+                                "--use_csv_dictreader not supported with flag --zip_records."
+                            )
                         reader1 = csv.reader(
                             codecs.iterdecode(fhandle1.iter_lines(), "utf-8"),
                             delimiter=self.csv_delim,
