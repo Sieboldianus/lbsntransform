@@ -42,6 +42,9 @@ version_source = "commit"
 branch = "master"
 build_command = "python -m build"
 
+[tool.semantic_release.branches.main]
+match = "(master)"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
