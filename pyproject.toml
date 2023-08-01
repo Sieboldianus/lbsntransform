@@ -37,8 +37,10 @@ nltk_stopwords = ["nltk"]
 lbsntransform = "lbsntransform.__main__:main"
 
 [tool.semantic_release]
-version_variable = "src/lbsntransform/version.py:__version__"
+version_variable = [
+    "src/lbsntransform/version.py:__version__"]
 version_source = "commit"
+commit_version_number = "true"
 branch = "master"
 build_command = "python -m build"
 
