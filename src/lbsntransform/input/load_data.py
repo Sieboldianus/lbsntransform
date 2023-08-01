@@ -246,16 +246,10 @@ class LoadData:
                                 "--use_csv_dictreader not supported with flag --zip_records."
                             )
                         reader1 = csv.reader(
-                            codecs.iterdecode(fhandle1.iter_lines(), "utf-8"),
-                            delimiter=self.csv_delim,
-                            quotechar='"',
-                            quoting=csv.QUOTE_NONE,
+                            codecs.iterdecode(fhandle1.iter_lines(), "utf-8"), **kwargs
                         )
                         reader2 = csv.reader(
-                            codecs.iterdecode(fhandle2.iter_lines(), "utf-8"),
-                            delimiter=self.csv_delim,
-                            quotechar='"',
-                            quoting=csv.QUOTE_NONE,
+                            codecs.iterdecode(fhandle2.iter_lines(), "utf-8"), **kwargs
                         )
                         for zipped_record in zip_longest(reader1, reader2):
                             # catch any type-error None record
