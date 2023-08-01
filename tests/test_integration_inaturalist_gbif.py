@@ -64,7 +64,7 @@ def system_integration_inaturalist_gbif():
     tm_cfg.local_file_type = "csv"
     if data_source_url.startswith("http"):
         tm_cfg.source_web = True
-        tm_cfg.input_path = data_source_url
+        tm_cfg.input_path = [data_source_url]
     else:
         tm_cfg.input_path = Path(data_source_url)
     tm_cfg.dbpassword_output = db_pass
