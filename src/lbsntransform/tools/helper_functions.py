@@ -525,15 +525,26 @@ class HelperFunctions:
             date_time_record = dt.datetime.strptime(csv_datestring, t_format)
         except ValueError:
             return None
+        return HelperFunctions.date_to_proto(date_time_record)
+
+    @staticmethod
+    def date_to_proto(dt_record) -> Optional[Timestamp]:
+        """Assign datetime to protobuf Timestamp"""
         protobuf_timestamp_record = Timestamp()
         # Convert to ProtoBuf Timestamp Recommendation
-        protobuf_timestamp_record.FromDatetime(date_time_record)
+        protobuf_timestamp_record.FromDatetime(dt_record)
+        return protobuf_timestamp_record
+
+    @staticmethod
+    def stringdate_to_proto(dt_string) -> Optional[Timestamp]:
+        """Stringdate to proto, e.g. 2019-10-02T18:34:24"""
+        protobuf_timestamp_record = Timestamp()
+        protobuf_timestamp_record.FromJsonString(dt_string)
         return protobuf_timestamp_record
 
     @staticmethod
     def parse_timestamp_string_to_protobuf(timestamp_string):
-        """Converts timestamp string to protobuf object"""
-        # Parse from RFC 3339 date string to Timestamp.
+        """Parse from RFC 3339 date string to Timestamp."""
         time_date = dt.datetime.fromtimestamp(int(timestamp_string))
         protobuf_timestamp_record = Timestamp()
         protobuf_timestamp_record.FromDatetime(time_date)

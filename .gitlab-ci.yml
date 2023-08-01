@@ -26,8 +26,9 @@ test:
     - python -c 'import nltk;nltk.download("stopwords")'
   stage: test
   script:
-    # perform integration test
+    # perform integration tests
     - python tests/test_integration_yfcc.py
+    - python tests/test_integration_inaturalist_gbif.py
 
 artifacts:
   image: registry.gitlab.vgiscience.org/tud_ifk/miniconda-cidefault
