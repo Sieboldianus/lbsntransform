@@ -46,6 +46,7 @@ TAX_SPECIES = {
     "Panthera pardus": ("Leopard", "🐅"),
     "Felis catus": ("Cat", "🐈"),
     "Equus ferus": ("Horse", "🐎"),
+    "Equus africanus": ("Donkey", "🫏"),
     "Ovis aries": ("Sheep", "🐑"),
     "Capra hircus": ("Goat", "🐐"),
     "Sus domesticus": ("Pig", "🐖"),
@@ -81,6 +82,7 @@ TAX_SPECIES = {
     "Capsicum annuum": ("Bell Pepper", "🫑"),
     "Palaemon serratus": ("Shrimp", "🦐"),
     "Nelumbo nucifera": ("Lotus", "🪷"),
+    "Zingiber officinale": ("Ginger", "🫚"),
 }
 TAX_GENUS = {
     "Rattus": ("Rat", "🐀"),
@@ -143,6 +145,10 @@ TAX_GENUS = {
     "Tilia": ("Deciduous", "🌳"),
     "Ulmus": ("Deciduous", "🌳"),
     "Larix": ("Deciduous conifer", "🌲"),
+    "Alces": ("Moose", "🫎"),
+    "Anser": ("Goose", "🪿"),
+    "Branta": ("Goose", "🪿"),
+    # "Turdus": ("Blackbird", "🐦‍⬛"),
 }
 TAX_FAMILY = {
     "Cercopithecidae": ("Monkey", "🐒"),
@@ -187,6 +193,9 @@ TAX_FAMILY = {
     "Sauropodidae": ("Dinosaur", "🦕"),
     "Nephropidae": ("Lobster", "🦞"),
     "Ostreidae": ("Oyster", "🦪"),
+    "Plethodontidae": ("Lizard", "🦎"),
+    "Talitridae": ("Insects/Bug", "🐛"),
+    # "Icteridae": ("Blackbird", "🐦‍⬛"),
 }
 TAX_ORDER = {
     "Fagales": ("Beeches, Oaks, Walnuts, And Allies", "🌳"),
@@ -218,11 +227,19 @@ TAX_ORDER = {
     "Oegopsida": ("Squid", "🦑"),
     "Bathyteuthida": ("Squid", "🦑"),
     "Odonata": ("Mosquitoes", "🦟"),
+    "Isopoda": ("Insects/Bug", "🐛"),
+    "Perciformes": ("Fish", "🐟"),
+    "Salmoniformes": ("Fish", "🐟"),
+    "Cypriniformes": ("Fish", "🐟"),
+    "Scorpaeniformes": ("Fish", "🐟"),
+    "Caudata": ("Lizard", "🦎"),
 }
 TAX_CLASS = {
     "Gastropoda": ("Snail", "🐌"),
     "Bivalvia": ("Mollusca", "🐚"),
     "Actinopterygii": ("Fish", "🐟"),
+    "Elasmobranchii": ("Fish", "🐟"),
+    "Asteroidea": ("Fish", "🐟"),
     "Aves": ("Birds", "🐦"),
     "Pinopsida": ("Pines", "🌲"),
     "Coniferopsida": ("Conifers", "🌲"),
@@ -230,16 +247,32 @@ TAX_CLASS = {
     "Squamata": ("Lizard", "🦎"),
     "Insecta": ("Insects/Bug", "🐛"),
     "Mammalia": ("Mammal", "🐾"),
+    "Arachnida": ("Spider", "🕷"),
+    "Diplopoda": ("Worm", "🪱"),
+    "Cubozoa": ("Jellyfish", "🪼"),
+    "Scyphozoa": ("Jellyfish", "🪼"),
+    "Staurozoa": ("Jellyfish", "🪼"),
+    "Hydrozoa": ("Jellyfish", "🪼"),
+    "Phaeophyceae": ("Corals", "🪸"),
+    "Crocodylia": ("Crocodiles", "🐊"),
 }
 TAX_PHYLUM = {
     "Tracheophyta": ("plants", "🌱"),
     "Annelida": ("worms", "🪱"),
     "Nemertea": ("worms", "🪱"),
+    "Arthropoda": ("Insects/Bug", "🐛"),
+    "Cnidaria": ("Corals", "🪸"),
+    "Ochrophyta": ("Corals", "🪸"),
+    "Echinodermata": ("Fish", "🐟"),
 }
 TAX_KINGDOM = {
     "Fungi": ("Mushrom", "🍄"),
+    "Protozoa": ("Mushrom", "🍄"),
+    "Archaea": ("Microbe", "🦠"),
     "Plantae": ("plants", "🌱"),
     "Bacteria": ("Microbe", "🦠"),
+    "Viruses": ("Microbe", "🦠"),
+    "Chromista": ("Corals", "🪸"),
 }
 
 TAX_EMOJI = {
@@ -447,13 +480,14 @@ class importer:
         if emoji:
             post_record.emoji.extend([emoji])
         lbsn_records.append(post_record)
+        if post_guid == "7145128":
+            input(f"Record: {record} \n\nemoji : {emoji}")
         return lbsn_records
 
     @staticmethod
     def strip_occurence_guid(occurrence_id: str) -> str:
         """Strip inaturalist prefix from occurrence guid"""
-        prefix = "https://www.inaturalist.org/observations/"
-        return occurrence_id[len(prefix) :]
+        return occurrence_id.rsplit("/", 1)[-1]
 
     def gbif_extract_postlatlng(self, lat_entry: str, lng_entry: str) -> str:
         """Basic routine for extracting lat/lng coordinates from post.
@@ -554,6 +588,10 @@ class importer:
         ```
         SELECT * FROM topical.post WHERE array_length(emoji, 1) > 0;
         ```
+        - for updating empty mappings:
+        ```
+        SELECT emoji,post_url,array_length(emoji, 1) AS ct FROM topical.post ORDER BY ct DESC
+        ```
 
         [1]: https://symbl.cc/en/emoji/animals-and-nature/
         [2]: https://www.gbif.org/species/5510
@@ -578,5 +616,5 @@ class importer:
         for tax_level in level_list:
             tax_level_dict = tax_emoj.get(tax_level)
             match_test = tax_level_dict.get(record.get(tax_level))
-            if match_test is not None:
+            if match_test:
                 return match_test[1]
