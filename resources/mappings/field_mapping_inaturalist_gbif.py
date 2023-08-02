@@ -129,7 +129,6 @@ TAX_GENUS = {
     "Zea": ("Corn", "🌽"),
     "Phaseolus": ("Bean", "🫘"),
     "Hyacinthus": ("Hyacinth", "🪻"),
-
 }
 TAX_FAMILY = {
     "Cercopithecidae": ("Monkey", "🐒"),
@@ -150,7 +149,7 @@ TAX_FAMILY = {
     "Tetraodontidae": ("Blowfish", "🐡"),
     "Pinnipedia": ("Seals", "🦭"),
     "Crocodylidae": ("Crocodiles", "🐊"),
-    "Serpentes": ("Crocodiles", "🐍"),
+    "Serpentes": ("Snake", "🐍"),
     "Tyrannosauridae": ("T-Rex", "🦖"),
     "Spheniscidae": ("Penguins", "🐧"),
     "Accipitridae": ("Eagle", "🦅"),
@@ -220,7 +219,7 @@ TAX_CLASS = {
 TAX_PHYLUM = {
     "Tracheophyta": ("plants", "🌱"),
     "Annelida": ("worms", "🪱"),
-    "Nemertea": ("worms", "🪱")
+    "Nemertea": ("worms", "🪱"),
 }
 TAX_KINGDOM = {
     "Fungi": ("Mushrom", "🍄"),
