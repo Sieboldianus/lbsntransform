@@ -232,6 +232,7 @@ TAX_ORDER = {
     "Salmoniformes": ("Fish", "🐟"),
     "Cypriniformes": ("Fish", "🐟"),
     "Scorpaeniformes": ("Fish", "🐟"),
+    "Beryciformes": ("Fish", "🐟"),
     "Caudata": ("Lizard", "🦎"),
 }
 TAX_CLASS = {
