@@ -129,6 +129,20 @@ TAX_GENUS = {
     "Zea": ("Corn", "🌽"),
     "Phaseolus": ("Bean", "🫘"),
     "Hyacinthus": ("Hyacinth", "🪻"),
+    "Alnus": ("Deciduous", "🌳"),
+    "Betula": ("Deciduous", "🌳"),
+    "Carpinus": ("Deciduous", "🌳"),
+    "Crataegus": ("Deciduous", "🌳"),
+    "Fagus": ("Deciduous", "🌳"),
+    "Fraxinus": ("Deciduous", "🌳"),
+    "Ilex": ("Deciduous", "🌳"),
+    "Populus": ("Deciduous", "🌳"),
+    "Quercus": ("Deciduous", "🌳"),
+    "Salix": ("Deciduous", "🌳"),
+    "Sorbus": ("Deciduous", "🌳"),
+    "Tilia": ("Deciduous", "🌳"),
+    "Ulmus": ("Deciduous", "🌳"),
+    "Larix": ("Deciduous conifer", "🌲"),
 }
 TAX_FAMILY = {
     "Cercopithecidae": ("Monkey", "🐒"),
@@ -203,6 +217,7 @@ TAX_ORDER = {
     "Myopsida": ("Squid", "🦑"),
     "Oegopsida": ("Squid", "🦑"),
     "Bathyteuthida": ("Squid", "🦑"),
+    "Odonata": ("Mosquitoes", "🦟"),
 }
 TAX_CLASS = {
     "Gastropoda": ("Snail", "🐌"),
