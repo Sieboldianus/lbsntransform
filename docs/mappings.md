@@ -1,5 +1,8 @@
 # Mappings
 ## Input Mappings
+### Available mappings
+
+Example mappings currently exist for Reddit, Twitter, Flickr, Instagram, and iNaturalist.
 ### Concept
 
 For any conversion, a mapping must exist. A mapping is defined in 
