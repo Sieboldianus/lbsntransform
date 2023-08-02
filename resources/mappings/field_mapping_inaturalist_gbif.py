@@ -480,8 +480,6 @@ class importer:
         if emoji:
             post_record.emoji.extend([emoji])
         lbsn_records.append(post_record)
-        if post_guid == "7145128":
-            input(f"Record: {record} \n\nemoji : {emoji}")
         return lbsn_records
 
     @staticmethod
