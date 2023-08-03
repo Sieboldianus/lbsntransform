@@ -148,7 +148,6 @@ TAX_GENUS = {
     "Alces": ("Moose", "🫎"),
     "Anser": ("Goose", "🪿"),
     "Branta": ("Goose", "🪿"),
-    # "Turdus": ("Blackbird", "🐦‍⬛"),
 }
 TAX_FAMILY = {
     "Cercopithecidae": ("Monkey", "🐒"),
@@ -195,6 +194,8 @@ TAX_FAMILY = {
     "Ostreidae": ("Oyster", "🦪"),
     "Plethodontidae": ("Lizard", "🦎"),
     "Talitridae": ("Insects/Bug", "🐛"),
+    "Fabaceae": ("Flowers", "🌼"),
+    "Asteraceae": ("Sunflowers", "🌻"),
     # "Icteridae": ("Blackbird", "🐦‍⬛"),
 }
 TAX_ORDER = {
@@ -256,6 +257,7 @@ TAX_CLASS = {
     "Hydrozoa": ("Jellyfish", "🪼"),
     "Phaeophyceae": ("Corals", "🪸"),
     "Crocodylia": ("Crocodiles", "🐊"),
+    "Liliopsida": ("lilies", "⚜️"),
 }
 TAX_PHYLUM = {
     "Tracheophyta": ("plants", "🌱"),
