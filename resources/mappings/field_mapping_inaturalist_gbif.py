@@ -486,7 +486,12 @@ class importer:
     @staticmethod
     def strip_occurence_guid(occurrence_id: str) -> str:
         """Strip inaturalist prefix from occurrence guid"""
-        return occurrence_id.rsplit("/", 1)[-1]
+        if "/" in occurrence_id:
+            return occurrence_id.rsplit("/", 1)[-1]
+        # there are 233 entries in gbif data
+        # where the occurence_id from iNaturalist is
+        # not an URL; in this case, return unfiltered
+        return occurrence_id
 
     def gbif_extract_postlatlng(self, lat_entry: str, lng_entry: str) -> str:
         """Basic routine for extracting lat/lng coordinates from post.
