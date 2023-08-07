@@ -38,7 +38,7 @@ lbsntransform = "lbsntransform.__main__:main"
 
 [tool.semantic_release]
 assets = []
-version_variable = [
+version_variables = [
     "src/lbsntransform/version.py:__version__",]
 version_source = "commit"
 commit_version_number = true
